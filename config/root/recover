@@ -1,0 +1,103 @@
+#
+# Copyright Golden Delicious Computers GmbH&Co. KG, 2010
+# licenced unter GPL 2.0
+#
+# this is part of Letux 400 minifs
+#
+# this script is the main loop of the minifs
+#
+
+## FIXME: check that we run it on Letux 400 only
+exit 1
+
+# things to consider:
+#   make the script "universal" so that it can be run on the full debian to install the minifs
+#
+
+# mount private file systems
+
+mkdir -p /mnt/kernel
+mkdir -p /mnt/minifs
+
+mount /dev/mtdblock3 /mnt/minifs
+mount /dev/mtdblock4 /mnt/nand1
+
+function listrecovery
+{ # list recovery files we find
+}
+
+function install
+{ # install package
+	DEST=/mnt/nand1
+	DESTDEV=/dev/mtdblock4
+	# if we want to write the minifs, use mtdblock3
+	case "$1" in
+		uImage ) # kernel
+			# copy to /dev/mtd1
+			;;
+		*.yaffs2 | *.jffs2 )	# raw image
+			# unmount
+			# copy to raw device
+			# remount
+			;;
+		*.tgz )
+			(cd DEST && tar xvzf "$1")
+			;;
+		*.tbz )
+			(cd DEST && tar xvjf "$1")
+			;;
+		* )
+			## analyse contents, i.e. file "$1"
+	esac
+}
+
+while true
+do
+	clear
+	echo "*** RECOVERY SYSTEM ***"
+	cut -b 1-17 </dev/mtdblock2	# Mac address
+	echo
+	echo "1) show partitions"
+	echo "2) list recovery files"
+	echo "3) format NAND flash and install"
+	echo "4) install"
+#	echo "5) Debian network install"
+	echo "F) File System Check"
+	echo "Q) reboot"
+	echo
+	echo -n "your choice: "
+	read CMD
+	case $CMD i
+		1 )
+			# list all partitions and try to figure out what they contain and if they are sane
+			;;
+		2 )
+			clear
+			listrecovery	# search all SD, USB, network (e.g. wget http://download.goldelico.com/letux-400/* ) for
+			# uImage
+			# file.yaffs2
+			# file.jffs2
+			# file.tgz
+			# file.tbz
+			echo
+			echo -n "continue: "
+			read CMD
+			;;
+		3 )
+			umount /dev/mtdblock1
+			# copy uImage -> /dev/mtd1
+			;;
+		4 )
+			install file
+			;;
+		q | Q )
+		# problem: will not be able to reboot kernel from SD card
+			echo "this will shut down. Reboot manually after confirming."
+			read CMD
+			shutdown -r now
+			;;
+		f | F )
+#			fsck /dev/mtdblock4
+#			fsck /dev/mtdblock5
+	esac
+done
