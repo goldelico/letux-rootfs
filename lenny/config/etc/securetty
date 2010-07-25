@@ -1,0 +1,17 @@
+#
+# The /etc/securetty file allows you to specify which TTY devices the root user is allowed to login on.
+# The /etc/securetty file is read by the login program usually /bin/login.
+# Its format is a list of the tty devices names allowed, and for all others that are commented out
+# or do not appear in this file, root login is disallowed.
+# Disable any tty that you do not need by commenting them out # at the beginning of the line. 
+#
+
+#tty1
+#tty2
+#tty3
+#tty4
+#tty5
+#tty6
+#tty7
+#tty8
+ttyS2

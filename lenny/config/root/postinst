@@ -1,0 +1,99 @@
+#
+# Copyright Golden Delicious Computers GmbH&Co. KG, 2010
+# licenced unter GPL 2.0
+#
+# this is part of OM Beagle
+# see http://elinux.org/BeagleBoardDebian
+#
+# run this script after first install to upgrade the bootstrapped image to a useful image
+#
+
+depmod -a
+apt-get update		# get latest package list
+date 010100002015	# get rid of 'in the future' warnings from tar until we have ntp
+
+sed -i 's/\(PermitEmptyPasswords\) no/\1 yes/' $DEST/etc/ssh/sshd_config
+# sed -i 's/\(PermitEmptyPasswords\) yes/\1 no/' $DEST/etc/ssh/sshd_config
+
+# command line tools
+
+apt-get install -y ntp
+apt-get install -y sudo
+apt-get install -y udev
+apt-get install -y dnsutils
+apt-get install -y mtd-utils
+apt-get install -y usbmount
+apt-get install -y bluez-utils
+apt-get install -y openssh-server openssh-client
+apt-get install -y usb-modeswitch-data/testing usb-modeswitch/testing
+
+# X11 installs
+apt-get install -y xorg
+wget -c http://rcn-ee.homeip.net:81/dl/deb-sbuild/lenny/xorg-drivers/xserver-xorg-video-omap3_0.1.1-2_armel.deb
+dpkg -i xserver-xorg-video-omap3_0.1.1-2_armel.deb
+# apt-get install -y xserver-xorg-video-omap3
+
+#
+# backport from lenny testing to stable to fix http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=493942
+# see (German): http://wiki.unixboard.de/index.php/Debian_Backports
+#
+
+if false	# set to true if we can load a working xserver-xorg-input-tslib (e.g. lenny/testing)
+then
+
+apt-get install -y xserver-xorg-input-tslib libts-bin
+
+else	# otherwise backport
+
+apt-get install -y build-essential dpkg-dev debhelper xserver-xorg-dev libts-dev pkg-config
+
+wget http://ftp.debian.org/debian/pool/main/x/xf86-input-tslib/xf86-input-tslib_0.0.4-5.dsc
+wget http://ftp.debian.org/debian/pool/main/x/xf86-input-tslib/xf86-input-tslib_0.0.4-5.diff.gz
+wget http://ftp.debian.org/debian/pool/main/x/xf86-input-tslib/xf86-input-tslib_0.0.4.orig.tar.gz
+dpkg-source -x xf86-input-tslib_0.0.4-5.dsc
+( 
+cd xf86-input-tslib-0.0.4
+dpkg-checkbuilddeps
+### patch ###
+cp tslib.c src/tslib.c
+dpkg-buildpackage
+)
+
+# note: removing dpkg-dev will also remove usb-modeswitch !?!
+
+apt-get remove build-essential debhelper xserver-xorg-dev libts-dev pkg-config
+rm -rf xf86-input-tslib_0.0.4* xf86-input-tslib-0.0.4
+dpkg -i xserver-xorg-input-tslib_0.0.4-5_armel.deb
+
+apt-get install -y libts-bin
+apt-get install matchbox-keyboard matchbox-keyboard-im
+
+fi
+
+# add any GUI components you want to load here
+
+# apt-get install -y gnome-core gdm
+# apt-get install -y kde-core kdm
+# apt-get install -y gdm
+# apt-get install -y xfce4
+# apt-get install -y matchbox
+# apt-get install -y QuantumSTEP
+
+apt-get install -y lxde
+
+# applications and games
+
+apt-get install -y gpsd tangogps
+apt-get install -y synaptic
+
+# cleanup
+
+apt-get -y autoremove
+apt-get -y autoclean
+rm *.deb
+
+# save a snapshot of the resulting system (copy from this SD to some server)
+# rm /boot/*.tbz
+# tar cvjf /boot/rootfs.tbz /
+
+# rm postinst

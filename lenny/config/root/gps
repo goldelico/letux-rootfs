@@ -1,0 +1,12 @@
+#
+# start gps demo
+# see also http://projects.goldelico.com/p/gta04-kernel/page/Devices/
+#
+killall gpsd
+echo "1" >/sys/devices/virtual/gpio/gpio156/value
+sleep 1
+echo "0" >/sys/devices/virtual/gpio/gpio156/value
+sleep 1
+echo "1" >/sys/devices/virtual/gpio/gpio156/value
+gpsd /dev/ttyS1
+tangogps --display :0.0

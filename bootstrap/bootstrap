@@ -1,0 +1,149 @@
+#!/bin/sh
+#
+# based on http://elinux.org/BeagleBoardDebian
+# and ideas from http://wiki.openmoko.org/wiki/Manual_Debian#debootstrap_on_the_neo
+# run this on the BB from flashed Angstrom OS to bootstrap Debian onto the same SD card
+#
+# you must have internet access from the BB
+#
+
+DEST=/debian
+
+rm -f data.tar.gz *.deb
+wget http://ftp.de.debian.org/debian/pool/main/c/cdebootstrap/cdebootstrap-static_0.5.4_armel.deb || exit 1
+ar -x cdebootstrap-static_0.5.4_armel.deb data.tar.gz
+zcat data.tar.gz | tar -xv -C / -f -                       
+rm data.tar.gz cdebootstrap-static_0.5.4_armel.deb
+
+wget http://ftp.de.debian.org/debian/pool/main/d/debian-archive-keyring/debian-archive-keyring_2009.01.31_all.deb || exit 1
+ar -x debian-archive-keyring_2009.01.31_all.deb data.tar.gz                                                                
+zcat data.tar.gz | tar -xv -C / -f -                         
+rm data.tar.gz debian-archive-keyring_2009.01.31_all.deb
+
+cdebootstrap-static --allow-unauthenticated --flavour=minimal --include=ifupdown,udev,procps,netbase,vim-tiny,module-init-tools,wget,openssh-server,psmisc,iputils-ping,mtd-utils,apmd stable $DEST/ http://ftp.de.debian.org/debian/
+
+mkdir -p $DEST/etc/
+echo "bb-debian" > $DEST/etc/hostname
+
+mkdir -p $DEST/etc/network
+cat > $DEST/etc/network/interfaces <<__END__
+auto lo
+iface lo inet loopback
+auto usb0
+iface usb0 inet static
+	pre-up depmod
+	pre-up modprobe g_ether
+    address 192.168.0.202
+    netmask 255.255.255.0
+    network 192.168.0.0
+    gateway 192.168.0.200
+	post-down rmmod g_ether
+    up echo nameserver 208.67.222.222 >/etc/resolv.conf
+__END__
+
+: mkdir -p $DEST/etc/network/run
+cat > $DEST/etc/fstab << __END__
+rootfs  /                auto    defaults,errors=remount-ro,noatime 0 1
+proc    /proc            proc    defaults                           0 0
+devpts  /dev/pts         devpts  mode=0620,gid=5                    0 0
+usbfs   /proc/bus/usb    usbfs   defaults                           0 0
+tmpfs   /dev/shm         tmpfs   defaults,noatime                   0 0
+tmpfs   /tmp             tmpfs   defaults,noatime                   0 0
+tmpfs   /var/lock        tmpfs   defaults,noatime                   0 0
+tmpfs   /var/run         tmpfs   defaults,noatime                   0 0
+tmpfs   /var/tmp         tmpfs   defaults,noatime                   0 0
+__END__
+
+: cat > $DEST/etc/modules << __END__
+g_ether
+hidp
+ohci-hcd
+rfcomm
+__END__
+
+mkdir -p $DEST/etc/apt/apt.conf.d
+cat > $DEST/etc/apt/apt.conf.d/99no-install-recommends << __END__
+APT::Install-Recommends "0";
+__END__
+
+sed -i 's/\(PermitEmptyPasswords\) no/\1 yes/' $DEST/etc/ssh/sshd_config
+
+chroot $DEST /bin/sh -e <<__END_CHROOT__
+echo root: | chpasswd
+apt-get --yes --purge remove cdebootstrap-helper-rc.d
+__END_CHROOT__
+
+cat > $DEST/etc/ts.conf << __END__
+# Uncomment if you wish to use the linux input layer event interface
+module_raw input
+
+# Uncomment if you're using a Sharp Zaurus SL-5500/SL-5000d
+# module_raw collie
+
+# Uncomment if you're using a Sharp Zaurus SL-C700/C750/C760/C860
+# module_raw corgi
+
+# Uncomment if you're using a device with a UCB1200/1300/1400 TS interface
+# module_raw ucb1x00
+
+# Uncomment if you're using an HP iPaq h3600 or similar
+# module_raw h3600
+
+# Uncomment if you're using a Hitachi Webpad
+# module_raw mk712
+
+# Uncomment if you're using an IBM Arctic II
+# module_raw arctic2
+
+# module pthres pmin=1
+module variance delta=30
+module dejitter delta=100
+module linear
+__END__
+
+mkdir -p $DEST/etc/X11/
+cat > $DEST/etc/X11/xorg.conf << __END__
+Section "Module"                                       
+        Load    "extmod"                                
+        Load    "dbe"                           
+        Load    "glx"                                           
+        Load    "freetype"                             
+        Load    "type1"                        
+        Load    "record"                    
+        Load    "dri"                       
+EndSection                            
+
+Section "Monitor"                                                                    
+        Identifier      "Builtin Default Monitor"
+EndSection                                       
+
+Section "Device"                                  
+        Identifier      "Builtin Default fbdev Device 0"
+        Driver  "omapfb"
+EndSection                                                
+
+Section "Screen"                                        
+        Identifier      "Builtin Default fbdev Screen 0"     
+        Device  "Builtin Default fbdev Device 0"            
+        Monitor "Builtin Default Monitor"               
+EndSection                                              
+
+Section "InputDevice"
+		Identifier	"Touchscreen"
+		Driver		"tslib"
+		Option		"Device"	"/dev/input/touchscreen0"
+#		Option		"SwapX"		"off"
+#		Option		"SwapY"		"off"
+		Option		"Rotate"	"cw"	# "none", "cw" (clockwise), "ccw" (counter-clockwise), "half"
+EndSection
+
+Section "ServerLayout"                                 
+        Identifier      "Builtin Default Layout"                                     
+        Screen  "Builtin Default fbdev Screen 0"        
+        InputDevice	"Touchscreen"
+EndSection
+__END__
+
+# pack into complete rootfs image as the basis to apply further patches
+
+tar cvjf bootstrapped-rootfs.tbz -C $DEST .
