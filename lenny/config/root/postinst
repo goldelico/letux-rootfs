@@ -2,8 +2,8 @@
 # Copyright Golden Delicious Computers GmbH&Co. KG, 2010
 # licenced unter GPL 2.0
 #
-# this is part of OM Beagle
-# see http://elinux.org/BeagleBoardDebian
+# this is part of OM Beagle Hybrid
+# it is derived from http://elinux.org/BeagleBoardDebian
 #
 # run this script after first install to upgrade the bootstrapped image to a useful image
 #
