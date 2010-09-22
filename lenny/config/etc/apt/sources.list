@@ -2,4 +2,4 @@ deb http://ftp.de.debian.org/debian stable main
 deb http://ftp2.de.debian.org/debian stable main
 deb http://ftp.us.debian.org/debian stable main
 deb http://ftp.us.debian.org/debian testing main
-deb http://download.goldelico.de/debian stable main
+deb http://download.goldelico.de/debian standard main

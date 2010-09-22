@@ -38,6 +38,8 @@ dpkg -i xserver-xorg-video-omap3_0.1.1-2_armel.deb
 # see (German): http://wiki.unixboard.de/index.php/Debian_Backports
 #
 
+mv /etc/rts.conf /etc/ts.conf.cfg # save loaded config
+
 if false	# set to true if we can load a working xserver-xorg-input-tslib (e.g. lenny/testing)
 then
 
@@ -61,16 +63,20 @@ dpkg-buildpackage
 
 # note: removing dpkg-dev will also remove usb-modeswitch !?!
 
-apt-get remove build-essential debhelper xserver-xorg-dev libts-dev pkg-config
+apt-get remove -y build-essential debhelper xserver-xorg-dev libts-dev pkg-config
 rm -rf xf86-input-tslib_0.0.4* xf86-input-tslib-0.0.4
 dpkg -i xserver-xorg-input-tslib_0.0.4-5_armel.deb
 
 apt-get install -y libts-bin
-apt-get install matchbox-keyboard matchbox-keyboard-im
+apt-get install -y matchbox-keyboard matchbox-keyboard-im
 
 fi
 
+mv -f /etc/rts.conf.cfg /etc/ts.conf # overwrite default config
+
+#
 # add any GUI components you want to load here
+#
 
 # apt-get install -y gnome-core gdm
 # apt-get install -y kde-core kdm
