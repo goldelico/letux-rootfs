@@ -1,0 +1,22 @@
+#
+# enable handsfree / earpiece
+# and echo microphone signal
+#
+
+amixer set HandsfreeL on
+amixer set HandsfreeR on
+amixer set 'HandsfreeL Mux' AudioL2
+amixer set 'HandsfreeR Mux' AudioR2
+amixer set Earpiece 100%
+amixer set 'Earpiece Mixer AudioL2' on
+amixer set 'Earpiece Mixer AudioR2' off
+amixer set 'Earpiece Mixer Voice' off
+amixer set 'Analog' 5
+amixer set TX1 'Analog'
+amixer set 'TX1 Digital' 12
+amixer set 'Analog Left AUXL' nocap
+amixer set 'Analog Right AUXR' nocap
+amixer set 'Analog Left Main Mic' cap
+amixer set 'Analog Left Headset Mic' nocap
+
+arecord | tee record.wav | aplay

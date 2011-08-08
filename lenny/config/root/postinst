@@ -2,45 +2,63 @@
 # Copyright Golden Delicious Computers GmbH&Co. KG, 2010
 # licenced unter GPL 2.0
 #
-# this is part of OM Beagle Hybrid
+# this is part of OM Beagle Hybrid / GTA04
 # it is derived from http://elinux.org/BeagleBoardDebian
 #
 # run this script after first install to upgrade the bootstrapped image to a useful image
+# it should be safe to re-run it
 #
 
 depmod -a
-apt-get update		# get latest package list
-date 010100002015	# get rid of 'in the future' warnings from tar until we have ntp
+
+## FIXME: we should set the clock to the changed date of this postinst file!
+( ps -ef | fgrep -v fgrep | fgrep -q ntpd ) || date 010100002011 # get rid of 'in the future' warnings from tar and apt-get until we have ntp
+
+apt-get update || exit 1	# get latest package list
+dpkg --configure -a	# try to cleanup if previous attempt failed
+apt-get install -y --force-yes debian-archive-keyring
+apt-get update		# get latest package list again
+apt-get install -y apt-utils
+
+# WARNING: this line opens a big security hole but simplifies development
 
 sed -i 's/\(PermitEmptyPasswords\) no/\1 yes/' $DEST/etc/ssh/sshd_config
 # sed -i 's/\(PermitEmptyPasswords\) yes/\1 no/' $DEST/etc/ssh/sshd_config
 
-# command line tools
+#
+# install useful command line tools
+#
 
-apt-get install -y ntp
+apt-get install -y ntp	# update clock from network
 apt-get install -y sudo
 apt-get install -y udev
-apt-get install -y dnsutils
-apt-get install -y mtd-utils
+apt-get install -y dnsutils  	# nslookup etc.
+apt-get install -y mtd-utils	# read/write/erase NAND
+apt-get install -y i2c-tools	# read/write/scan I2C
+apt-get install -y alsa-utils	# alsamixer, aplay etc.
+apt-get install -y fbset		# to switch to TV-Out
 apt-get install -y usbmount
-apt-get install -y bluez-utils
-apt-get install -y openssh-server openssh-client
-apt-get install -y usb-modeswitch-data/testing usb-modeswitch/testing
+apt-get install -y evtest		# allows to check touch screen and button events
+apt-get install -y openssh-server openssh-client	# remote access thorugh ssh
+apt-get install -y pppd
+apt-get install -y libertas-firmware wireless-tools	# driver for Marvell WLAN
+apt-get install -y bluez-utils bluez-audio	# driver for HCI Bluetooth
 
-# X11 installs
+#
+# install X11 driver for omap3
+#
+
 apt-get install -y xorg
 wget -c http://rcn-ee.homeip.net:81/dl/deb-sbuild/lenny/xorg-drivers/xserver-xorg-video-omap3_0.1.1-2_armel.deb
 dpkg -i xserver-xorg-video-omap3_0.1.1-2_armel.deb
 # apt-get install -y xserver-xorg-video-omap3
 
 #
-# backport from lenny testing to stable to fix http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=493942
+# backport touch screen driver to fix http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=493942
 # see (German): http://wiki.unixboard.de/index.php/Debian_Backports
 #
 
-mv /etc/rts.conf /etc/ts.conf.cfg # save loaded config
-
-if false	# set to true if we can load a working xserver-xorg-input-tslib (e.g. lenny/testing)
+if false	# set to true if we finally can load a working xserver-xorg-input-tslib (e.g. from squeeze)
 then
 
 apt-get install -y xserver-xorg-input-tslib libts-bin
@@ -56,8 +74,8 @@ dpkg-source -x xf86-input-tslib_0.0.4-5.dsc
 ( 
 cd xf86-input-tslib-0.0.4
 dpkg-checkbuilddeps
-### patch ###
-cp tslib.c src/tslib.c
+### apply our patch ###
+cp ../tslib.c src/tslib.c
 dpkg-buildpackage
 )
 
@@ -68,14 +86,11 @@ rm -rf xf86-input-tslib_0.0.4* xf86-input-tslib-0.0.4
 dpkg -i xserver-xorg-input-tslib_0.0.4-5_armel.deb
 
 apt-get install -y libts-bin
-apt-get install -y matchbox-keyboard matchbox-keyboard-im
 
 fi
 
-mv -f /etc/rts.conf.cfg /etc/ts.conf # overwrite default config
-
 #
-# add any GUI components you want to load here
+# install GUI components
 #
 
 # apt-get install -y gnome-core gdm
@@ -83,23 +98,41 @@ mv -f /etc/rts.conf.cfg /etc/ts.conf # overwrite default config
 # apt-get install -y gdm
 # apt-get install -y xfce4
 # apt-get install -y matchbox
-# apt-get install -y QuantumSTEP
+# apt-get install -y quantumstep quantumstep-displaymanager
 
 apt-get install -y lxde
 
-# applications and games
+#
+# applications, tools and games
+#
 
 apt-get install -y gpsd tangogps
 apt-get install -y synaptic
+apt-get install -y matchbox-keyboard matchbox-keyboard-im
 
+#
 # cleanup
+#
 
 apt-get -y autoremove
 apt-get -y autoclean
 rm *.deb
 
-# save a snapshot of the resulting system (copy from this SD to some server)
-# rm /boot/*.tbz
-# tar cvjf /boot/rootfs.tbz /
+#
+# reinstall our private configuration (apt-get install may have overwritten some parts)
+#
+
+(cd / && tar xvzf /root/config.tgz)
+
+# (re) calibrate touch screen
+# ts_calibrate
+
+#
+# save a snapshot of the resulting system (copy from this SD to some medium to make clones)
+#
+
+# (cd / && tar cvjf lenny-lxde.tbz --exclude lenny-lxde.tbz --exclude proc  -- exclude /sys . )
 
 # rm postinst
+
+echo postinst done.

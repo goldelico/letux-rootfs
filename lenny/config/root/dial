@@ -1,0 +1,20 @@
+#
+# dial a phone number
+#
+# usage: dial pin number
+
+for i in $(cd /sys/class/tty/ && echo ttyHS*)
+	do
+	if [ "$(cat /sys/class/tty/$i/hsotype)" == "Application" ]
+		then
+		IF="/dev/$i"
+	fi
+done
+
+[ "$IF" ] || (echo HSO Application interface not found; exit 1)
+
+(
+echo "AT+CPIN=$1"
+# echo "AT.... enable Voice PCM"
+echo "ATD$2;"
+) >$IF

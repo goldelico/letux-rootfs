@@ -14,14 +14,23 @@ depmod -a
 
 apt-get remove -y usb-modeswitch-data/testing usb-modeswitch/testing
 apt-get remove -y xserver-xorg-input-tslib libts-bin
-apt-get autoremove -y
 
-sed -i 's/stable/squeeze/' /etc/apt/sources.list
+apt-get autoremove -y
+apt-get autoclean
+apt-get clean
+
+sed -ibak 's/lenny/squeeze/' /etc/apt/sources.list
+sed -ibak 's/lenny/squeeze/' /etc/apt/apt.conf
 
 apt-get update
+apt-get install -y apt dpkg 
 apt-get dist-upgrade -y
 
 apt-get install -y xserver-xorg-input-tslib libts-bin usb-modeswitch usb-modeswitch-data
+
+apt-get autoremove -y
+apt-get autoclean
+apt-get clean
 
 rm -rf /etc/udev/rules.d/z60_xserver-xorg-input-wacom.rules
 

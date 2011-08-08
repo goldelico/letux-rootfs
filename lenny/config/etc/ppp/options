@@ -1,0 +1,6 @@
+asyncmap 0
+netmask 255.255.254.0
+proxyarp
+lock
+crtscts
+modem
