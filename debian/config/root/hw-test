@@ -1,0 +1,410 @@
+#
+# GTA04 hardware test script
+# © Golden Delicious Computers GmbH&Co. KG, 2012
+# licenced under GPL
+#
+
+TESTER_VERSION="2.0"
+TESTER_DATE="08 Feb 2012"
+
+trap "killall hciattach arecord aplay; exit" SIGHUP SIGINT SIGTERM
+make femtocom >/dev/null
+
+# testing "GTM601" "test if we can access"
+
+ANYNOK=false
+
+function testing {
+	TEST="$1"
+	MESSAGE=
+	[ "$2" ] && MESSAGE="# $2"
+	OK=false
+	NOK=true
+}
+
+# (n)ok "value" (optional)
+
+SEQUENCE=1
+function ok {
+	echo $SEQUENCE "$TEST" ok "$1" $MESSAGE
+	SEQUENCE=$(expr $SEQUENCE + 1)
+	OK=true
+	NOK=false
+}
+
+function nok {
+	if "$NOK"
+	then
+		echo $SEQUENCE "$TEST" nok "$1" $MESSAGE
+		SEQUENCE=$(expr $SEQUENCE + 1)
+		ANYNOK=true
+	fi
+}
+
+testing "Tests-Start"
+ok "$(date)"
+
+testing "Tests-Version"
+ok "$TESTER_VERSION"
+
+testing "LED" "enable LEDs"
+echo 31 >/sys/class/leds/tca6507:0/brightness 2>/dev/null &&
+echo 255 >/sys/class/leds/tca6507:1/brightness 2>/dev/null &&
+echo 31 >/sys/class/leds/tca6507:3/brightness 2>/dev/null &&
+echo 255 >/sys/class/leds/tca6507:4/brightness 2>/dev/null &&
+ok ||Ênok
+
+testing "VAUX2" "Sensor power"
+VDD=2800000
+echo $VDD >/sys/devices/platform/reg-virt-consumer.2/max_microvolts 2>/dev/null &&
+echo $VDD >/sys/devices/platform/reg-virt-consumer.2/min_microvolts 2>/dev/null &&
+echo normal >/sys/devices/platform/reg-virt-consumer.2/mode 2>/dev/null &&	#  enable power supply
+modprobe hmc5883l 2>/dev/null &&	# load driver
+ok || nok
+
+[ -r /sys/bus/i2c/devices/i2c-2/2-0068/suspend ] && echo 0 >/sys/bus/i2c/devices/i2c-2/2-0068/suspend 2>/dev/null	# start sampling on gyroscope
+[ -r /sys/bus/i2c/devices/i2c-2/2-001e/rate ] && echo 50 >/sys/bus/i2c/devices/i2c-2/2-001e/rate 2>/dev/null	# start sampling on compass
+
+testing "BMP085" "Barometer values"
+PRESSURE=$(cat /sys/bus/i2c/devices/i2c-2/2-0077/pressure0_input 2>/dev/null)
+CENTIGRADE=$(cat /sys/bus/i2c/devices/i2c-2/2-0077/temp0_input 2>/dev/null)
+PRESSURE=$(expr "${PRESSURE:=0}" / 100)
+CENTIGRADE=$(expr "${CENTIGRADE:=0}" / 10)
+[ "$PRESSURE" -ge 850 -a "$PRESSURE" -le 1150 -a "$CENTIGRADE" -ge 20 -a "$CENTIGRADE" -le 60 ] && ok "${PRESSURE}mBar, ${CENTIGRADE}C" || nok "${PRESSURE}mBar, ${CENTIGRADE}C"
+
+testing "ITG3200" "Gyroscope values"
+read X Y Z CENTIGRADE < <(sed "s/,/ /g" /sys/bus/i2c/devices/i2c-2/2-0068/values 2>/dev/null)
+G=$(expr ${X:=0} '*' ${X} + ${Y:=0} '*' ${Y} + ${Z:=0} '*' ${Z})
+GMAX=$(expr 3 '*' 200 '*' 200)
+CENTIGRADE=$(expr "${CENTIGRADE:=0}" / 10)
+[ "$G" -le "$GMAX" -a "$CENTIGRADE" -ge 20 -a "$CENTIGRADE" -le 60 ] && ok "$X, $Y, $Z, ${CENTIGRADE}C" || nok "$X, $Y, $Z, ${CENTIGRADE}C"
+
+testing "BMA180" "Accelerometer values"
+read X Y Z < <(sed "s/,/ /g" /sys/bus/i2c/devices/i2c-2/2-0041/coord 2>/dev/null)
+G=$(expr ${X:=0} '*' ${X} + ${Y:=0} '*' ${Y} + ${Z:=0} '*' ${Z})
+GMIN=$(expr 8 '*' 1024 '*' 1024)
+GMAX=$(expr 32 '*' 1024 '*' 1024)
+[ "$G" -le "$GMAX" -a "$G" -ge "$GMIN" ] && ok "$X, $Y, $Z" || nok "$X, $Y, $Z"
+
+testing "HMC5883L" "Compass values"
+read X Y Z < <(sed "s/,/ /g" /sys/bus/i2c/devices/i2c-2/2-001e/values 2>/dev/null)
+[ -r /sys/bus/i2c/devices/i2c-2/2-001e/values ] && ok "$X, $Y, $Z" || nok "$X, $Y, $Z"
+
+function i2ctest
+{ # i2ctest bus address
+	echo y | i2cdetect -r $1 0x$2 0x$2 2>/dev/null | fgrep " $2
+ UU" >/dev/null
+}
+
+testing "TSC2007" "Touch screen values"
+read VAL < <(sed "s/,/ /g" /sys/bus/i2c/devices/i2c-2/2-0048/values 2>/dev/null)
+[ -r /sys/bus/i2c/devices/i2c-2/2-0048/values ] && ok "$VAL" || nok "$VAL"
+
+testing "OV9655" "Camera driver"
+[ -r /dev/video0 ] && ok || nok
+
+if false; then
+testing "LIS302" "optional Accelerometer values"
+i2ctest 2 1d && ok || nok 
+fi
+
+testing "TPS61050" "Torch/Flash I2C response"
+i2ctest 2 33 && ok || nok
+
+testing "M24LR64" "RFID-EEPROM I2C response"
+i2ctest 2 50 && ok || nok
+
+testing "Si47xx" "FM TRX I2C response"
+i2ctest 2 11 && ok || nok
+
+testing "TCA6507" "LED controller I2C response"
+i2ctest 2 45 && ok || nok
+
+testing "Batt-Volt" "main battery voltage"
+read VOLT < <(sed "s/,/ /g" /sys/bus/platform/devices/twl4030-bci-battery/power_supply/twl4030_bci_battery/voltage_now 2>/dev/null)
+[ "${VOLT:=0}" -ge 3100 -a "$VOLT" -le 4300 ] && ok "${VOLT}mV" || nok "${VOLT}mV"
+
+testing "Batt-Status" "main battery status"
+read STATUS < <(sed "s/,/ /g" /sys/bus/platform/devices/twl4030-bci-battery/power_supply/twl4030_bci_battery/status 2>/dev/null)
+[ "$STATUS" ] && ok "$STATUS" || nok "$STATUS"
+
+testing "Batt-Temp" "main battery temperature (may not be real value)"
+read TEMP < <(sed "s/,/ /g" /sys/bus/platform/devices/twl4030-bci-battery/power_supply/twl4030_bci_battery/temp 2>/dev/null)
+[ "${TEMP:=0}" -ge 20 -a "$TEMP" -le 60 ] && ok "${TEMP}C" || nok "${TEMP}C"
+
+testing "Batt-Backup" "backup battery voltage"
+read VOLT < <(sed "s/,/ /g" /sys/bus/platform/devices/twl4030-bci-battery/power_supply/twl4030_bci_bk_battery/voltage_now 2>/dev/null)
+[ "${VOLT:=0}" -ge 200 -a "$VOLT" -le 3500 ] && ok "${VOLT}mV" || nok "${VOLT}mV"
+
+testing "CPU-Memory" "Memory size"
+read VAL < <(fgrep MemTotal /proc/meminfo | sed "s/MemTotal.*:/ /g" 2>/dev/null)
+[ "$VAL" ] && ok "$VAL" || nok "$VAL"
+
+testing "CPU-ID" "Die ID"
+read VAL < <(fgrep Die-ID /proc/cpuinfo | sed "s/Die-ID.*:/ /g" 2>/dev/null)
+[ "$VAL" ] && ok "$VAL" || nok "$VAL"
+
+testing "USB-IP" "IP access through Ethernet over USB"
+read VAL < <(host www.goldelico.com | fgrep 'www.goldelico.com has address ' | sed "s/www.goldelico.com has address //g" 2>/dev/null)
+[ "$VAL" = "83.151.26.121" ] && ok "$VAL" || nok "$VAL"
+
+testing "Sound" "enabling sound"
+killall -9 arecord aplay 2>/dev/null # stop any running audio forwarding (or amixer commands will fail)
+sleep 1
+amixer -q set "DAC1 Analog" off &&
+amixer -q set "DAC2 Analog" on &&
+amixer -q set "DAC2 Analog" 5 &&	# so that total gain is < 1
+amixer -q set "Codec Operation Mode" "Option 2 (voice/audio)" &&
+amixer -q set Earpiece 100% &&
+amixer -q set "Earpiece Mixer AudioL2" on &&
+amixer -q set "Earpiece Mixer Voice" off &&
+amixer -q set "Analog" 5 &&
+amixer -q set TX1 "Analog" &&
+amixer -q set "TX1 Digital" 12 &&
+amixer -q set "Analog Left AUXL" nocap &&
+amixer -q set "Analog Right AUXR" nocap &&
+amixer -q set "Analog Left Main Mic" cap &&
+amixer -q set "Analog Left Headset Mic" nocap &&
+amixer -q set HandsfreeL on &&
+amixer -q set HandsfreeR on &&
+amixer -q set "HandsfreeL Mux" AudioL2 &&
+amixer -q set "HandsfreeR Mux" AudioR2 &&
+aplay -q /usr/share/sounds/alsa/Front_Center.wav &&
+ok ||Ênok
+$OK && (arecord | tee echo.wav | aplay) >/dev/null 2>&1 &	# run sound echo
+
+testing "TVout" "enabling TVout"
+#echo "0,0" >/sys/devices/platform/omapdss/overlay0/position &&
+#echo 0 >/sys/devices/platform/omapdss/overlay1/enabled &&
+echo 0 >/sys/devices/platform/omapdss/overlay0/enabled &&	# just be sure or the "echo >manager" will timeout
+sleep 1 &&
+echo "" >/sys/devices/platform/omapdss/overlay0/manager 2>/dev/null &&
+#echo 0 >/sys/devices/platform/omapdss/display1/enabled &&
+echo 0 >/sys/devices/platform/omapdss/display2/enabled &&
+echo "pal" >/sys/devices/platform/omapdss/display1/timings &&
+fbset -fb /dev/fb0 -xres 720 -yres 574 -vxres 480 -vyres 640 &&
+echo 1 >/sys/devices/platform/omapdss/display1/enabled &&
+echo "tv" >/sys/devices/platform/omapdss/overlay0/manager &&
+echo "120,-33" >/sys/devices/platform/omapdss/overlay0/position &&	# center: "(720-480)/2, (574-640)/2"
+echo 1 >/sys/devices/platform/omapdss/overlay0/enabled &&
+ok || nok
+
+testing "GTM601-USB" "check internal USB port"
+for repeat in 1 2 3 4 5
+	do
+	if lsusb | fgrep '0af0:8800 Option' >/dev/null
+		then # found
+		ok
+		break
+	fi
+	if [ -w /sys/devices/virtual/gpio/gpio186/value ]
+	then # wake up modem in GTA04A4
+		echo 1 >/sys/devices/virtual/gpio/gpio186/value
+		sleep 1
+		echo 0 >/sys/devices/virtual/gpio/gpio186/value
+		sleep 5
+	fi
+	done
+nok
+
+testing "GTM601-Device" "find out application port"
+for i in $(cd /sys/class/tty/ && echo ttyHS*)
+	 do 
+	T=
+	if [ "$(cat /sys/class/tty/$i/hsotype 2>/dev/null)" = Application ]
+	then
+		UMTSDEV="/dev/$i"
+		ok "$UMTSDEV"
+		break
+	fi
+done
+nok
+
+if $OK
+	then
+	testing "GTM601-IMEI" "read IMEI, Serial, versions etc."
+	(echo AT_OID; sleep 1) | ./femtocom "$UMTSDEV" | fgrep ':' >/tmp/$$.values
+	while read KEY VAL
+	do
+	case "$KEY" in
+		SN: )	read IMEI SN < <(echo "$VAL" | sed "s/,/ /g")
+			testing "GTM601-IMEI" "IMEI"
+			ok "$IMEI"
+			testing "GTM601-SN" "Serial Number"
+			ok "$SN"
+			;;
+		HWV: )	testing "GTM601-HWV" "Hardware Version"
+			ok "$VAL"
+			;;
+		FWV: )	testing "GTM601-FWV" "Firmware Version"
+			ok "$VAL"
+			;;
+		FBT: )	testing "GTM601-FBT" "Firmware Build Time"
+			ok "$(echo "$VAL" | sed 's/.*(Date: \(.*\), Time: \(.*\)).*/\1,\2/g')"
+			;;
+		PMN: )	testing "GTM601-PMN" "Product Name"
+			ok "$VAL"
+			;;
+	esac
+	done </tmp/$$.values
+
+	testing "GTM601-Wakeup" "check for 3G Wakeup through AT_ORESET"
+	for i in 1 2 3
+		do
+		(echo AT_ORESET; sleep 15) | /root/femtocom "$UMTSDEV" >/dev/null
+		if dmesg | fgrep '3G Wakeup' >/dev/null
+			then
+			ok
+			break
+		fi
+		done
+fi
+
+testing "VSIM" "GPS Antenna power"
+VDD=2800000
+echo $VDD >/sys/devices/platform/reg-virt-consumer.5/max_microvolts 2>/dev/null &&
+echo $VDD >/sys/devices/platform/reg-virt-consumer.5/min_microvolts 2>/dev/null &&
+echo normal >/sys/devices/platform/reg-virt-consumer.5/mode 2>/dev/null &&	#  enable power supply
+ok || nok
+
+testing "W2SG0004" "UART2 and GPS receiver"
+for i in 1 2 3 4 5
+	do
+	if read -t 2 </dev/ttyO1 LINE && echo $LINE | fgrep '$GP' >/dev/null
+	then
+		ok "$LINE"
+		break
+	fi
+	echo 0 >/sys/devices/virtual/gpio/gpio145/value &&
+	echo 1 >/sys/devices/virtual/gpio/gpio145/value	&& # trigger chip
+ 	stty 9600 </dev/ttyO1
+	sleep 1
+done
+nok
+
+testing "W2CBW003-BT/VAUX4" "Bluetooth/WLAN power, UART1, Bluetooth and initial baudrate"
+for BTBAUD in 3000000 921600 115200
+	do
+	killall hciattach 2>/dev/null	# stop any running daemon
+	echo 255 >/sys/class/leds/tca6507:6/brightness	# activate reset
+	echo 0 >/sys/devices/platform/reg-virt-consumer.4/max_microvolts  # power off
+	sleep 1
+	VDD=3150000
+	echo $VDD >/sys/devices/platform/reg-virt-consumer.4/max_microvolts
+	echo $VDD >/sys/devices/platform/reg-virt-consumer.4/min_microvolts
+	echo normal >/sys/devices/platform/reg-virt-consumer.4/mode  # enable power supply
+	echo 0 >/sys/class/leds/tca6507:6/brightness  # deactivate reset (and rescan MMC slot)
+	sleep 2	# let wlan/bt chip & drivers initialize
+	hciattach -s $BTBAUD /dev/ttyO0 any $BTBAUD flow 2>/dev/null >&2	# start daemon at current speed
+	sleep 2
+	if hciconfig hci0 up 2>/dev/null	# try to enable Bluetooth interface
+		then # successfull at this speed
+		ok $BTBAUD
+		break
+	fi
+done
+nok
+
+if $OK
+then # run additional Bluetooth tests
+	if [ $BTBAUD != "3000000" ]
+		then	# not yet at 3 MBit/s - switch to 3 MBit/s
+		testing "W2CBW003-BT-Highspeed" "try to temporarily go up to 3 MBit/s"
+		bccmd -d hci0 psset baudrate 12288 2>/dev/null &&
+		bccmd -d hci0 warmreset 2>/dev/null &&	# temporarily go up to 3 MBit/s
+		killall hciattach 2>/dev/null
+		hciattach -s 3000000 /dev/ttyO0 any 3000000 flow 2>/dev/null >&2 &&	# restart daemon at 3 MBit/s
+		hciconfig hci0 up 2>/dev/null &&
+		ok "3000000" || nok
+		if $OK
+			then
+			testing "W2CBW003-BT-Program" "try to program boot baudrate to 3 MBit/s"
+			bccmd -d hci0 psset -s 0x1 baudrate 12288	# reprogram the boot baudrate
+			ok "programmed" || nok "not programmed"
+		fi
+	fi
+	testing "W2CBW003-BT-BootBaud" "read boot baudrate"
+	read VAL < <(bccmd -d hci0 psget -s 0x1 baudrate 2>/dev/null | sed "s/UART Baud rate:.*(\(.*\))/\1/g")
+	VAL=$(expr "${VAL:=0}" '*' 1000000 / 4096)
+	[ "$VAL" -gt 0 ] && ok $VAL || nok $VAL
+	testing "W2CBW003-BT-MAC" "read MAC address"
+	BTMAC=$(hciconfig -a | fgrep 'BD Address' | cut -d ' ' -f 3-3)
+	[ "$BTMAC" ] && ok "$BTMAC" || nok "$BTMAC"
+fi
+if $OK
+then # scan
+	testing "W2CBW003-BT-Scan" "scan for Bluetooth Base station"
+	for i in 1 2 3 4 5
+		do
+		BASE=$(hcitool scan --refresh | fgrep --invert-match Scanning | head -1 | cut -f 2)	# try to locate base station
+		if [ "$BASE" ]
+		then
+			ok $BASE	# found
+			break
+		fi
+	done
+	nok
+fi
+
+testing "W2CBW003-WLAN-libertas" "check if kernel did load libertas driver"
+( lsmod | fgrep libertas_sdio >/dev/null ) && ok || nok
+
+testing "W2CBW003-WLAN-IF" "find the interface"
+WLANIF=$(iwconfig 2>/dev/null | fgrep wlan | (read -t 5 IF X Y ESSID; echo $IF))	# WLAN should have been configured while bluetooth was starting; but iwconfig may block
+[ "$WLANIF" ] && ok "$WLANIF" || nok "$WLANIF"
+
+if $OK
+then # run additional WLAN tests
+	testing "W2CBW003-WLAN-IFUP" "check if ifup works"
+	ifconfig $WLANIF up && ok || nok
+	testing "W2CBW003-WLAN-MAC" "read MAC address"
+	WLANMAC=$(ifconfig $WLANIF | fgrep "HWaddr" | (read -t 5 IF L ENC HW MAC; echo $MAC))
+	[ "$WLANMAC" ] && ok "$WLANMAC" || nok "$WLANMAC"
+fi
+if $OK
+then # scan
+	testing "W2CBW003-WLAN-Scan" "scan for WLAN Base station"
+	for i in 1 2 3 4 5
+		do
+		BASE=$(iwlist $WLANIF scan | fgrep Address: | head -1 | sed 's/.*Address: \([0-9a-fA-F:]*\).*/\1/g')	# try to locate base station
+		if [ "$BASE" ]
+		then
+			ok $BASE	# found
+			break
+		fi
+	done
+	nok
+	testing "W2CBW003-WLAN-IFDOWN" "disable WLAN"
+	ifconfig $WLANIF down 2>/dev/null &&
+	ok || nok
+fi
+
+testing "W2CBW003-WLAN-VAUX4-off" "powering down"
+echo 0 >/sys/devices/platform/reg-virt-consumer.4/max_microvolts &&	# power off WLAN/BT
+ok || nok
+
+testing "TVout-off" "switching back to LCD"
+echo "0,0" >/sys/devices/platform/omapdss/overlay0/position &&
+echo 0 >/sys/devices/platform/omapdss/overlay0/enabled &&
+sleep 1 &&
+echo "" >/sys/devices/platform/omapdss/overlay0/manager 2>/dev/null &&
+echo "" >/sys/devices/platform/omapdss/overlay0/manager 2>/dev/null &&
+echo 0 >/sys/devices/platform/omapdss/display1/enabled &&
+fbset -fb /dev/fb0 -xres 480 -yres 640 -vxres 480 -vyres 640 &&
+echo 1 >/sys/devices/platform/omapdss/display2/enabled &&
+echo "lcd" >/sys/devices/platform/omapdss/overlay0/manager &&
+echo 1 >/sys/devices/platform/omapdss/overlay0/enabled &&
+ok || nok
+
+
+testing "Tests-End" "Summary of all tests"
+$ANYNOK && nok "$(date)" || ok "$(date)"
+if $ANYNOK
+then # red
+	echo 31 >/sys/class/leds/tca6507:3/brightness 2>/dev/null
+	echo 0 >/sys/class/leds/tca6507:4/brightness 2>/dev/null
+else # green
+	echo 0 >/sys/class/leds/tca6507:3/brightness 2>/dev/null
+	echo 31 >/sys/class/leds/tca6507:4/brightness 2>/dev/null
+fi
+$ANYNOK && exit 1 || exit 0

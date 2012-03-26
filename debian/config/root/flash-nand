@@ -1,0 +1,211 @@
+#
+# clone the currently running system to NAND
+# works only if booted from SD
+#
+
+# do sanity tests
+# * that the rootfs is not coming from nand
+# * that boot.scr does not overwrite U-Boot
+
+# DEFAULT="-x -b -k -j" ### we can't write X-Loader yet
+DEFAULT="-k -j"
+
+[ "$1" == "" ] && set - $DEFAULT
+
+if [ ! -x /usr/sbin/nandwrite ]
+then
+	echo "mtd-utils not installed (apt-get install mtd-utils)"
+	exit 1
+fi
+
+apt-get clean
+
+# check if requested components are available
+
+for cmd
+do
+	case "$cmd" in
+		-x )
+			echo "flashing X-Loader from Linux not available (HW-ECC kernel support needed)"
+			exit 1
+			if [ ! -r /boot/x-load.flash ]
+			then
+				echo x-loader missing
+				exit 1
+			fi
+			# MLO is not stored in NAND but should be in rootfs
+			# so that we can create bootable SD cards
+			if [ ! -r /boot/MLO ]
+			then
+				echo MLO missing
+				exit 1
+			fi
+			;;
+		-b )
+			echo "flashing U-Boot from Linux not available (HW-ECC kernel support needed)"
+			exit 1
+			if [ ! -r /boot/u-boot.bin ]
+			then
+				echo U-Boot missing
+				exit 1
+			fi
+			if [ ! -r /boot/boot.scr ]
+			then
+				echo boot script missing
+				exit 1
+			fi
+			if [ ! -r /boot/menu.rgb16z -a -r /boot/splash.rgb16z ]
+			then
+				echo boot menu images missing
+				exit 1
+			fi
+			;;
+		-k )
+			if [ ! -r /boot/uImage ]
+			then
+				echo kernel image missing
+				exit 1
+			fi
+			;;
+		-j | -u )
+			FOUND=false
+			if fgrep -q 'root=/dev/mtdblock4' /proc/cmdline
+			then
+				echo "can't overwrite active rootfs"
+				exit 1
+			fi
+			while read FILESYSTEM BLOCKS USED AVAILABLE USEPERCENT MOUNTED
+			do
+				case $FILESYSTEM in
+					rootfs )
+						FOUND=true
+						# fixme: we don't copy /var/cache so this estimate is wrong
+						if [ $USED -gt 1000000 ]
+						then
+							echo "root file system is too big (${FILESYSTEM}k) for 512 MB NAND flash"
+						##	exit 1
+						fi
+				esac
+			done < <(df /)
+
+			if ! $FOUND
+			then
+				echo rootfs not found
+				exit 1
+			fi
+			;;
+		* ) echo unknown option "$cmd"
+			echo "-x x-loader"
+			echo "-b u-boot and boot scripts"
+			echo "-k kernel"
+			echo "-j rootfs in jffs2 format"
+			echo "-u rootfs in UBIFS format (experimental)"
+			echo "default: $DEFAULT"
+			exit 1
+			;;
+	esac
+done
+
+# install requested components
+
+for cmd
+do
+	case "$cmd" in
+		-x ) echo flashing X-loader
+
+			# FIXME: this must be written with HW_ECC enabled!
+
+			flash_eraseall /dev/mtd0 &&
+			# write 4 copies at different locations? use -s option
+			nandwrite -p /dev/mtd0 -s 0x00000 /boot/x-load.flash &&
+			nandwrite -p /dev/mtd0 -s 0x20000 /boot/x-load.flash &&
+			nandwrite -p /dev/mtd0 -s 0x40000 /boot/x-load.flash &&
+			nandwrite -p /dev/mtd0 -s 0x60000 /boot/x-load.flash || exit 1
+			;;
+
+		-b ) echo flashing U-Boot and boot scripts
+
+			flash_eraseall /dev/mtd1 &&
+			nandwrite -p /dev/mtd1 -s 0x000000 /boot/u-boot.bin || exit 1
+
+			echo copying boot scripts to end of U-Boot partition
+
+			nandwrite -p /dev/mtd1 -s 0x150000 /boot/splash.rgb16z &&
+			nandwrite -p /dev/mtd1 -s 0x190000 /boot/menu.rgb16z &&
+			nandwrite -p /dev/mtd1 -s 0x1d0000 /boot/boot.scr || exit 1
+
+			nanddump /dev/mtd2 | xxd | head
+			;;
+
+		-k ) echo flashing Kernel
+
+			flash_eraseall /dev/mtd3 &&
+			nandwrite -p /dev/mtd3 /boot/uImage || exit 1
+			### FIXME: what about updating the lmodules?
+			### but we may not yet have a working rootfs or may overwrite it later on!
+			;;
+
+		-j ) echo flashing Rootfs as jffs2
+
+			flash_eraseall /dev/mtd4 &&
+			mkdir -p /mnt/nand &&
+			mount -t jffs2 /dev/mtdblock4 /mnt/nand &&
+			(
+			cd /mnt/nand &&
+				(
+				echo "copying files (takes a while)"
+				rm -rf *	# clear previous rootfs (if any) -- this leaves .* files!
+				tar --exclude ./mnt --exclude ./media --exclude ./var/cache --exclude ./tmp --exclude ./proc --exclude ./sys --exclude lost+found -czf - -C / . | tar xzfp -
+				echo "copied"
+				mkdir -p ./mnt ./media ./tmp ./proc ./sys
+				mkdir -p ./var/cache/apt/archives ./var/cache/apt/archives/partial ./var/cache/debconf
+				cp /var/cache/debconf/config.dat ./var/cache/debconf/config.dat
+				# apply any important patches (which?)
+				# echo "creating new sshd key"
+				# e.g. clear sshd key - but this code creates a new one on the MMC
+				# so we should save the keys before doing that and restore them
+				# rm -f /etc/ssh/ssh_host_*
+				# dpkg-reconfigure openssh-server
+				sync
+				echo "synced"
+				)
+			) || echo erasing/flashing jffs2 to NAND failed
+			umount /mnt/nand
+			rm -rf /mnt/nand
+			;;
+
+		-u ) echo flashing Rootfs as UBIFS
+
+			# flash_erase /dev/mtd4 0 0
+			ubiattach /dev/ubi_ctrl -m 4
+			ubimkvol /dev/ubi0 -N rootfs -m
+			mkdir -p /mnt/nand
+			mount -t ubifs ubi0:rootfs /mnt/nand
+			(
+			cd /mnt/nand &&
+				(
+				echo "copying files (takes a while)"
+				rm -rf *	# clear previous rootfs (if any) -- this leaves .* files!
+				tar --exclude ./mnt --exclude ./media --exclude ./var/cache --exclude ./tmp --exclude ./proc --exclude ./sys --exclude lost+found -czf - -C / . | tar xzfp -
+				echo "copied"
+				mkdir -p ./mnt ./media ./tmp ./proc ./sys
+				mkdir -p ./var/cache/apt/archives ./var/cache/apt/archives/partial ./var/cache/debconf
+				cp /var/cache/debconf/config.dat ./var/cache/debconf/config.dat
+				# apply any important patches (which?)
+				# echo "creating new sshd key"
+				# e.g. clear sshd key - but this code creates a new one on the MMC
+				# so we should save the keys before doing that and restore them
+				# rm -f /etc/ssh/ssh_host_*
+				# dpkg-reconfigure openssh-server
+				sync
+				echo "synced"
+				)
+			)
+			umount /mnt/nand
+			rm -rf /mnt/nand
+			;;
+
+	esac
+done
+
+echo "done."

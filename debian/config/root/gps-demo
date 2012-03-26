@@ -1,0 +1,26 @@
+#
+# start gps demo
+# see also http://projects.goldelico.com/p/gta04-kernel/page/Devices/
+#
+
+echo "### resetting GPS receiver ###"
+killall gpsd
+echo "1" >/sys/devices/virtual/gpio/gpio145/value
+sleep 1
+echo "0" >/sys/devices/virtual/gpio/gpio145/value
+sleep 1
+echo "1" >/sys/devices/virtual/gpio/gpio145/value
+
+case $(cat /sys/devices/virtual/gpio/gpio144/value) in
+	0)	echo "### on internal antenna ###";;
+	1)	echo "### on external antenna ###";;
+	?)	echo "### unknown antenna status ###";;
+esac
+
+echo "### starting gpsd ###"
+gpsd /dev/ttyS1
+
+export XAUTHORITY=/.Xauthority
+
+echo "### starting tangogps ###"
+tangogps --display :0.0

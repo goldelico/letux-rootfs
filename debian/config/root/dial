@@ -1,0 +1,37 @@
+#
+# dial a phone number
+#
+# usage: dial number
+# to hang up: dial -
+
+echo 1 >/sys/devices/virtual/gpio/gpio186/value && sleep 5
+
+make femtocom
+
+for i in $(cd /sys/class/tty/ && echo ttyHS*)
+	do
+	if [ "$(cat /sys/class/tty/$i/hsotype)" == "Application" ]
+		then
+		IF="/dev/$i"
+	fi
+done
+
+[ "$IF" ] || (echo HSO Application interface not found; exit 1)
+
+echo Interface: $IF
+killall arecord
+
+(
+if [ "$1" == "-" ]
+then
+	echo "AT+CHUP"; sleep 3
+else
+	echo "AT_ODO=0"; sleep 1
+	echo "AT_OPCMENABLE=1"; sleep 1
+	echo "AT_OPCMPROF=0"; sleep 1
+	echo "AT+COPS"; sleep 1
+	echo "ATD$1;"; sleep 1
+	arecord -fS16_LE -r8000 | aplay -Dhw:1,0 &	# microphone -> modem
+	arecord -Dhw:1,0 -fS16_LE -r8000 | aplay	# modem -> earpiece, speaker, headset
+fi
+) | ./femtocom $IF

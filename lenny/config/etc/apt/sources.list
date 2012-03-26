@@ -1,5 +1,0 @@
-deb http://ftp.de.debian.org/debian lenny main
-deb http://ftp.de.debian.org/debian lenny main contrib non-free
-deb http://download.goldelico.com/quantumstep/debian stable main
-deb http://ftp2.de.debian.org/debian lenny main
-deb http://ftp.us.debian.org/debian lenny main

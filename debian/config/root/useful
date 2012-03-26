@@ -1,0 +1,130 @@
+#
+# Copyright Golden Delicious Computers GmbH&Co. KG, 2010
+# licenced unter GPL 2.0
+#
+# this is part of OM Beagle Hybrid / GTA04
+# it is derived from http://elinux.org/BeagleBoardDebian
+#
+# run this script to update the packages that are useful
+#
+
+apt-get update || exit 1	# get latest package list
+dpkg --configure -a	# try to cleanup if previous attempt failed
+apt-get install -y --force-yes debian-archive-keyring
+apt-get update		# get latest package list again
+apt-get install -y apt-utils
+
+#
+# install useful command line tools
+#
+
+apt-get install -y ntp	# update clock from network
+apt-get install -y sudo			# nice to have...
+apt-get install -y udev			# important
+apt-get install -y dnsutils     # nslookup etc.
+apt-get install -y dhcpcd		# so that we can get an IP address from the access point
+apt-get install -y mtd-utils    # read/write/erase NAND
+apt-get install -y i2c-tools    # read/write/scan I2C
+apt-get install -y alsa-utils   # alsamixer, aplay etc.
+apt-get install -y fbset        # to switch to TV-Out
+apt-get install -y usbmount
+apt-get install -y evtest       # allows to check touch screen, keyboard and button events
+apt-get install -y joystick
+apt-get install -y openssh-server openssh-client    # remote access thorugh ssh
+apt-get install -y ppp
+apt-get install -y libertas-firmware wireless-tools # driver for Marvell WLAN
+apt-get install -y bluez-utils bluez-audio          # driver for HCI Bluetooth
+apt-get install -y rfkill
+apt-get install -y dosfstools parted	# to make bootable SD cards
+apt-get install -y man-db		# some tools install a manual anyways - so why not make them readable
+
+#
+# install X11 driver for omap3
+#
+
+apt-get install -y xorg
+
+#
+# backport touch screen driver to fix http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=493942
+# see (German): http://wiki.unixboard.de/index.php/Debian_Backports
+#
+
+case "$(cat /etc/debian_version)" in	# set to true if we finally can load a working xserver-xorg-input-tslib (e.g. from squeeze)
+6.* )	# Squeeze has good support
+
+apt-get install -y xserver-xorg-video-omap3
+apt-get install -y xserver-xorg-input-tslib xserver-xorg-input-void libts-bin
+
+;;
+5.* )	# Lenny needs a backport
+
+wget -c http://rcn-ee.homeip.net:81/dl/deb-sbuild/lenny/xorg-drivers/xserver-xorg-video-omap3_0.1.1-2_armel.deb
+dpkg -i xserver-xorg-video-omap3_0.1.1-2_armel.deb
+
+apt-get install -y build-essential dpkg-dev debhelper xserver-xorg-dev libts-dev pkg-config
+
+wget http://ftp.debian.org/debian/pool/main/x/xf86-input-tslib/xf86-input-tslib_0.0.4-5.dsc
+wget http://ftp.debian.org/debian/pool/main/x/xf86-input-tslib/xf86-input-tslib_0.0.4-5.diff.gz
+wget http://ftp.debian.org/debian/pool/main/x/xf86-input-tslib/xf86-input-tslib_0.0.4.orig.tar.gz
+dpkg-source -x xf86-input-tslib_0.0.4-5.dsc
+( 
+cd xf86-input-tslib-0.0.4
+dpkg-checkbuilddeps
+### apply our patch ###
+cp ../tslib.c src/tslib.c
+dpkg-buildpackage
+)
+
+# note: removing dpkg-dev will also remove usb-modeswitch !?!
+
+apt-get remove -y build-essential debhelper xserver-xorg-dev libts-dev pkg-config
+rm -rf xf86-input-tslib_0.0.4* xf86-input-tslib-0.0.4
+dpkg -i xserver-xorg-input-tslib_0.0.4-5_armel.deb
+
+apt-get install -y libts-bin
+
+;;
+* )
+echo "unknown Debian Version: $(cat /etc/debian_version)"
+;;
+esac
+
+#
+# install GUI components
+#
+
+# apt-get install -y gnome-core gdm
+# apt-get install -y kde-core kdm
+# apt-get install -y gdm
+# apt-get install -y xfce4
+# apt-get install -y matchbox
+# apt-get install -y quantumstep quantumstep-displaymanager
+
+apt-get install -y lxde
+
+#
+# applications, tools and games
+#
+
+apt-get install -y gpsd tangogps
+apt-get install -y synaptic
+apt-get install -y matchbox-keyboard matchbox-keyboard-im
+
+#
+# cleanup
+#
+
+apt-get -y autoremove
+apt-get -y autoclean
+rm -f *.deb
+
+#
+# reinstall our private configuration (apt-get install may have overwritten some parts)
+#
+
+(cd / && tar xvzf /root/config.tgz)
+
+# (re) calibrate touch screen
+# ts_calibrate
+
+echo useful packages installed and configured.

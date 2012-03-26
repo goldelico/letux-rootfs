@@ -1,0 +1,66 @@
+#
+# clone current system to a (reformatted) bootable SD
+# works only if booted from NAND
+# and if package dosfstools is installed
+#
+
+[ "$DEV" ] || export DEV=/dev/mmcblk0
+# check if this is the boot file system - then reject
+
+umount ${DEV}p1
+umount ${DEV}p2
+
+if [ "$DEV" = "/dev/sda" ]
+then
+	echo "can't write to boot device"
+	exit
+fi
+
+## new based on http://omappedia.org/wiki/SD_Configuration#Script_to_partition.2Fformat_SDCards
+
+if [ -b "$DEV" ] ; then
+		dd if=/dev/zero of=$DEV bs=1024 count=1024
+		SIZE=$(LC_ALL=C LANGUAGE=C fdisk -l $DEV | grep Disk | awk '{print $5}')	# make sure fdisk runs in default LANGUAGE
+		echo DISK SIZE - $SIZE bytes
+		CYLINDERS=$(expr $SIZE / 255 / 63 / 512)
+		echo CYLINDERS - $CYLINDERS
+		{
+		echo ",9,0x0C,*"
+		echo ",,,-"
+		} | sfdisk -D -H 255 -S 63 -C $CYLINDERS $DEV
+		/sbin/partprobe $DEV
+		mkfs.vfat -F 32 -n "boot" ${DEV}p1
+		mke2fs -j -L "rootfs" ${DEV}p2
+else
+	echo "Device $DEV not found or not a block device"
+	exit 1
+fi
+
+umount ${DEV}p1
+umount ${DEV}p2
+
+fsck.vfat -y ${DEV}p1 &&
+fsck.ext3 -y ${DEV}p2 || exit 1
+
+mkdir -p /media/boot
+mount ${DEV}p1 /media/boot || exit
+mkdir -p /media/rootfs
+mount ${DEV}p2 /media/rootfs || exit
+df
+
+cp /boot/MLO /media/boot/MLO	# must come first
+cp /boot/u-boot.bin /media/boot/u-boot.bin
+cp /boot/splash.rgb16z /media/boot/splash.rgb16z
+cp /boot/menu.rgb16z /media/boot/menu.rgb16z
+cp /boot/boot.scr /media/boot/boot.scr
+cp /boot/uImage /media/boot/uImage
+cp /boot/x-load.flash /media/boot/x-load.flash
+
+(cd / && tar czf - .) | (cd /media/rootfs && tar xvjf - )
+
+sync
+df
+umount ${DEV}p1
+rmdir /media/boot
+umount ${DEV}p2
+rmdir /media/rootfs

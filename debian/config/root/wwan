@@ -1,0 +1,43 @@
+#
+# set up a UMTS data connection
+#
+# usage: wwan
+#
+
+echo 1 >/sys/devices/virtual/gpio/gpio186/value && sleep 5
+
+make femtocom
+
+for i in $(cd /sys/class/tty/ && echo ttyHS*)
+	do
+	if [ "$(cat /sys/class/tty/$i/hsotype)" == "Application" ]
+		then
+		IF="/dev/$i"
+	fi
+done
+
+[ "$IF" ] || (echo HSO Application interface not found; exit 1)
+
+echo Interface: $IF
+
+APN="$(cat wwan.conf)"
+
+(
+echo "AT+CGDCONT=1,\"IP\",\"$APN\""; sleep 1
+echo "AT_OWANCALL=1,1,1"; sleep 1
+echo "AT_OWANDATA?"; sleep 60
+) | ./femtocom $IF | while read MSG C IP GW DNS1 DNS2 NBNS1 NBNS2 SPEED MORE
+	do
+	echo $MSG $C $IP $GW $DNS1 $DNS2 $NBNS1 $NBNS2 $SPEED $MORE
+	if [ "$MSG" == "_OWANDATA:" ] # _OWANDATA: 1, 10.152.124.183, 0.0.0.0, 193.189.244.225, 193.189.244.206, 0.0.0.0, 0.0.0.0,144000
+		then
+		IP=$(expr "$IP" : "\(.*\),")
+		DNS1=$(expr "$DNS1" : "\(.*\),")
+		DNS2=$(expr "$DNS2" : "\(.*\),")
+		ifconfig hso0 $IP netmask 255.255.255.255 up
+		echo "nameserver $DNS1" >/etc/resolv.conf
+		echo "nameserver $DNS2" >>/etc/resolv.conf
+		echo "Setup done"
+		exit 0
+		fi
+	done || echo "Could not set up"

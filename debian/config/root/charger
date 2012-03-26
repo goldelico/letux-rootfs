@@ -1,0 +1,34 @@
+### echo "USB and Power input"
+### echo "==================="
+## cat /sys/???
+
+echo "Main battery"
+echo "============"
+echo type: $(cat /sys/bus/platform/devices/twl4030-bci-battery/power_supply/twl4030_bci_battery/type)
+echo status: $(cat /sys/bus/platform/devices/twl4030-bci-battery/power_supply/twl4030_bci_battery/status)
+echo volt: $(cat /sys/bus/platform/devices/twl4030-bci-battery/power_supply/twl4030_bci_battery/voltage_now)mV
+echo current: $(cat /sys/bus/platform/devices/twl4030-bci-battery/power_supply/twl4030_bci_battery/current_now)mA
+echo online: $(cat /sys/bus/platform/devices/twl4030-bci-battery/power_supply/twl4030_bci_battery/online)
+echo temp: $(cat /sys/bus/platform/devices/twl4030-bci-battery/power_supply/twl4030_bci_battery/temp)C
+
+echo
+echo "Backup battery"
+echo "=============="
+echo type: $(cat /sys/bus/platform/devices/twl4030-bci-battery/power_supply/twl4030_bci_bk_battery/type)
+# echo status: $(cat /sys/bus/platform/devices/twl4030-bci-battery/power_supply/twl4030_bci_bk_battery/status)
+echo volt: $(cat /sys/bus/platform/devices/twl4030-bci-battery/power_supply/twl4030_bci_bk_battery/voltage_now)mV
+
+echo
+echo "BQ27000 (if HDQ works)"
+echo "======================"
+
+echo type: $(cat /sys/devices/platform/bq27000-battery/power_supply/bq27000/type 2>/dev/null)
+echo status: $(cat /sys/devices/platform/bq27000-battery/power_supply/bq27000/status 2>/dev/null)
+echo present: $(cat /sys/devices/platform/bq27000-battery/power_supply/bq27000/present 2>/dev/null)
+echo capacity: $(cat /sys/devices/platform/bq27000-battery/power_supply/bq27000/capacity 2>/dev/null)mAh
+echo volt: $(cat /sys/devices/platform/bq27000-battery/power_supply/bq27000/voltage_now 2>/dev/null)mV
+echo current: $(cat /sys/devices/platform/bq27000-battery/power_supply/bq27000/current_now 2>/dev/null)mA
+echo temp: $(cat /sys/devices/platform/bq27000-battery/power_supply/bq27000/temp 2>/dev/null)C
+echo discharge: $(cat /sys/devices/platform/bq27000-battery/power_supply/bq27000/time_to_empty_avg 2>/dev/null)s to empty
+echo remaining: $(cat /sys/devices/platform/bq27000-battery/power_supply/bq27000/time_to_empty_now 2>/dev/null)s to empty
+echo charge: $(cat /sys/devices/platform/bq27000-battery/power_supply/bq27000/time_to_full_now 2>/dev/null)s to full

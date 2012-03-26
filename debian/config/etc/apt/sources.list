@@ -1,0 +1,10 @@
+# Debian
+deb http://ftp.de.debian.org/debian squeeze main contrib non-free
+# experimental
+deb http://qtmoko.sourceforge.net/debian/gta04 /
+deb http://qtmoko.sourceforge.net/apps /
+deb http://download.goldelico.com/gta04/debian stable main
+deb http://download.goldelico.com/quantumstep/debian stable main
+# mirrors
+deb http://ftp2.de.debian.org/debian squeeze main contrib non-free
+deb http://ftp.us.debian.org/debian squeeze main contrib non-free
