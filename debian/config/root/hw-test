@@ -178,7 +178,7 @@ testing "TVout" "enabling TVout"
 #echo 0 >/sys/devices/platform/omapdss/overlay1/enabled &&
 echo 0 >/sys/devices/platform/omapdss/overlay0/enabled &&	# just be sure or the "echo >manager" will timeout
 sleep 1 &&
-echo "" >/sys/devices/platform/omapdss/overlay0/manager 2>/dev/null &&
+(echo "" >/sys/devices/platform/omapdss/overlay0/manager 2>/dev/null || (sleep 1 && echo "" >/sys/devices/platform/omapdss/overlay0/manager 2>/dev/null )) &&
 #echo 0 >/sys/devices/platform/omapdss/display1/enabled &&
 echo 0 >/sys/devices/platform/omapdss/display2/enabled &&
 echo "pal" >/sys/devices/platform/omapdss/display1/timings &&
