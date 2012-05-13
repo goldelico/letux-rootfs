@@ -1,11 +1,11 @@
 #
-# Copyright Golden Delicious Computers GmbH&Co. KG, 2010
+# Copyright Golden Delicious Computers GmbH&Co. KG, 2010-2012
 # licenced unter GPL 2.0
 #
 # this is part of OM Beagle Hybrid / GTA04
 # it is derived from http://elinux.org/BeagleBoardDebian
 #
-# run this script to update the packages that are useful
+# run this script to install/update the packages that are useful
 #
 
 apt-get update || exit 1	# get latest package list
@@ -49,7 +49,7 @@ apt-get install -y xorg
 # see (German): http://wiki.unixboard.de/index.php/Debian_Backports
 #
 
-case "$(cat /etc/debian_version)" in	# set to true if we finally can load a working xserver-xorg-input-tslib (e.g. from squeeze)
+case "$(cat /etc/debian_version)" in
 6.* )	# Squeeze has good support
 
 apt-get install -y xserver-xorg-video-omap3
