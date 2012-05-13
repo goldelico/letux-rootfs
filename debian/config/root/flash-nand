@@ -82,7 +82,7 @@ do
 						# fixme: we don't copy /var/cache so this estimate is wrong
 						if [ $USED -gt 1000000 ]
 						then
-							echo "root file system is too big (${FILESYSTEM}k) for 512 MB NAND flash"
+							echo "root file system is too big (${USED}k) for 512 MB NAND flash"
 						##	exit 1
 						fi
 				esac
@@ -161,11 +161,12 @@ do
 				mkdir -p ./mnt ./media ./tmp ./proc ./sys
 				mkdir -p ./var/cache/apt/archives ./var/cache/apt/archives/partial ./var/cache/debconf
 				cp /var/cache/debconf/config.dat ./var/cache/debconf/config.dat
+				rm -f ./home/.bash_history
 				# apply any important patches (which?)
 				# echo "creating new sshd key"
 				# e.g. clear sshd key - but this code creates a new one on the MMC
 				# so we should save the keys before doing that and restore them
-				# rm -f /etc/ssh/ssh_host_*
+				# rm -f ./etc/ssh/ssh_host_*
 				# dpkg-reconfigure openssh-server
 				sync
 				echo "synced"
