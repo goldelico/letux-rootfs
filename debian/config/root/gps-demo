@@ -1,6 +1,6 @@
 #
 # start gps demo
-# see also http://projects.goldelico.com/p/gta04-kernel/page/Devices/
+# see also http://projects.goldelico.com/p/gta04-kernel/page/GPS/
 #
 
 echo "### resetting GPS receiver ###"
