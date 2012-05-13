@@ -4,8 +4,8 @@
 # licenced under GPL
 #
 
-TESTER_VERSION="2.0"
-TESTER_DATE="08 Feb 2012"
+TESTER_VERSION="2.1"
+TESTER_DATE="13 May 2012"
 
 trap "killall hciattach arecord aplay; exit" SIGHUP SIGINT SIGTERM
 make femtocom >/dev/null
@@ -252,13 +252,14 @@ if $OK
 	for i in 1 2 3
 		do
 		(echo AT_ORESET; sleep 15) | /root/femtocom "$UMTSDEV" >/dev/null
-		if dmesg | fgrep '3G Wakeup' >/dev/null
+		if dmesg | fgrep '3G Wakeup received :)' >/dev/null
 			then
 			ok
 			break
 		fi
 		done
 fi
+nok
 
 testing "VSIM" "GPS Antenna power"
 VDD=2800000
