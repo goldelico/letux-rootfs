@@ -10,7 +10,7 @@ main(int argc, char *argv[])
 	int fd;
 	if(!argv[1])
 		{
-		fprintf(stderr, "usage: %s /dev/ttyHS? [nocrlf]", argv[0]);
+		fprintf(stderr, "usage: %s /dev/ttyHS? [nocrlf]\n", argv[0]);
 		return 1;
 		}
 	fd=open(argv[1], O_RDWR);
