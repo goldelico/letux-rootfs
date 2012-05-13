@@ -1,5 +1,5 @@
 #
-# Copyright Golden Delicious Computers GmbH&Co. KG, 2010
+# Copyright Golden Delicious Computers GmbH&Co. KG, 2010-2012
 # licenced unter GPL 2.0
 #
 # this is part of the GTA04 project
@@ -8,30 +8,42 @@
 #
 
 echo "This script will upgrade from Debian stable (lenny) to Debian squeeze."
-echo "There will be a handful interactive questions from dist-upgrade but you can still go to have some coffee..."
 
-depmod -a
+case "$(cat /etc/debian_version)" in
+6.* )
+	echo "*** Squeeze is already installed ***";
+	;;
+5.* )
+	echo "There will be a handful interactive questions from dist-upgrade but you can still go to have some coffee..."
 
-apt-get remove -y usb-modeswitch-data/testing usb-modeswitch/testing
-apt-get remove -y xserver-xorg-input-tslib libts-bin
+	depmod -a
 
-apt-get autoremove -y
-apt-get autoclean
-apt-get clean
+	apt-get remove -y usb-modeswitch-data/testing usb-modeswitch/testing
+	apt-get remove -y xserver-xorg-input-tslib libts-bin
 
-sed -ibak 's/lenny/squeeze/' /etc/apt/sources.list
-sed -ibak 's/lenny/squeeze/' /etc/apt/apt.conf
+	apt-get autoremove -y
+	apt-get autoclean
+	apt-get clean
 
-apt-get update
-apt-get install -y apt dpkg 
-apt-get dist-upgrade -y
+	sed -ibak 's/lenny/squeeze/' /etc/apt/sources.list
+	sed -ibak 's/lenny/squeeze/' /etc/apt/apt.conf
 
-apt-get install -y xserver-xorg-input-tslib libts-bin usb-modeswitch usb-modeswitch-data
+	apt-get update
+	apt-get install -y apt dpkg
+	apt-get dist-upgrade -y
 
-apt-get autoremove -y
-apt-get autoclean
-apt-get clean
+	apt-get install -y xserver-xorg-input-tslib libts-bin usb-modeswitch usb-modeswitch-data
 
-rm -rf /etc/udev/rules.d/z60_xserver-xorg-input-wacom.rules
+	apt-get autoremove -y
+	apt-get autoclean
+	apt-get clean
 
-echo "you should now reboot and apt-get update && apt-get upgrade"
+	rm -rf /etc/udev/rules.d/z60_xserver-xorg-input-wacom.rules
+
+	echo "you should now reboot and apt-get update && apt-get upgrade"
+	;;
+* )
+	echo "*** Unknown Debian version installed ($(cat /etc/debian_version)) ***";
+	;;
+
+esac
