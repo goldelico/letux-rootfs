@@ -147,6 +147,7 @@ do
 
 		-j ) echo flashing Rootfs as jffs2
 
+			umount /dev/mtdblock4
 			flash_eraseall /dev/mtd4 &&
 			mkdir -p /mnt/nand &&
 			mount -t jffs2 /dev/mtdblock4 /mnt/nand &&
@@ -172,12 +173,14 @@ do
 				echo "synced"
 				)
 			) || echo erasing/flashing jffs2 to NAND failed
+			df
 			umount /mnt/nand
 			rm -rf /mnt/nand
 			;;
 
 		-u ) echo flashing Rootfs as UBIFS
 
+			/dev/mtdblock4
 			# flash_erase /dev/mtd4 0 0
 			ubiattach /dev/ubi_ctrl -m 4
 			ubimkvol /dev/ubi0 -N rootfs -m
@@ -203,6 +206,7 @@ do
 				echo "synced"
 				)
 			)
+			df
 			umount /mnt/nand
 			rm -rf /mnt/nand
 			;;
