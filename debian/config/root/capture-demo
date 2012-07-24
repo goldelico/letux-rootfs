@@ -1,0 +1,9 @@
+#
+# start capture demo
+# see also http://projects.goldelico.com/p/gta04-kernel/page/Camera/
+#
+
+make capture
+
+echo "### capturing ###"
+./capture >file.jpg
