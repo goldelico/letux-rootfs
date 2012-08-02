@@ -3,24 +3,47 @@
 # see also http://projects.goldelico.com/p/gta04-kernel/page/GPS/
 #
 
+SERIAL=/dev/ttyO1
+
+echo "### powering up antenna ###"
+VDD=2800000
+echo $VDD >/sys/devices/platform/reg-virt-consumer.5/max_microvolts 2>/dev/null &&
+echo $VDD >/sys/devices/platform/reg-virt-consumer.5/min_microvolts 2>/dev/null &&
+echo normal >/sys/devices/platform/reg-virt-consumer.5/mode 2>/dev/null &&	#  enable power supply
+
 echo "### resetting GPS receiver ###"
 killall gpsd
-echo "1" >/sys/devices/virtual/gpio/gpio145/value
-sleep 1
-echo "0" >/sys/devices/virtual/gpio/gpio145/value
-sleep 1
-echo "1" >/sys/devices/virtual/gpio/gpio145/value
+OK=false
+for i in 1 2 3 4 5
+	do
+	if read -t 2 <$SERIAL LINE && echo $LINE | fgrep '$GP' >/dev/null
+	then
+		OK=true
+		break
+	fi
+	echo 0 >/sys/devices/virtual/gpio/gpio145/value &&
+	echo 1 >/sys/devices/virtual/gpio/gpio145/value	&& # trigger chip
+ 	stty 9600 <$SERIAL
+	sleep 1
+done
+if "$OK"
+then : nothing
+else
+	echo "### failed resetting GPS receiver ###"
+	exit 1
+fi
 
 case $(cat /sys/devices/virtual/gpio/gpio144/value) in
-	0)	echo "### on internal antenna ###";;
-	1)	echo "### on external antenna ###";;
-	?)	echo "### unknown antenna status ###";;
+	0 )	echo "### on internal antenna ###";;
+	1 )	echo "### on external antenna ###";;
+	* )	echo "### unknown antenna status ###";;
 esac
 
 echo "### starting gpsd ###"
-gpsd /dev/ttyS1
+gpsd $SERIAL
 
 export XAUTHORITY=/.Xauthority
 
 echo "### starting tangogps ###"
+# dbus-launch tangogps
 tangogps --display :0.0
