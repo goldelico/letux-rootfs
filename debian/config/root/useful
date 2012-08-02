@@ -106,7 +106,7 @@ apt-get install -y lxde
 # applications, tools and games
 #
 
-apt-get install -y gpsd tangogps
+apt-get install -y gpsd dbus-x11 tangogps
 apt-get install -y synaptic
 apt-get install -y matchbox-keyboard matchbox-keyboard-im
 
