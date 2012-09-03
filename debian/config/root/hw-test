@@ -4,8 +4,8 @@
 # licenced under GPL
 #
 
-TESTER_VERSION="2.1"
-TESTER_DATE="13 May 2012"
+TESTER_VERSION="2.2"
+TESTER_DATE="3 Sep 2012"
 
 trap "killall hciattach arecord aplay; exit" SIGHUP SIGINT SIGTERM
 make femtocom >/dev/null
@@ -52,7 +52,7 @@ echo 31 >/sys/class/leds/tca6507:0/brightness 2>/dev/null &&
 echo 255 >/sys/class/leds/tca6507:1/brightness 2>/dev/null &&
 echo 31 >/sys/class/leds/tca6507:3/brightness 2>/dev/null &&
 echo 255 >/sys/class/leds/tca6507:4/brightness 2>/dev/null &&
-ok ||Ênok
+ok || nok
 
 testing "VAUX2" "Sensor power"
 VDD=2800000
@@ -170,7 +170,7 @@ amixer -q set HandsfreeR on &&
 amixer -q set "HandsfreeL Mux" AudioL2 &&
 amixer -q set "HandsfreeR Mux" AudioR2 &&
 aplay -q /usr/share/sounds/alsa/Front_Center.wav &&
-ok ||Ênok
+ok || nok
 $OK && (arecord | tee echo.wav | aplay) >/dev/null 2>&1 &	# run sound echo
 
 testing "TVout" "enabling TVout"
@@ -247,6 +247,7 @@ if $OK
 			;;
 	esac
 	done </tmp/$$.values
+	nok
 
 	testing "GTM601-Wakeup" "check for 3G Wakeup through AT_ORESET"
 	for i in 1 2 3
@@ -258,8 +259,8 @@ if $OK
 			break
 		fi
 		done
+	nok
 fi
-nok
 
 testing "VSIM" "GPS Antenna power"
 VDD=2800000
