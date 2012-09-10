@@ -144,6 +144,10 @@ testing "CPU-ID" "Die ID"
 read VAL < <(fgrep Die-ID /proc/cpuinfo | sed "s/Die-ID.*:/ /g" 2>/dev/null)
 [ "$VAL" ] && ok "$VAL" || nok "$VAL"
 
+testing "CPU-MPUrate" "mpurate reported by U-Boot"
+read VAL < <(expr "$(fgrep mpurate= </proc/cmdline)" : ".*mpurate=\([0-9]*\) .*")
+[ "$VAL" ] && ok "$VAL" || nok "$VAL"
+
 testing "USB-IP" "IP access through Ethernet over USB"
 read VAL < <(host www.goldelico.com | fgrep 'www.goldelico.com has address ' | sed "s/www.goldelico.com has address //g" 2>/dev/null)
 [ "$VAL" = "83.151.26.121" ] && ok "$VAL" || nok "$VAL"
