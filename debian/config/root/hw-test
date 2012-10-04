@@ -4,8 +4,8 @@
 # licenced under GPL
 #
 
-TESTER_VERSION="2.3"
-TESTER_DATE="21 Sep 2012"
+TESTER_VERSION="2.4"
+TESTER_DATE="29 Sep 2012"
 
 trap "killall hciattach arecord aplay; exit" SIGHUP SIGINT SIGTERM
 make femtocom >/dev/null
@@ -70,14 +70,14 @@ PRESSURE=$(cat /sys/bus/i2c/devices/i2c-2/2-0077/pressure0_input 2>/dev/null)
 CENTIGRADE=$(cat /sys/bus/i2c/devices/i2c-2/2-0077/temp0_input 2>/dev/null)
 PRESSURE=$(expr "${PRESSURE:=0}" / 100)
 CENTIGRADE=$(expr "${CENTIGRADE:=0}" / 10)
-[ "$PRESSURE" -ge 850 -a "$PRESSURE" -le 1150 -a "$CENTIGRADE" -ge 20 -a "$CENTIGRADE" -le 60 ] && ok "${PRESSURE}mBar, ${CENTIGRADE}C" || nok "${PRESSURE}mBar, ${CENTIGRADE}C"
+[ "$PRESSURE" -ge 850 -a "$PRESSURE" -le 1150 -a "$CENTIGRADE" -ge 20 -a "$CENTIGRADE" -le 60 ] && ok "${PRESSURE} mBar, ${CENTIGRADE} C" || nok "${PRESSURE} mBar, ${CENTIGRADE} C"
 
 testing "ITG3200" "Gyroscope values"
 read X Y Z CENTIGRADE < <(sed "s/,/ /g" /sys/bus/i2c/devices/i2c-2/2-0068/values 2>/dev/null)
 G=$(expr ${X:=0} '*' ${X} + ${Y:=0} '*' ${Y} + ${Z:=0} '*' ${Z})
 GMAX=$(expr 3 '*' 200 '*' 200)
 CENTIGRADE=$(expr "${CENTIGRADE:=0}" / 10)
-[ "$G" -le "$GMAX" -a "$CENTIGRADE" -ge 20 -a "$CENTIGRADE" -le 60 ] && ok "$X, $Y, $Z, ${CENTIGRADE}C" || nok "$X, $Y, $Z, ${CENTIGRADE}C"
+[ "$G" -le "$GMAX" -a "$CENTIGRADE" -ge 20 -a "$CENTIGRADE" -le 60 ] && ok "$X, $Y, $Z, ${CENTIGRADE} C" || nok "$X, $Y, $Z, ${CENTIGRADE} C"
 
 testing "BMA180" "Accelerometer values"
 read X Y Z < <(sed "s/,/ /g" /sys/bus/i2c/devices/i2c-2/2-0041/coord 2>/dev/null)
@@ -122,7 +122,7 @@ i2ctest 2 45 && ok || nok
 
 testing "Batt-Volt" "main battery voltage"
 read VOLT < <(sed "s/,/ /g" /sys/bus/platform/devices/twl4030-bci-battery/power_supply/twl4030_bci_battery/voltage_now 2>/dev/null)
-[ "${VOLT:=0}" -ge 3100 -a "$VOLT" -le 4300 ] && ok "${VOLT}mV" || nok "${VOLT}mV"
+[ "${VOLT:=0}" -ge 3100 -a "$VOLT" -le 4300 ] && ok "${VOLT} mV" || nok "${VOLT} mV"
 
 testing "Batt-Status" "main battery status"
 read STATUS < <(sed "s/,/ /g" /sys/bus/platform/devices/twl4030-bci-battery/power_supply/twl4030_bci_battery/status 2>/dev/null)
@@ -130,11 +130,11 @@ read STATUS < <(sed "s/,/ /g" /sys/bus/platform/devices/twl4030-bci-battery/powe
 
 testing "Batt-Temp" "main battery temperature (may not be real value)"
 read TEMP < <(sed "s/,/ /g" /sys/bus/platform/devices/twl4030-bci-battery/power_supply/twl4030_bci_battery/temp 2>/dev/null)
-[ "${TEMP:=0}" -ge 20 -a "$TEMP" -le 60 ] && ok "${TEMP}C" || nok "${TEMP}C"
+[ "${TEMP:=0}" -ge 20 -a "$TEMP" -le 60 ] && ok "${TEMP} C" || nok "${TEMP} C"
 
 testing "Batt-Backup" "backup battery voltage"
 read VOLT < <(sed "s/,/ /g" /sys/bus/platform/devices/twl4030-bci-battery/power_supply/twl4030_bci_bk_battery/voltage_now 2>/dev/null)
-[ "${VOLT:=0}" -ge 200 -a "$VOLT" -le 3500 ] && ok "${VOLT}mV" || nok "${VOLT}mV"
+[ "${VOLT:=0}" -ge 200 -a "$VOLT" -le 3500 ] && ok "${VOLT} mV" || nok "${VOLT} mV"
 
 testing "CPU-Memory" "Memory size (/proc/meminfo)"
 read VAL < <(fgrep MemTotal /proc/meminfo | sed "s/MemTotal.*:/ /g" 2>/dev/null)
@@ -150,7 +150,7 @@ read VAL < <(fgrep Die-ID /proc/cpuinfo | sed "s/Die-ID.*:/ /g" 2>/dev/null)
 
 testing "CPU-MPUrate" "mpurate reported by U-Boot"
 read VAL < <(expr "$(fgrep mpurate= </proc/cmdline)" : ".*mpurate=\([0-9]*\) .*")
-[ "$VAL" ] && ok "$VAL" || nok "$VAL"
+[ "$VAL" ] && ok "$VAL MHz" || nok "$VAL"
 
 testing "USB-IP" "IP access through Ethernet over USB"
 read VAL < <(host www.goldelico.com | fgrep 'www.goldelico.com has address ' | sed "s/www.goldelico.com has address //g" 2>/dev/null)
@@ -417,4 +417,7 @@ else # green
 	echo 0 >/sys/class/leds/tca6507:3/brightness 2>/dev/null
 	echo 31 >/sys/class/leds/tca6507:4/brightness 2>/dev/null
 fi
+
+sync	# so that we can safely switch off the device
+
 $ANYNOK && exit 1 || exit 0
