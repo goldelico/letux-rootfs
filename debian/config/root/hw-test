@@ -4,8 +4,8 @@
 # licenced under GPL
 #
 
-TESTER_VERSION="2.4"
-TESTER_DATE="29 Sep 2012"
+TESTER_VERSION="2.5"
+TESTER_DATE="06 Oct 2012"
 
 trap "killall hciattach arecord aplay; exit" SIGHUP SIGINT SIGTERM
 make femtocom >/dev/null
@@ -182,20 +182,7 @@ ok || nok
 $OK && (arecord | tee echo.wav | aplay) >/dev/null 2>&1 &	# run sound echo
 
 testing "TVout" "enabling TVout"
-#echo "0,0" >/sys/devices/platform/omapdss/overlay0/position &&
-#echo 0 >/sys/devices/platform/omapdss/overlay1/enabled &&
-echo 0 >/sys/devices/platform/omapdss/overlay0/enabled &&	# just be sure or the "echo >manager" will timeout
-sleep 1 &&
-(echo "" >/sys/devices/platform/omapdss/overlay0/manager 2>/dev/null || (sleep 1 && echo "" >/sys/devices/platform/omapdss/overlay0/manager 2>/dev/null )) &&
-#echo 0 >/sys/devices/platform/omapdss/display1/enabled &&
-echo 0 >/sys/devices/platform/omapdss/display2/enabled &&
-echo "pal" >/sys/devices/platform/omapdss/display1/timings &&
-fbset -fb /dev/fb0 -xres 720 -yres 574 -vxres 480 -vyres 640 &&
-echo 1 >/sys/devices/platform/omapdss/display1/enabled &&
-echo "tv" >/sys/devices/platform/omapdss/overlay0/manager &&
-echo "120,-33" >/sys/devices/platform/omapdss/overlay0/position &&	# center: "(720-480)/2, (574-640)/2"
-echo 1 >/sys/devices/platform/omapdss/overlay0/enabled &&
-ok || nok
+./tvout 1 2>/dev/null && ok || nok
 
 testing "GTM601-USB" "check internal USB port"
 for repeat in 1 2 3 4 5
@@ -394,18 +381,7 @@ echo 0 >/sys/devices/platform/reg-virt-consumer.4/max_microvolts &&	# power off 
 ok || nok
 
 testing "TVout-off" "switching back to LCD"
-echo "0,0" >/sys/devices/platform/omapdss/overlay0/position &&
-echo 0 >/sys/devices/platform/omapdss/overlay0/enabled &&
-sleep 1 &&
-echo "" >/sys/devices/platform/omapdss/overlay0/manager 2>/dev/null &&
-echo "" >/sys/devices/platform/omapdss/overlay0/manager 2>/dev/null &&
-echo 0 >/sys/devices/platform/omapdss/display1/enabled &&
-fbset -fb /dev/fb0 -xres 480 -yres 640 -vxres 480 -vyres 640 &&
-echo 1 >/sys/devices/platform/omapdss/display2/enabled &&
-echo "lcd" >/sys/devices/platform/omapdss/overlay0/manager &&
-echo 1 >/sys/devices/platform/omapdss/overlay0/enabled &&
-ok || nok
-
+./tvout 0 2>/dev/null && ok || nok
 
 testing "Tests-End" "Summary of all tests"
 $ANYNOK && nok "$(date)" || ok "$(date)"
