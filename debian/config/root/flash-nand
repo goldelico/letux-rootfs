@@ -157,12 +157,13 @@ do
 				echo "copying files (takes a while)"
 				rm -rf *	# clear previous rootfs (if any) -- this leaves .* files!
 				rm -rf /root/echo.wav /root/radek*	# remove some log files we don't need
-				tar --exclude ./mnt --exclude ./media --exclude ./var/cache --exclude ./tmp --exclude ./proc --exclude ./sys --exclude lost+found -czf - -C / . | tar xzfp -
+				# copy to jffs2
+				tar --exclude ./mnt --exclude ./media --exclude ./var/cache --exclude ./tmp --exclude ./proc --exclude ./sys --exclude lost+found -czf - -C / . | tar xzfp - --checkpoint=100
 				echo "copied"
 				mkdir -p ./mnt ./media ./tmp ./proc ./sys
 				mkdir -p ./var/cache/apt/archives ./var/cache/apt/archives/partial ./var/cache/debconf
 				cp /var/cache/debconf/config.dat ./var/cache/debconf/config.dat
-				rm -f ./home/.bash_history
+				rm -f ./home/.bash_history ./root/.bash_history ./.bash_history
 				# apply any important patches (which?)
 				# echo "creating new sshd key"
 				# e.g. clear sshd key - but this code creates a new one on the MMC
