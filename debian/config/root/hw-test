@@ -4,8 +4,8 @@
 # licenced under GPL
 #
 
-TESTER_VERSION="2.5"
-TESTER_DATE="06 Oct 2012"
+TESTER_VERSION="2.6"
+TESTER_DATE="28 Oct 2012"
 
 trap "killall hciattach arecord aplay; exit" SIGHUP SIGINT SIGTERM
 make femtocom >/dev/null
@@ -134,7 +134,7 @@ read TEMP < <(sed "s/,/ /g" /sys/bus/platform/devices/twl4030-bci-battery/power_
 
 testing "Batt-Backup" "backup battery voltage"
 read VOLT < <(sed "s/,/ /g" /sys/bus/platform/devices/twl4030-bci-battery/power_supply/twl4030_bci_bk_battery/voltage_now 2>/dev/null)
-[ "${VOLT:=0}" -ge 200 -a "$VOLT" -le 3500 ] && ok "${VOLT} mV" || nok "${VOLT} mV"
+[ "${VOLT:=0}" -ge 200 -a "$VOLT" -le 3000 ] && ok "${VOLT} mV" || nok "${VOLT} mV"
 
 testing "CPU-Memory" "Memory size (/proc/meminfo)"
 read VAL < <(fgrep MemTotal /proc/meminfo | sed "s/MemTotal.*:/ /g" 2>/dev/null)
