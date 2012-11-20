@@ -24,6 +24,7 @@ apt-get install -y udev			# important
 apt-get install -y dnsutils     # nslookup etc.
 apt-get install -y dhcpcd		# so that we can get an IP address from the access point
 apt-get install -y mtd-utils    # read/write/erase NAND
+apt-get install -y uboot-envtools	# read write U-Boot environment e.g. to trigger boot to boot-menu or reflash
 apt-get install -y i2c-tools    # read/write/scan I2C
 apt-get install -y alsa-utils   # alsamixer, aplay etc.
 apt-get install -y fbset        # to switch to TV-Out
