@@ -64,7 +64,7 @@ X1:23:respawn:/usr/bin/startx
 #
 #T0:23:respawn:/sbin/getty -L ttyS0 9600 vt100
 #T1:23:respawn:/sbin/getty -L ttyS1 9600 vt100
-T2:23:respawn:/sbin/getty -L ttyS2 115200 vt100
+#T2:23:respawn:/sbin/getty -L ttyS2 115200 vt100
 # new OMAP console
 O2:23:respawn:/sbin/getty -L ttyO2 115200 vt100
 
