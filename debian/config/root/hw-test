@@ -1,6 +1,6 @@
 #
 # GTA04 hardware test script
-# © Golden Delicious Computers GmbH&Co. KG, 2012
+# ï¿½ Golden Delicious Computers GmbH&Co. KG, 2012
 # licenced under GPL
 #
 
@@ -71,21 +71,21 @@ PRESSURE=$(cat /sys/bus/i2c/devices/i2c-2/2-0077/pressure0_input 2>/dev/null)
 CENTIGRADE=$(cat /sys/bus/i2c/devices/i2c-2/2-0077/temp0_input 2>/dev/null)
 PRESSURE=$(expr "${PRESSURE:=0}" / 100)
 CENTIGRADE=$(expr "${CENTIGRADE:=0}" / 10)
-[ "$PRESSURE:=-1" -ge 850 -a "$PRESSURE" -le 1150 -a "$CENTIGRADE" -ge 20 -a "$CENTIGRADE" -le 60 ] && ok "${PRESSURE} mBar, ${CENTIGRADE} C" || nok "${PRESSURE} mBar, ${CENTIGRADE} C"
+[ "${PRESSURE:=-1}" -ge 850 -a "$PRESSURE" -le 1150 -a "${CENTIGRADE:=-1}" -ge 20 -a "$CENTIGRADE" -le 60 ] && ok "${PRESSURE} mBar, ${CENTIGRADE} C" || nok "${PRESSURE} mBar, ${CENTIGRADE} C"
 
 testing "ITG3200" "Gyroscope values"
 read X Y Z CENTIGRADE < <(sed "s/,/ /g" /sys/bus/i2c/devices/i2c-2/2-0068/values 2>/dev/null)
 G=$(expr ${X:=0} '*' ${X} + ${Y:=0} '*' ${Y} + ${Z:=0} '*' ${Z})
 GMAX=$(expr 3 '*' 200 '*' 200)
 CENTIGRADE=$(expr "${CENTIGRADE:=0}" / 10)
-[ "$G:=-1" -le "$GMAX" -a "$CENTIGRADE" -ge 20 -a "$CENTIGRADE" -le 60 ] && ok "$X, $Y, $Z, ${CENTIGRADE} C" || nok "$X, $Y, $Z, ${CENTIGRADE} C"
+[ "$G" -le "$GMAX" -a "$CENTIGRADE" -ge 20 -a "$CENTIGRADE" -le 60 ] && ok "$X, $Y, $Z, ${CENTIGRADE} C" || nok "$X, $Y, $Z, ${CENTIGRADE} C"
 
 testing "BMA180" "Accelerometer values"
 read X Y Z < <(sed "s/,/ /g" /sys/bus/i2c/devices/i2c-2/2-0041/coord 2>/dev/null)
 G=$(expr ${X:=0} '*' ${X} + ${Y:=0} '*' ${Y} + ${Z:=0} '*' ${Z})
 GMIN=$(expr 8 '*' 1024 '*' 1024)
 GMAX=$(expr 32 '*' 1024 '*' 1024)
-[ "$G:=-1" -le "$GMAX" -a "$G" -ge "$GMIN" ] && ok "$X, $Y, $Z" || nok "$X, $Y, $Z"
+[ "$G" -le "$GMAX" -a "$G" -ge "$GMIN" ] && ok "$X, $Y, $Z" || nok "$X, $Y, $Z"
 
 testing "HMC5883L" "Compass values"
 read X Y Z < <(sed "s/,/ /g" /sys/bus/i2c/devices/i2c-2/2-001e/values 2>/dev/null)
