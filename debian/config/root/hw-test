@@ -1,11 +1,11 @@
 #
 # GTA04 hardware test script
-# � Golden Delicious Computers GmbH&Co. KG, 2012
+# (c) Golden Delicious Computers GmbH&Co. KG, 2012
 # licenced under GPL
 #
 
-TESTER_VERSION="2.7"
-TESTER_DATE="12 Dec 2012"
+TESTER_VERSION="2.8"
+TESTER_DATE="13 Dec 2012"
 
 trap "killall hciattach arecord aplay; exit" SIGHUP SIGINT SIGTERM
 make femtocom >/dev/null
@@ -46,6 +46,12 @@ ok "$(date)"
 
 testing "Tests-Version"
 ok "$TESTER_VERSION"
+
+testing "Tests-Rootfs"
+if fgrep -q 'root=/dev/mtdblock' /proc/cmdline
+then ok "NAND"
+else ok "SD"
+fi
 
 testing "LED" "enable LEDs"
 echo 31 >/sys/class/leds/tca6507:0/brightness 2>/dev/null &&

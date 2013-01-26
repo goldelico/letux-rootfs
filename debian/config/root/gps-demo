@@ -5,6 +5,9 @@
 
 SERIAL=/dev/ttyO1
 
+case "$(uname -r)" in
+
+2.6.* )
 echo "### powering up antenna ###"
 VDD=2800000
 echo $VDD >/sys/devices/platform/reg-virt-consumer.5/max_microvolts 2>/dev/null &&
@@ -41,6 +44,13 @@ esac
 
 echo "### starting gpsd ###"
 gpsd $SERIAL
+;;
+
+3.* )
+## nothing to do
+## how can we detect int/ext antenna status?
+;;
+esac
 
 export XAUTHORITY=/.Xauthority
 
