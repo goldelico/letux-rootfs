@@ -80,7 +80,6 @@ echo health: $(cat /sys/devices/w1_bus_master1/01-000000000000/bq27000-battery/p
 echo discharge: $(cat /sys/devices/w1_bus_master1/01-000000000000/bq27000-battery/power_supply/bq27000-battery/time_to_empty_avg 2>/dev/null)s to empty
 echo remaining: $(cat /sys/devices/w1_bus_master1/01-000000000000/bq27000-battery/power_supply/bq27000-battery/time_to_empty_now 2>/dev/null)s to empty
 echo charging: $(cat /sys/devices/w1_bus_master1/01-000000000000/bq27000-battery/power_supply/bq27000-battery/time_to_full_now 2>/dev/null)s to full
-## does it report more? number of cycles? nominal capacity? full capacity?
 ;;
 
 esac
