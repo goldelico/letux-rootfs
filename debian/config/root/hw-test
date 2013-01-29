@@ -428,27 +428,15 @@ echo 31 >/sys/devices/platform/omap_i2c.2/i2c-2/2-0045/leds/gta04:red:aux/bright
 echo 255 >/sys/devices/platform/omap_i2c.2/i2c-2/2-0045/leds/gta04:green:aux/brightness 2>/dev/null &&
 ok || nok
 
-if false
-then
-testing "VAUX2" "Sensor power"
-VDD=2800000
-echo 0 >/sys/devices/platform/reg-virt-consumer.2/max_microvolts 2>/dev/null &&
-echo $VDD >/sys/devices/platform/reg-virt-consumer.2/max_microvolts 2>/dev/null &&
-echo $VDD >/sys/devices/platform/reg-virt-consumer.2/min_microvolts 2>/dev/null &&
-echo normal >/sys/devices/platform/reg-virt-consumer.2/mode 2>/dev/null &&	#  enable power supply
-modprobe hmc5883l 2>/dev/null &&	# load driver
-ok || nok
-fi
-
-[ -r /sys/bus/i2c/devices/2-0068/iio:device0/suspend ] && echo 0 >/sys/bus/i2c/devices/i2c-2/2-0068/suspend 2>/dev/null	# start sampling on gyroscope
-[ -r /sys/bus/i2c/devices/2-001e/iio:device1/sampling_frequency ] && echo 50 >/sys/bus/i2c/devices/i2c-2/2-001e/rate 2>/dev/null	# start sampling on compass
+#[ -r /sys/bus/i2c/devices/2-0068/iio:device0/suspend ] && echo 0 >/sys/bus/i2c/devices/i2c-2/2-0068/suspend 2>/dev/null	# start sampling on gyroscope
+#[ -r /sys/bus/i2c/devices/2-001e/iio:device1/sampling_frequency ] && echo 50 >/sys/bus/i2c/devices/i2c-2/2-001e/rate 2>/dev/null	# start sampling on compass
 
 testing "BMP085" "Barometer values"
 PRESSURE=$(cat /sys/bus/i2c/devices/2-0077/pressure0_input 2>/dev/null)
 CENTIGRADE=$(cat /sys/bus/i2c/devices/2-0077/temp0_input 2>/dev/null)
 PRESSURE=$(expr "${PRESSURE:=0}" / 100)
 CENTIGRADE=$(expr "${CENTIGRADE:=0}" / 10)
-[ "${PRESSURE:=-1}" -ge 850 -a "$PRESSURE" -le 1150 -a "${CENTIGRADE:=-1}" -ge 20 -a "$CENTIGRADE" -le 60 ] && ok "${PRESSURE} mBar, ${CENTIGRADE} C" || nok "${PRESSURE} mBar, ${CENTIGRADE} C"
+[ "${PRESSURE:=-1}" -ge 850 -a "$PRESSURE" -le 1150 -a "${CENTIGRADE:=-1}" -ge 20 -a "$CENTIGRADE" -le 60 ] && ok "${PRESSURE} mBar, ${CENTIGRADE} °C" || nok "${PRESSURE} mBar, ${CENTIGRADE} °C"
 
 testing "ITG3200" "Gyroscope values"
 dev=$(findiio itg3200)
@@ -459,7 +447,7 @@ CENTIGRADE=$(cat $dev/temp 2>/dev/null)
 G=$(expr ${X:=0} '*' ${X} + ${Y:=0} '*' ${Y} + ${Z:=0} '*' ${Z})
 GMAX=$(expr 3 '*' 200 '*' 200)
 CENTIGRADE=$(expr "${CENTIGRADE:=0}" / 10)
-[ "$G" -le "$GMAX" -a "$CENTIGRADE" -ge 20 -a "$CENTIGRADE" -le 60 ] && ok "$X, $Y, $Z, ${CENTIGRADE} C" || nok "$X, $Y, $Z, ${CENTIGRADE} C"
+[ "$G" -le "$GMAX" -a "$CENTIGRADE" -ge 20 -a "$CENTIGRADE" -le 60 ] && ok "$X, $Y, $Z, ${CENTIGRADE} °C" || nok "$X, $Y, $Z, ${CENTIGRADE} °C"
 
 testing "BMA180" "Accelerometer values"
 read X Y Z < <(sed "s/,/ /g" /sys/bus/i2c/devices/i2c-2/2-0041/coord 2>/dev/null)
@@ -479,31 +467,20 @@ testing "TSC2007" "Touch screen values"
 read VAL < <(sed "s/,/ /g" /sys/bus/i2c/devices/i2c-2/2-0048/values 2>/dev/null)
 [ "$VAL" ] && ok "$VAL" || nok "$VAL"
 
-testing "OV9655" "Camera driver"
+testing "OV9655" "Camera found"
 [ -r /dev/video0 ] && ok || nok
 
-function i2ctest
-{ # i2ctest bus address
-	echo y | i2cdetect -r $1 0x$2 0x$2 2>/dev/null | fgrep " $2
- UU" >/dev/null
-}
-
-if false; then
-testing "LIS302" "optional Accelerometer values"
-i2ctest 2 1d && ok || nok 
-fi
-
 testing "TPS61050" "Torch/Flash I2C response"
-i2ctest 2 33 && ok || nok
+[ -r /sys/bus/i2c/drivers/tps6105x/2-0033 ] && ok || nok
 
-testing "M24LR64" "RFID-EEPROM I2C response"
-i2ctest 2 50 && ok || nok
+testing "M24LR64" "RFID-EEPROM found"
+[ -r /sys/devices/platform/omap_i2c.2/i2c-2/2-0050/eeprom ] && ok || nok
 
-testing "Si47xx" "FM TRX I2C response"
-i2ctest 2 11 && ok || nok
+testing "Si47xx" "FM TRX"
+false && ok || nok
 
-testing "TCA6507" "LED controller I2C response"
-i2ctest 2 45 && ok || nok
+testing "TCA6507" "LED controller found"
+[ -d /sys/bus/i2c/drivers/leds-tca6507/2-0045/leds ] && ok || nok
 
 testing "Batt-Volt" "main battery voltage"
 VOLT=$(cat /sys/devices/platform/twl4030_madc_hwmon/in12_input 2>/dev/null)
@@ -513,17 +490,42 @@ testing "Batt-Status" "main battery status"
 STATUS=$(cat /sys/devices/platform/omap_i2c.1/i2c-1/1-004b/twl4030_bci/power_supply/twl4030_usb/status 2>/dev/null)
 [ "$STATUS" ] && ok "$STATUS" || nok "$STATUS"
 
-testing "Batt-Temp" "main battery temperature (may not be real value if there is no thermistor)"
+testing "Batt-Temp" "main battery temperature (may not be real value if there is no NTC)"
 TEMP=$(cat /sys/devices/platform/twl4030_madc_hwmon/temp1_input 2>/dev/null)
-[ "${TEMP:=-1}" -ge 20 -a "$TEMP" -le 60 ] && ok "${TEMP} C" || nok "${TEMP} C"
+[ "${TEMP:=-1}" -ge 20 -a "$TEMP" -le 60 ] && ok "${TEMP} C" || nok "${TEMP} °C"
 
 testing "Batt-Backup" "backup battery voltage"
 VOLT=$(cat /sys/devices/platform/twl4030_madc_hwmon/in9_input 2>/dev/null)
 [ "${VOLT:=-1}" -ge 200 -a "$VOLT" -le 3250 ] && ok "${VOLT} mV" || nok "${VOLT} mV"
 
-testing "Batt-HDQ" "main battery capacity (hdq) - may not be installed"
-VOLT=$(cat /sys/devices/w1_bus_master1/01-000000000000/bq27000-battery/power_supply/bq27000-battery/capacity 2>/dev/null)
+testing "Batt-Volt-HDQ" "main battery voltage (hdq)"
+VOLT=$(cat /sys/devices/w1_bus_master1/01-000000000000/bq27000-battery/power_supply/bq27000-battery/voltage_now 2>/dev/null)
+VOLT=$(expr "${VOLT:=0}" / 1000)
 [ "${VOLT:=-1}" -ge 3100 -a "$VOLT" -le 4300 ] && ok "${VOLT} mV" || nok "${VOLT} mV"
+
+testing "Board-Version" "Board version stored in u-boot environment"
+read VAL < <(fw_printenv 'board' 2>/dev/null | sed "s/board=//g" 2>/dev/null)
+[ "$VAL" ] && ok "$VAL" || nok "$VAL"
+
+testing "CPU-Memory" "Memory size (/proc/meminfo)"
+read VAL < <(fgrep MemTotal /proc/meminfo | sed "s/MemTotal.*:/ /g" 2>/dev/null)
+[ "$VAL" ] && ok "$VAL" || nok "$VAL"
+
+testing "CPU-NAND" "NAND size (/proc/mtd)"
+read MTD VAL OTHER < <(fgrep "File System" /proc/mtd)
+[ "$VAL" ] && ok "$(expr $(printf "%d\n" 0x$VAL) / 1000) kB" || nok "$VAL"
+
+testing "CPU-ID" "Die-ID stored in u-boot environment"
+read VAL < <(fw_printenv 'dieid#' 2>/dev/null | sed "s/dieid#=//g" 2>/dev/null)
+[ "$VAL" ] && ok "$VAL" || nok "$VAL"
+
+testing "CPU-MPUrate" "mpurate reported by U-Boot"
+read VAL < <(fw_printenv 'mpurate' 2>/dev/null | sed "s/mpurate=//g" 2>/dev/null)
+[ "$VAL" ] && ok "$VAL MHz" || nok "$VAL"
+
+testing "USB-IP" "IP access through Ethernet over USB"
+read VAL < <(host www.goldelico.com | fgrep 'www.goldelico.com has address ' | sed "s/www.goldelico.com has address //g" 2>/dev/null)
+[ "$VAL" = "83.151.26.121" ] && ok "$VAL" || nok "$VAL"
 
 testing "Sound" "enabling sound"
 killall -9 arecord aplay 2>/dev/null # stop any running audio forwarding (or amixer commands will fail)
@@ -625,16 +627,6 @@ if $OK
 	nok
 fi
 
-if false
-then
-testing "VSIM" "GPS Antenna power"
-VDD=2800000
-echo $VDD >/sys/devices/platform/reg-virt-consumer.5/max_microvolts 2>/dev/null &&
-echo $VDD >/sys/devices/platform/reg-virt-consumer.5/min_microvolts 2>/dev/null &&
-echo normal >/sys/devices/platform/reg-virt-consumer.5/mode 2>/dev/null &&	#  enable power supply
-ok || nok
-fi
-
 testing "W2SG0004" "UART2 and GPS receiver"
 for i in 1 2 3 4 5
 	do
@@ -644,11 +636,6 @@ $PSRF' >/dev/null
 		ok "$LINE"
 		break
 	fi
-if false
-then
-	echo 0 >/sys/devices/virtual/gpio/gpio145/value &&
-	echo 1 >/sys/devices/virtual/gpio/gpio145/value # trigger chip
-fi
  	stty 9600 </dev/ttyO1
 	sleep 2
 done
@@ -658,18 +645,6 @@ testing "W2CBW003-BT UART" "Bluetooth/WLAN power, UART1, Bluetooth and initial b
 for BTBAUD in 3000000 921600 115200
 	do
 	killall hciattach 2>/dev/null	# stop any running daemon
-if false
-then
-	echo 255 >/sys/class/leds/tca6507:6/brightness	# activate reset
-	echo 0 >/sys/devices/platform/reg-virt-consumer.4/max_microvolts  # power off
-	sleep 1
-	VDD=3150000
-	echo $VDD >/sys/devices/platform/reg-virt-consumer.4/max_microvolts
-	echo $VDD >/sys/devices/platform/reg-virt-consumer.4/min_microvolts
-	echo normal >/sys/devices/platform/reg-virt-consumer.4/mode  # enable power supply
-	echo 0 >/sys/class/leds/tca6507:6/brightness  # deactivate reset (and rescan MMC slot)
-	sleep 2	# let wlan/bt chip & drivers initialize
-fi
 	hciattach -s $BTBAUD /dev/ttyO0 any $BTBAUD flow 2>/dev/null >&2	# start daemon at current speed
 	sleep 2
 	if hciconfig hci0 up 2>/dev/null	# try to enable Bluetooth interface
@@ -752,13 +727,6 @@ then # scan
 	testing "W2CBW003-WLAN-IFDOWN" "disable WLAN"
 	ifconfig $WLANIF down 2>/dev/null &&
 	ok || nok
-fi
-
-if false
-then
-testing "W2CBW003-WLAN-VAUX4-off" "powering down"
-echo 0 >/sys/devices/platform/reg-virt-consumer.4/max_microvolts &&	# power off WLAN/BT
-ok || nok
 fi
 
 testing "TVout-off" "switching back to LCD"
