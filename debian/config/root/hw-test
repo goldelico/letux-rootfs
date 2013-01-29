@@ -503,9 +503,9 @@ VOLT=$(cat /sys/devices/w1_bus_master1/01-000000000000/bq27000-battery/power_sup
 VOLT=$(expr "${VOLT:=0}" / 1000)
 [ "${VOLT:=-1}" -ge 3100 -a "$VOLT" -le 4300 ] && ok "${VOLT} mV" || nok "${VOLT} mV"
 
-testing "Board-Version" "Board version stored in u-boot environment"
-read VAL < <(fw_printenv 'board' 2>/dev/null | sed "s/board=//g" 2>/dev/null)
-[ "$VAL" ] && ok "$VAL" || nok "$VAL"
+#testing "Board-Version" "Board version stored in u-boot environment"
+#read VAL < <(fw_printenv 'board' 2>/dev/null | sed "s/board=//g" 2>/dev/null)
+#[ "$VAL" ] && ok "$VAL" || nok "$VAL"
 
 testing "CPU-Memory" "Memory size (/proc/meminfo)"
 read VAL < <(fgrep MemTotal /proc/meminfo | sed "s/MemTotal.*:/ /g" 2>/dev/null)
@@ -618,7 +618,7 @@ if $OK
 	testing "GTM601-Wakeup" "check for 3G Wakeup through AT_ORESET"
 	for i in 1 2 3
 		do
-		if (echo AT_ORESET; sleep 15) | /root/femtocom "$UMTSDEV" >/dev/null | ( evtest /dev/input/event6 & sleep 15; kill $! ) | fgrep 'type 1 (Key), code 240 (Unknown), value 1' 2>/dev/null 1>&2
+		if (echo AT_ORESET; sleep 15) | /root/femtocom "$UMTSDEV" >/dev/null | ( evtest /dev/input/by-path/platform-gpio-keys.1-event & sleep 15; kill $! ) | fgrep 'type 1 (Key), code 240 (Unknown), value 1' 2>/dev/null 1>&2
 			then
 			ok "$LINE"
 			break
@@ -740,11 +740,15 @@ then # red
 	echo 0 >/sys/devices/platform/omap_i2c.2/i2c-2/2-0045/leds/gta04:green:power/brightness 2>/dev/null
 	echo 255 >/sys/devices/platform/omap_i2c.2/i2c-2/2-0045/leds/gta04:red:aux/brightness 2>/dev/null
 	echo 0 >/sys/devices/platform/omap_i2c.2/i2c-2/2-0045/leds/gta04:green:aux/brightness 2>/dev/null
+	echo 255 >/sys/devices/platform/omap_i2c.2/i2c-2/2-0045/leds/gta04:left/brightness 2>/dev/null
+	echo 255 >/sys/devices/platform/omap_i2c.2/i2c-2/2-0045/leds/gta04:right/brightness 2>/dev/null
 else # green
 	echo 0 >/sys/devices/platform/omap_i2c.2/i2c-2/2-0045/leds/gta04:red:power/brightness 2>/dev/null
 	echo 255 >/sys/devices/platform/omap_i2c.2/i2c-2/2-0045/leds/gta04:green:power/brightness 2>/dev/null
 	echo 0 >/sys/devices/platform/omap_i2c.2/i2c-2/2-0045/leds/gta04:red:aux/brightness 2>/dev/null
 	echo 255 >/sys/devices/platform/omap_i2c.2/i2c-2/2-0045/leds/gta04:green:aux/brightness 2>/dev/null
+	echo 0 >/sys/devices/platform/omap_i2c.2/i2c-2/2-0045/leds/gta04:left/brightness 2>/dev/null
+	echo 0 >/sys/devices/platform/omap_i2c.2/i2c-2/2-0045/leds/gta04:right/brightness 2>/dev/null
 fi
 
 ;;

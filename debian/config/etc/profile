@@ -23,7 +23,8 @@ export PATH
 
 umask 022
 
-export TSLIB_TSDEVICE=/dev/input/event1
+#export TSLIB_TSDEVICE=/dev/input/event1	# kernel 2.6.32
+export TSLIB_TSDEVICE=/dev/input/event0		# kernel 3.7
 export TSLIB_CALIBFILE=/etc/pointercal
 export TSLIB_CONFFILE=/etc/ts.conf
 #export TSLIB_PLUGINDIR=/usr/lib/ts	# lenny
