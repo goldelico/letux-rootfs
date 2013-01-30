@@ -1,6 +1,5 @@
 # Debian
 deb http://ftp.de.debian.org/debian squeeze main contrib non-free
-deb-src http://ftp.de.debian.org/debian stable main contrib non-free
 # experimental
 deb http://download.goldelico.com/gta04/debian stable main
 deb http://download.goldelico.com/quantumstep/debian stable main

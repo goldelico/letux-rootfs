@@ -192,7 +192,7 @@ amixer -q set "HandsfreeL Mux" AudioL2 &&
 amixer -q set "HandsfreeR Mux" AudioR2 &&
 aplay -q /usr/share/sounds/alsa/Front_Center.wav &&
 ok || nok
-$OK && (arecord | tee echo.wav | aplay) >/dev/null 2>&1 &	# run sound echo
+$OK && (arecord | tee /tmp/echo.wav | aplay) >/dev/null 2>&1 &	# run sound echo
 
 testing "TVout" "enabling TVout"
 ./tvout 1 2>/dev/null && ok || nok
@@ -554,7 +554,7 @@ amixer -q set "HandsfreeL Mux" AudioL2 &&
 amixer -q set "HandsfreeR Mux" AudioR2 &&
 aplay -q /usr/share/sounds/alsa/Front_Center.wav &&
 ok || nok
-$OK && (arecord | tee echo.wav | aplay) >/dev/null 2>&1 &	# run sound echo
+$OK && (arecord | tee /tmp/echo.wav | aplay) >/dev/null 2>&1 &	# run sound echo
 
 testing "TVout" "enabling TVout"
 ./tvout 1 2>/dev/null && ok || nok

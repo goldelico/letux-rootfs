@@ -45,7 +45,8 @@ echo current: $(cat /sys/devices/platform/omap_i2c.1/i2c-1/1-004b/twl4030_bci/po
 echo
 echo "Main Battery"
 echo "============"
-echo volt: $(cat /sys/devices/platform/twl4030_madc_hwmon/in12_input)mV
+VOLT=$(cat /sys/devices/platform/twl4030_madc_hwmon/in12_input)
+echo volt: ${VOLT}mV ca. $(expr \( "$VOLT" - 3200 \) \* 100 / 1050)%
 echo current: $(cat /sys/devices/platform/twl4030_madc_hwmon/curr10_input)mA
 echo temp: $(cat /sys/devices/platform/twl4030_madc_hwmon/temp1_input)°C
 echo type: $(cat /sys/devices/platform/twl4030_madc_hwmon/in0_input)mV
@@ -67,18 +68,18 @@ echo technology: $(cat /sys/devices/w1_bus_master1/01-000000000000/bq27000-batte
 echo capacity: $(cat /sys/devices/w1_bus_master1/01-000000000000/bq27000-battery/power_supply/bq27000-battery/capacity 2>/dev/null)%
 echo status: $(cat /sys/devices/w1_bus_master1/01-000000000000/bq27000-battery/power_supply/bq27000-battery/status 2>/dev/null)
 echo level: $(cat /sys/devices/w1_bus_master1/01-000000000000/bq27000-battery/power_supply/bq27000-battery/capacity_level 2>/dev/null)
-echo volt: $(cat /sys/devices/w1_bus_master1/01-000000000000/bq27000-battery/power_supply/bq27000-battery/voltage_now 2>/dev/null)mV
-echo current: $(cat /sys/devices/w1_bus_master1/01-000000000000/bq27000-battery/power_supply/bq27000-battery/current_now 2>/dev/null)mA
+echo volt: $(cat /sys/devices/w1_bus_master1/01-000000000000/bq27000-battery/power_supply/bq27000-battery/voltage_now 2>/dev/null)uV
+echo current: $(cat /sys/devices/w1_bus_master1/01-000000000000/bq27000-battery/power_supply/bq27000-battery/current_now 2>/dev/null)uA
 echo temp: $(cat /sys/devices/w1_bus_master1/01-000000000000/bq27000-battery/power_supply/bq27000-battery/temp 2>/dev/null)/10°C
-echo charge: $(cat /sys/devices/w1_bus_master1/01-000000000000/bq27000-battery/power_supply/bq27000-battery/charge_now 2>/dev/null)uC
-echo full: $(cat /sys/devices/w1_bus_master1/01-000000000000/bq27000-battery/power_supply/bq27000-battery/charge_full 2>/dev/null)uC
-echo design: $(cat /sys/devices/w1_bus_master1/01-000000000000/bq27000-battery/power_supply/bq27000-battery/charge_full_design 2>/dev/null)uC
-echo energy: $(cat /sys/devices/w1_bus_master1/01-000000000000/bq27000-battery/power_supply/bq27000-battery/energy 2>/dev/null)J
-echo power: $(cat /sys/devices/w1_bus_master1/01-000000000000/bq27000-battery/power_supply/bq27000-battery/power 2>/dev/null)W
+echo charge: $(cat /sys/devices/w1_bus_master1/01-000000000000/bq27000-battery/power_supply/bq27000-battery/charge_now 2>/dev/null)uAh
+echo full: $(cat /sys/devices/w1_bus_master1/01-000000000000/bq27000-battery/power_supply/bq27000-battery/charge_full 2>/dev/null)uAh
+echo design: $(cat /sys/devices/w1_bus_master1/01-000000000000/bq27000-battery/power_supply/bq27000-battery/charge_full_design 2>/dev/null)uAh
+echo energy: "$(cat /sys/devices/w1_bus_master1/01-000000000000/bq27000-battery/power_supply/bq27000-battery/energy 2>/dev/null)J?"
+echo power: "$(cat /sys/devices/w1_bus_master1/01-000000000000/bq27000-battery/power_supply/bq27000-battery/power 2>/dev/null)W?"
 echo cycles: $(cat /sys/devices/w1_bus_master1/01-000000000000/bq27000-battery/power_supply/bq27000-battery/cycle_count 2>/dev/null)
 echo health: $(cat /sys/devices/w1_bus_master1/01-000000000000/bq27000-battery/power_supply/bq27000-battery/health 2>/dev/null)
 echo discharge: $(cat /sys/devices/w1_bus_master1/01-000000000000/bq27000-battery/power_supply/bq27000-battery/time_to_empty_avg 2>/dev/null)s to empty
-echo remaining: $(cat /sys/devices/w1_bus_master1/01-000000000000/bq27000-battery/power_supply/bq27000-battery/time_to_empty_now 2>/dev/null)s to empty
+echo remaining: $(cat /sys/devices/w1_bus_master1/01-000000000000/bq27000-battery/power_supply/bq27000-battery/time_to_empty_now 2>/dev/null)s to "?"
 echo charging: $(cat /sys/devices/w1_bus_master1/01-000000000000/bq27000-battery/power_supply/bq27000-battery/time_to_full_now 2>/dev/null)s to full
 ;;
 

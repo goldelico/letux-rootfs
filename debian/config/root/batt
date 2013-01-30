@@ -1,0 +1,7 @@
+while true
+do
+VOLT=$(cat /sys/devices/platform/twl4030_madc_hwmon/in12_input) 
+TEMP=$(cat /sys/devices/platform/twl4030_madc_hwmon/temp1_input)
+echo "$(date) - ${VOLT}mV - $(expr \( "$VOLT" - 3200 \) \* 100 / 1050)% - ${TEMP}C"
+sleep 60
+done

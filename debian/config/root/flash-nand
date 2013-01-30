@@ -156,7 +156,6 @@ do
 				(
 				echo "copying files (takes a while)"
 				rm -rf *	# clear previous rootfs (if any) -- this leaves .* files!
-				rm -rf /root/echo.wav /root/radek*	# remove some log files we don't need
 				# copy to jffs2
 				tar --exclude ./mnt --exclude ./media --exclude ./var/cache --exclude ./tmp --exclude ./proc --exclude ./sys --exclude lost+found -czf - -C / . | tar xzfp - --checkpoint=100
 				echo "copied"
