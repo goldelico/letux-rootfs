@@ -1,11 +1,11 @@
 #
-# Copyright Golden Delicious Computers GmbH&Co. KG, 2010-2012
+# Copyright Golden Delicious Computers GmbH&Co. KG, 2010-2013
 # licenced unter GPL 2.0
 #
 # this is part of OM Beagle Hybrid / GTA04
 # it is derived from http://elinux.org/BeagleBoardDebian
 #
-# run this script to install/update the packages that are useful
+# run this script to install/update the packages by some useful tools
 #
 
 apt-get update || exit 1	# get latest package list
@@ -19,7 +19,7 @@ apt-get install -y apt-utils
 #
 
 apt-get install -y ntp	# update clock from network
-apt-get install -y sudo			# nice to have...
+apt-get install -y sudo			# always nice to have...
 apt-get install -y udev			# important
 apt-get install -y dnsutils     # nslookup etc.
 apt-get install -y dhcpcd		# so that we can get an IP address from the access point
@@ -38,6 +38,7 @@ apt-get install -y bluez-utils bluez-audio          # driver for HCI Bluetooth
 apt-get install -y rfkill
 apt-get install -y dosfstools parted	# to make bootable SD cards
 apt-get install -y man-db		# some tools install a manual anyways - so why not make them readable
+apt-get install -y gcc libc6-dev linux-libc-dev make		# so that we can cc some (simple) binaries from source
 
 #
 # install X11 driver for omap3
@@ -45,18 +46,27 @@ apt-get install -y man-db		# some tools install a manual anyways - so why not ma
 
 apt-get install -y xorg
 
+case "$(cat /etc/debian_version)" in
+6.* )	# Squeeze has good touch screen support
+
+apt-get install -y xserver-xorg-video-omap3
+apt-get install -y xserver-xorg-input-tslib xserver-xorg-input-void libts-bin
+
+# Kernels since 2.6.37 use a different EV_VERSION
+
+case "$(uname -r)" in
+2.6.37 | 2.6.38 | 2.6.39 | 3.* )
+	wget http://download.goldelico.com/gta04/debian/dists/stable/main/binary-armel/libts-0.0-0_1.0-8lindi1_armel.deb
+	dpkg -i libts-0.0-0_1.0-8lindi1_armel.deb
+	;;
+esac
+
+;;
 #
 # backport touch screen driver to fix http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=493942
 # see (German): http://wiki.unixboard.de/index.php/Debian_Backports
 #
 
-case "$(cat /etc/debian_version)" in
-6.* )	# Squeeze has good support
-
-apt-get install -y xserver-xorg-video-omap3
-apt-get install -y xserver-xorg-input-tslib xserver-xorg-input-void libts-bin
-
-;;
 5.* )	# Lenny needs a backport
 
 wget -c http://rcn-ee.homeip.net:81/dl/deb-sbuild/lenny/xorg-drivers/xserver-xorg-video-omap3_0.1.1-2_armel.deb

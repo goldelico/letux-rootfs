@@ -14,12 +14,6 @@ depmod -a
 ## FIXME: we should set the clock to the changed date of this postinst file!
 ( ps -ef | fgrep -v fgrep | fgrep -q ntpd ) || date 010100002011 # get rid of 'in the future' warnings from tar and apt-get until we have ntp
 
-apt-get update || exit 1	# get latest package list
-dpkg --configure -a	# try to cleanup if previous attempt failed
-apt-get install -y --force-yes debian-archive-keyring
-apt-get update		# get latest package list again
-apt-get install -y apt-utils
-
 # WARNING: this line opens a big security hole but simplifies development
 
 sed -i 's/\(PermitEmptyPasswords\) no/\1 yes/' $DEST/etc/ssh/sshd_config
