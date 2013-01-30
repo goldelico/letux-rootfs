@@ -492,7 +492,11 @@ STATUS=$(cat /sys/devices/platform/omap_i2c.1/i2c-1/1-004b/twl4030_bci/power_sup
 
 testing "Batt-Temp" "main battery temperature (may not be real value if there is no NTC)"
 TEMP=$(cat /sys/devices/platform/twl4030_madc_hwmon/temp1_input 2>/dev/null)
-[ "${TEMP:=-1}" -ge 20 -a "$TEMP" -le 60 ] && ok "${TEMP} C" || nok "${TEMP} °C"
+[ "${TEMP:=-1}" -ge 20 -a "$TEMP" -le 60 ] && ok "${TEMP} °C" || nok "${TEMP} °C"
+
+testing "Batt-Type" "main battery identification"
+TYPE=$(cat /sys/devices/platform/twl4030_madc_hwmon/in0_input 2>/dev/null)
+[ "${TYPE:=-1}" ] && ok "${TYPE} mV" || nok "${TYPE} mV"
 
 testing "Batt-Backup" "backup battery voltage"
 VOLT=$(cat /sys/devices/platform/twl4030_madc_hwmon/in9_input 2>/dev/null)
@@ -618,7 +622,7 @@ if $OK
 	testing "GTM601-Wakeup" "check for 3G Wakeup through AT_ORESET"
 	for i in 1 2 3
 		do
-		if (echo AT_ORESET; sleep 15) | /root/femtocom "$UMTSDEV" >/dev/null | ( evtest /dev/input/by-path/platform-gpio-keys.1-event & sleep 15; kill $! ) | fgrep 'type 1 (Key), code 240 (Unknown), value 1' 2>/dev/null 1>&2
+		if (echo AT_ORESET; sleep 15) | /root/femtocom "$UMTSDEV" >/dev/null | ( evtest /dev/input/incoming & sleep 15; kill $! ) | fgrep 'type 1 (Key), code 240 (Unknown), value 1' 2>/dev/null 1>&2
 			then
 			ok "$LINE"
 			break
