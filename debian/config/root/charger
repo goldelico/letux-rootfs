@@ -46,7 +46,7 @@ echo
 echo "Main Battery"
 echo "============"
 VOLT=$(cat /sys/devices/platform/twl4030_madc_hwmon/in12_input)
-echo volt: ${VOLT}mV ca. $(expr \( "$VOLT" - 3200 \) \* 100 / 1050)%
+echo volt: ${VOLT}mV ca. $(expr \( "$VOLT" - 3300 \) \* 100 / 950)%
 echo current: $(cat /sys/devices/platform/twl4030_madc_hwmon/curr10_input)mA
 echo temp: $(cat /sys/devices/platform/twl4030_madc_hwmon/temp1_input)°C
 echo type: $(cat /sys/devices/platform/twl4030_madc_hwmon/in0_input)mV
