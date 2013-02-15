@@ -56,7 +56,7 @@ cp /boot/boot.scr /media/boot/boot.scr
 cp /boot/uImage /media/boot/uImage
 cp /boot/x-load.flash /media/boot/x-load.flash
 
-(cd / && tar czf - .) | (cd /media/rootfs && tar xvjf - )
+(cd / && tar cf - .) | (cd /media/rootfs && tar xvf - )
 
 sync
 df
