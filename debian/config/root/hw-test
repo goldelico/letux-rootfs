@@ -438,24 +438,27 @@ PRESSURE=$(expr "${PRESSURE:=0}" / 100)
 CENTIGRADE=$(expr "${CENTIGRADE:=0}" / 10)
 [ "${PRESSURE:=-1}" -ge 850 -a "$PRESSURE" -le 1150 -a "${CENTIGRADE:=-1}" -ge 20 -a "$CENTIGRADE" -le 60 ] && ok "${PRESSURE} mBar, ${CENTIGRADE} °C" || nok "${PRESSURE} mBar, ${CENTIGRADE} °C"
 
+modprobe itg3200
 testing "ITG3200" "Gyroscope values"
 dev=$(findiio itg3200)
 X=$(cat $dev/in_anglvel_x_raw 2>/dev/null)
 Y=$(cat $dev/in_anglvel_y_raw 2>/dev/null)
 Z=$(cat $dev/in_anglvel_z_raw 2>/dev/null)
-CENTIGRADE=$(cat $dev/temp 2>/dev/null)
+CENTIGRADE=$(cat $dev/unknown 2>/dev/null)
 G=$(expr ${X:=0} '*' ${X} + ${Y:=0} '*' ${Y} + ${Z:=0} '*' ${Z})
 GMAX=$(expr 3 '*' 200 '*' 200)
 CENTIGRADE=$(expr "${CENTIGRADE:=0}" / 10)
 [ "$G" -le "$GMAX" -a "$CENTIGRADE" -ge 20 -a "$CENTIGRADE" -le 60 ] && ok "$X, $Y, $Z, ${CENTIGRADE} °C" || nok "$X, $Y, $Z, ${CENTIGRADE} °C"
 
 testing "BMA180" "Accelerometer values"
-read X Y Z < <(sed "s/,/ /g" /sys/bus/i2c/devices/i2c-2/2-0041/coord 2>/dev/null)
+# read X Y Z < <(sed "s/,/ /g" /sys/bus/i2c/devices/i2c-2/2-0041/coord 2>/dev/null)
+read X Y Z < <(echo $(evtest /dev/input/accel | head -19 | fgrep Value | sed 's/Value//g'))
 G=$(expr ${X:=0} '*' ${X} + ${Y:=0} '*' ${Y} + ${Z:=0} '*' ${Z})
-GMIN=$(expr 8 '*' 1024 '*' 1024)
-GMAX=$(expr 32 '*' 1024 '*' 1024)
+GMIN=$(expr 200 '*' 200)
+GMAX=$(expr 300 '*' 300)
 [ "$G" -le "$GMAX" -a "$G" -ge "$GMIN" ] && ok "$X, $Y, $Z" || nok "$X, $Y, $Z"
 
+modprobe hmc5843
 testing "HMC5883L" "Compass values"
 dev=$(findiio hmc5843)
 X=$(cat $dev/in_magn_x_raw 2>/dev/null)
@@ -467,8 +470,11 @@ testing "TSC2007" "Touch screen values"
 read VAL < <(sed "s/,/ /g" /sys/bus/i2c/devices/i2c-2/2-0048/values 2>/dev/null)
 [ "$VAL" ] && ok "$VAL" || nok "$VAL"
 
-testing "OV9655" "Camera found"
+testing "OV9655" "Camera device found"
 [ -r /dev/video0 ] && ok || nok
+
+testing "PVR/SGX" "GPU device found"
+[ -r /proc/pvr/version ] && ok $(cat /proc/pvr/version) || nok
 
 testing "TPS61050" "Torch/Flash I2C response"
 [ -r /sys/bus/i2c/drivers/tps6105x/2-0033 ] && ok || nok
@@ -554,7 +560,7 @@ amixer -q set "HandsfreeL Mux" AudioL2 &&
 amixer -q set "HandsfreeR Mux" AudioR2 &&
 aplay -q /usr/share/sounds/alsa/Front_Center.wav &&
 ok || nok
-$OK && (arecord | tee /tmp/echo.wav | aplay) >/dev/null 2>&1 &	# run sound echo
+$OK && amixer -q set "Analog" 3 && (arecord | tee /tmp/echo.wav | aplay) >/dev/null 2>&1 &	# run sound echo
 
 testing "TVout" "enabling TVout"
 ./tvout 1 2>/dev/null && ok || nok
@@ -736,23 +742,29 @@ fi
 testing "TVout-off" "switching back to LCD"
 ./tvout 0 2>/dev/null && ok || nok
 
+killall -9 arecord aplay 2>/dev/null # stop any running audio forwarding
+
 testing "Tests-End" "Summary of all tests"
 $ANYNOK && nok "$(date)" || ok "$(date)"
 if $ANYNOK
 then # red
-	echo 255 >/sys/devices/platform/omap_i2c.2/i2c-2/2-0045/leds/gta04:red:power/brightness 2>/dev/null
-	echo 0 >/sys/devices/platform/omap_i2c.2/i2c-2/2-0045/leds/gta04:green:power/brightness 2>/dev/null
-	echo 255 >/sys/devices/platform/omap_i2c.2/i2c-2/2-0045/leds/gta04:red:aux/brightness 2>/dev/null
-	echo 0 >/sys/devices/platform/omap_i2c.2/i2c-2/2-0045/leds/gta04:green:aux/brightness 2>/dev/null
-	echo 255 >/sys/devices/platform/omap_i2c.2/i2c-2/2-0045/leds/gta04:left/brightness 2>/dev/null
-	echo 255 >/sys/devices/platform/omap_i2c.2/i2c-2/2-0045/leds/gta04:right/brightness 2>/dev/null
+	(
+	echo 255 >/sys/devices/platform/omap_i2c.2/i2c-2/2-0045/leds/gta04:red:power/brightness
+	echo 0 >/sys/devices/platform/omap_i2c.2/i2c-2/2-0045/leds/gta04:green:power/brightness
+	echo 255 >/sys/devices/platform/omap_i2c.2/i2c-2/2-0045/leds/gta04:red:aux/brightness
+	echo 0 >/sys/devices/platform/omap_i2c.2/i2c-2/2-0045/leds/gta04:green:aux/brightness
+	echo 255 >/sys/devices/platform/omap_i2c.2/i2c-2/2-0045/leds/gta04:left/brightness
+	echo 255 >/sys/devices/platform/omap_i2c.2/i2c-2/2-0045/leds/gta04:right/brightness
+	) 2>/dev/null
 else # green
-	echo 0 >/sys/devices/platform/omap_i2c.2/i2c-2/2-0045/leds/gta04:red:power/brightness 2>/dev/null
-	echo 255 >/sys/devices/platform/omap_i2c.2/i2c-2/2-0045/leds/gta04:green:power/brightness 2>/dev/null
-	echo 0 >/sys/devices/platform/omap_i2c.2/i2c-2/2-0045/leds/gta04:red:aux/brightness 2>/dev/null
-	echo 255 >/sys/devices/platform/omap_i2c.2/i2c-2/2-0045/leds/gta04:green:aux/brightness 2>/dev/null
-	echo 0 >/sys/devices/platform/omap_i2c.2/i2c-2/2-0045/leds/gta04:left/brightness 2>/dev/null
-	echo 0 >/sys/devices/platform/omap_i2c.2/i2c-2/2-0045/leds/gta04:right/brightness 2>/dev/null
+	(
+	echo 0 >/sys/devices/platform/omap_i2c.2/i2c-2/2-0045/leds/gta04:red:power/brightness
+	echo 255 >/sys/devices/platform/omap_i2c.2/i2c-2/2-0045/leds/gta04:green:power/brightness
+	echo 0 >/sys/devices/platform/omap_i2c.2/i2c-2/2-0045/leds/gta04:red:aux/brightness
+	echo 255 >/sys/devices/platform/omap_i2c.2/i2c-2/2-0045/leds/gta04:green:aux/brightness
+	echo 0 >/sys/devices/platform/omap_i2c.2/i2c-2/2-0045/leds/gta04:left/brightness
+	echo 0 >/sys/devices/platform/omap_i2c.2/i2c-2/2-0045/leds/gta04:right/brightness
+	) 2>/dev/null
 fi
 
 ;;

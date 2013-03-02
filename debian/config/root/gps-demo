@@ -47,8 +47,7 @@ gpsd $SERIAL
 ;;
 
 3.* )
-## nothing to do
-## how can we detect int/ext antenna status?
+	echo "### $(cat /sys/devices/platform/extcon-gpio/extcon/gps_antenna/state) antenna ###"
 ;;
 esac
 
