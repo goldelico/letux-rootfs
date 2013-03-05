@@ -3,24 +3,38 @@
 # see also http://projects.goldelico.com/p/gta04-kernel/page/Camera/
 #
 
+[ "$(which mplayer)" ] || apt-get install -y mplayer
+
 export XAUTHORITY=/.Xauthority
-export DEVICE=/dev/video0
+
+case "$(uname -r)" in
+
+2.6.* )
+	export DEVICE=/dev/video0
+	;;
+3.* )
+	media-ctl -r -l '"ov9655 2-0030":0->"OMAP3 ISP CCDC":0[1], "OMAP3 ISP CCDC":2->"OMAP3 ISP preview":0[1], "OMAP3 ISP preview":1->"OMAP3 ISP resizer":0[1], "OMAP3 ISP resizer":1->"OMAP3 ISP resizer output":0[1]'
+	## handle resizer depending on image size
+	media-ctl -V '"ov9655 2-0030":0 [SGRBG10 1280x1024], "OMAP3 ISP CCDC":2 [SGRBG10 1280x1024], "OMAP3 ISP preview":1 [UYVY 1280x1024], "OMAP3 ISP resizer":1 [UYVY 1024x768]'
+	export DEVICE=/dev/video6
+	;;
+esac
 
 echo "### starting mplayer ###"
 case "$1" in
 	sxga )
-		mplayer tv:// -tv driver=v4l2:width=1280:height=1024:device=$DEVICE:fps=15 -vo x11
+		mplayer tv:// -tv driver=v4l2:outfmt=uyvy:width=1280:height=1024:device=$DEVICE:fps=15 -vo x11
 		;;
 	vga )
-		mplayer tv:// -tv driver=v4l2:width=640:height=480:device=$DEVICE:fps=30 -vo x11
+		mplayer tv:// -tv driver=v4l2:outfmt=uyvy:width=640:height=480:device=$DEVICE:fps=30 -vo x11
 		;;
 	qvga )
-		mplayer tv:// -tv driver=v4l2:width=320:height=240:device=$DEVICE:fps=30 -vo x11
+		mplayer tv:// -tv driver=v4l2:outfmt=uyvy:width=320:height=240:device=$DEVICE:fps=30 -vo x11
 		;;
 	cif )
-		mplayer tv:// -tv driver=v4l2:width=352:height=288:device=$DEVICE:fps=30 -vo x11
+		mplayer tv:// -tv driver=v4l2:outfmt=uyvy:width=352:height=288:device=$DEVICE:fps=30 -vo x11
 		;;
 	* )
-		mplayer tv:// -tv driver=v4l2:width=640:height=480:device=$DEVICE:fps=12 -vo x11
+		mplayer tv:// -tv driver=v4l2:outfmt=uyvy:width=640:height=480:device=$DEVICE:fps=12 -vo x11
 		;;
 esac
