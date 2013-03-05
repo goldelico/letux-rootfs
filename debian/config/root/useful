@@ -39,6 +39,7 @@ apt-get install -y rfkill
 apt-get install -y dosfstools parted	# to make bootable SD cards
 apt-get install -y man-db		# some tools install a manual anyways - so why not make them readable
 apt-get install -y gcc libc6-dev linux-libc-dev make		# so that we can cc some (simple) binaries from source
+apt-get install -y --force-yes media-ctl	# for camera isp control
 
 #
 # install X11 driver for omap3
@@ -47,7 +48,7 @@ apt-get install -y gcc libc6-dev linux-libc-dev make		# so that we can cc some (
 apt-get install -y xorg
 
 case "$(cat /etc/debian_version)" in
-6.* )	# Squeeze has good touch screen support
+6.* | 7.* )	# Squeeze and Wheezy good touch screen support
 
 apt-get install -y xserver-xorg-video-omap3
 apt-get install -y xserver-xorg-input-tslib xserver-xorg-input-void libts-bin
