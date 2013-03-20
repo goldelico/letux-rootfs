@@ -8,7 +8,7 @@
 # * that boot.scr does not overwrite U-Boot
 
 # DEFAULT="-x -b -k -j" ### we can't write X-Loader yet
-DEFAULT="-k -j"
+DEFAULT="-k -u"
 
 [ "$1" == "" ] && set - $DEFAULT
 
@@ -148,7 +148,7 @@ do
 		-j ) echo flashing Rootfs as jffs2
 
 			umount /dev/mtdblock4
-			flash_eraseall /dev/mtd4 &&
+			flash_eraseall -j /dev/mtd4 &&
 			mkdir -p /mnt/nand &&
 			mount -t jffs2 /dev/mtdblock4 /mnt/nand &&
 			(
@@ -165,7 +165,7 @@ do
 				rm -f ./home/.bash_history ./root/.bash_history ./.bash_history
 				# apply any important patches (which?)
 				# echo "creating new sshd key"
-				# e.g. clear sshd key - but this code creates a new one on the MMC
+				# e.g. clear sshd key
 				# so we should save the keys before doing that and restore them
 				# rm -f ./etc/ssh/ssh_host_*
 				# dpkg-reconfigure openssh-server
@@ -179,33 +179,37 @@ do
 			;;
 
 		-u ) echo flashing Rootfs as UBIFS
-
-			/dev/mtdblock4
-			# flash_erase /dev/mtd4 0 0
+			
+			umount /dev/nand
+			umount ubi0:gta04-rootfs	# if mounted
+			ubidetach /dev/ubi_ctrl -m 4	# if attached
+			ubiformat -y /dev/mtd4
 			ubiattach /dev/ubi_ctrl -m 4
-			ubimkvol /dev/ubi0 -N rootfs -m
-			mkdir -p /mnt/nand
-			mount -t ubifs ubi0:rootfs /mnt/nand
+			ubimkvol /dev/ubi0 -N gta04-rootfs -m &&
+			mkdir -p /mnt/nand &&
+			mount -t ubifs ubi0:gta04-rootfs /mnt/nand &&
 			(
 			cd /mnt/nand &&
 				(
 				echo "copying files (takes a while)"
 				rm -rf *	# clear previous rootfs (if any) -- this leaves .* files!
-				tar --exclude ./mnt --exclude ./media --exclude ./var/cache --exclude ./tmp --exclude ./proc --exclude ./sys --exclude lost+found -cf - -C / . | tar xpf -
+				tar --exclude ./mnt --exclude ./media --exclude ./var/cache --exclude ./tmp --exclude ./proc --exclude ./sys --exclude lost+found -cf - -C / . | tar xpf - --checkpoint=100
 				echo "copied"
 				mkdir -p ./mnt ./media ./tmp ./proc ./sys
 				mkdir -p ./var/cache/apt/archives ./var/cache/apt/archives/partial ./var/cache/debconf
 				cp /var/cache/debconf/config.dat ./var/cache/debconf/config.dat
+				sed s/rootfs/#rootfs/ /etc/fstab >./etc/fstab	# comment out the rootfs entry because roofs mounting fails
+				rm -f ./home/.bash_history ./root/.bash_history ./.bash_history
 				# apply any important patches (which?)
 				# echo "creating new sshd key"
-				# e.g. clear sshd key - but this code creates a new one on the MMC
+				# e.g. clear sshd key
 				# so we should save the keys before doing that and restore them
-				# rm -f /etc/ssh/ssh_host_*
+				# rm -f ./etc/ssh/ssh_host_*
 				# dpkg-reconfigure openssh-server
 				sync
 				echo "synced"
 				)
-			)
+			) || echo erasing/flashing ubifs to NAND failed
 			df
 			umount /mnt/nand
 			rm -rf /mnt/nand
