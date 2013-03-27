@@ -18,7 +18,9 @@ then
 	exit 1
 fi
 
+# clean up current rootfs
 apt-get clean
+depmod -a
 
 # check if requested components are available
 
@@ -180,7 +182,7 @@ do
 
 		-u ) echo flashing Rootfs as UBIFS
 			
-			umount /dev/nand
+			umount /mnt/nand
 			umount ubi0:gta04-rootfs	# if mounted
 			ubidetach /dev/ubi_ctrl -m 4	# if attached
 			ubiformat -y /dev/mtd4
