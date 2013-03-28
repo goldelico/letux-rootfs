@@ -4,9 +4,20 @@
 # usage: wwan
 #
 
-echo 1 >/sys/devices/virtual/gpio/gpio186/value && sleep 5
-
-make femtocom
+for repeat in 1 2 3 4 5
+	do
+	if lsusb | fgrep '0af0:8800 Option' >/dev/null
+		then # found
+		break
+	fi
+	if [ -w /sys/devices/virtual/gpio/gpio186/value ]
+	then # wake up modem in GTA04A4
+		echo 1 >/sys/devices/virtual/gpio/gpio186/value
+		sleep 1
+		echo 0 >/sys/devices/virtual/gpio/gpio186/value
+		sleep 5
+	fi
+	done
 
 for i in $(cd /sys/class/tty/ && echo ttyHS*)
 	do
@@ -25,7 +36,10 @@ APN="$(cat wwan.conf)"
 (
 echo "AT+CGDCONT=1,\"IP\",\"$APN\""; sleep 1
 echo "AT_OWANCALL=1,1,1"; sleep 1
+# fixme: we should wait for _OWANCALL: 1,1 on NDIS port
+echo "AT_OWANNWERROR?"; sleep 30	# give some time to establish registration
 echo "AT_OWANDATA?"; sleep 60
+echo "AT_OWANNWERROR?"; sleep 1
 ) | ./femtocom $IF | while read MSG C IP GW DNS1 DNS2 NBNS1 NBNS2 SPEED MORE
 	do
 	echo $MSG $C $IP $GW $DNS1 $DNS2 $NBNS1 $NBNS2 $SPEED $MORE
@@ -35,9 +49,15 @@ echo "AT_OWANDATA?"; sleep 60
 		DNS1=$(expr "$DNS1" : "\(.*\),")
 		DNS2=$(expr "$DNS2" : "\(.*\),")
 		ifconfig hso0 $IP netmask 255.255.255.255 up
+		# FIXME: this overwrites the DNS used for e.g. USB connection!
 		echo "nameserver $DNS1" >/etc/resolv.conf
 		echo "nameserver $DNS2" >>/etc/resolv.conf
 		echo "Setup done"
+		# forward all IP traffic (even if it arrives from the USB host) through WWAN
+		route add default dev hso0
+		echo 1 >/proc/sys/net/ipv4/ip_forward
+		iptables -t nat -A POSTROUTING -o hso0 -j MASQUERADE
 		exit 0
 		fi
-	done || echo "Could not set up"
+	done
+echo "Could not set up"
