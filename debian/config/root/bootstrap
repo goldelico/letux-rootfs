@@ -1,0 +1,54 @@
+# bootstrap a new Debian system from the current one,
+# not copying anything privately changed
+# see http://wiki.debian.org/Debootstrap
+
+# not yet well tested!
+
+# default: same as we already have
+
+case $(/etc/debian_version) in
+	4.* ) VERSION=lenny ;;
+	5.* ) VERSION=squeeze ;;
+	6.* ) VERSION=wheezy ;;
+esac
+
+# user override
+
+[ "$1" ] && VERSION=$1
+
+case "$VERSION" in
+	lenny ) ARCH=armel;;
+	squeeze ) ARCH=armel;;
+	wheezy ) ARHC=armhf;;
+	sid ) ARHC=armhf;;
+	* ) echo "unknown $VERSION"; exit;;
+esac
+
+MY_CHROOT=/debian-$VERSION
+
+echo "Bootstrap $VERSION / $ARCH to $MY_CHROOT"
+
+apt-get install debootstrap
+
+[ -r "$MY_CHROOT/etc/debian_version" ] || ( # unless already installed (rm the MY_CHROOT tree to force re-install)
+mkdir -p "$MY_CHROOT"
+cd /
+debootstrap --arch "$ARCH" "$VERSION" "$MY_CHROOT" http://ftp.us.debian.org/debian
+)
+
+# add our GTA04 config
+
+tar xvzf /root/config.tgz
+
+# fix /etc/apt/sources.list for $VERSION
+
+sed s/wheezy/squeeze/g etc/apt/sources.list
+sed s/squeeze/$VERSION/g etc/apt/sources.list
+
+### here we should chroot
+
+chroot "$MY_CHROOT" /bin/bash <<END
+# commands to finalize install
+/root/useful
+### and finally 'init q' to reload init (?) to boot into the new system
+END
