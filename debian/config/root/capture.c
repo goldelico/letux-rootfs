@@ -70,6 +70,7 @@ xioctl                          (int                    fd,
 static void
 process_image                   (const void *           p)
 {
+	// here we could write to a file...
         fputc ('.', stdout);
         fflush (stdout);
 }
@@ -513,9 +514,11 @@ init_device                     (void)
         CLEAR (fmt);
 
         fmt.type                = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-        fmt.fmt.pix.width       = 640; 
-        fmt.fmt.pix.height      = 480;
-        fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
+	// get this from command line options!
+        fmt.fmt.pix.width       = 1280; 
+        fmt.fmt.pix.height      = 1024;
+//        fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
+		fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_UYVY;
         fmt.fmt.pix.field       = V4L2_FIELD_INTERLACED;
 
         if (-1 == xioctl (fd, VIDIOC_S_FMT, &fmt))
@@ -588,9 +591,9 @@ usage                           (FILE *                 fp,
         fprintf (fp,
                  "Usage: %s [options]\n\n"
                  "Options:\n"
-                 "-d | --device name   Video device name [/dev/video]\n"
+                 "-d | --device name   Video device name [/dev/video0]\n"
                  "-h | --help          Print this message\n"
-                 "-m | --mmap          Use memory mapped buffers\n"
+                 "-m | --mmap          Use memory mapped buffers [default]\n"
                  "-r | --read          Use read() calls\n"
                  "-u | --userp         Use application allocated buffers\n"
                  "",
