@@ -34,12 +34,20 @@ echo Interface: $IF
 APN="$(cat wwan.conf)"
 
 (
-echo "AT+CGDCONT=1,\"IP\",\"$APN\""; sleep 1
-echo "AT_OWANCALL=1,1,1"; sleep 1
-# fixme: we should wait for _OWANCALL: 1,1 on NDIS port
+echo "AT_OPONI=1"; sleep 1	# report current network registration
+echo "AT_OSQI=1"; sleep 1	# report signal quality in dBm
+echo "AT_OEANT=1"; sleep 1	# report quality level (0..4 or 5)
+echo "AT_OCTI=1"; sleep 1	# report GSM/GPRS/EDGE cell data rate		
+echo "AT_OUWCTI=1"; sleep 1	# report available cell data rate		
+echo "AT_OUHCIP=1"; sleep 1	# report HSDPA call in progress		
+echo "AT_OSSYS=1"; sleep 1	# report system (GSM / UTRAN)		
+echo "AT_OPSYS=5,3"; sleep 1	# connect any system
+echo "AT_OWANCALLUNSOL=1"; sleep 1	# report _OWANCALL: on this tty
+echo "AT+CGDCONT=1,\"IP\",\"$APN\""; sleep 1	# set APN
+echo "AT_OWANCALL=1,1,1"; sleep 1	# start call
 echo "AT_OWANNWERROR?"; sleep 30	# give some time to establish registration
-echo "AT_OWANDATA?"; sleep 60
-echo "AT_OWANNWERROR?"; sleep 1
+echo "AT_OWANDATA?"; sleep 60	# should have connected - ask for network data
+echo "AT_OWANNWERROR?"; sleep 1	# finally check for error
 ) | ./femtocom $IF | while read MSG C IP GW DNS1 DNS2 NBNS1 NBNS2 SPEED MORE
 	do
 	echo $MSG $C $IP $GW $DNS1 $DNS2 $NBNS1 $NBNS2 $SPEED $MORE
