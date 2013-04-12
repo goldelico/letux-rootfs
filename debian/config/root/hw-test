@@ -4,8 +4,8 @@
 # licenced under GPL
 #
 
-TESTER_VERSION="3.0"
-TESTER_DATE="28 Jan 2013"
+TESTER_VERSION="3.1"
+TESTER_DATE="09 Apr 2013"
 
 trap "killall hciattach arecord aplay; exit" SIGHUP SIGINT SIGTERM
 make femtocom >/dev/null
@@ -48,12 +48,12 @@ testing "Tests-Version"
 ok "$TESTER_VERSION"
 
 testing "Tests-Kernel"
-ok "$(uname -r)"
+ok "$(uname -rv)"
 
 testing "Tests-Rootfs"
-if fgrep -q 'root=/dev/mtdblock' /proc/cmdline
-then ok "NAND"
-else ok "SD"
+if fgrep -q 'root=/dev/mmcblk' /proc/cmdline
+then ok "SD"
+else ok "NAND"
 fi
 
 case "$(uname -r)" in
@@ -471,7 +471,7 @@ read VAL < <(sed "s/,/ /g" /sys/bus/i2c/devices/i2c-2/2-0048/values 2>/dev/null)
 [ "$VAL" ] && ok "$VAL" || nok "$VAL"
 
 testing "OV9655" "Camera device found"
-[ -r /dev/video0 ] && ok || nok
+[ -r /dev/v4l-subdev8 ] && ok || nok
 
 testing "PVR/SGX" "GPU device found"
 [ -r /proc/pvr/version ] && ok $(cat /proc/pvr/version) || nok
