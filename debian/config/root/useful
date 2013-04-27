@@ -8,8 +8,8 @@
 # run this script to install/update the packages by some useful tools
 #
 
-apt-get update || exit 1	# get latest package list
-dpkg --configure -a	# try to cleanup if previous attempt failed
+apt-get update	# get latest package list
+yes | dpkg --configure -a	# try to cleanup if previous attempt failed
 apt-get install -y --force-yes debian-archive-keyring
 apt-get update		# get latest package list again
 apt-get install -y apt-utils
@@ -18,29 +18,31 @@ apt-get install -y apt-utils
 # install useful command line tools
 #
 
-apt-get install -y ntp	# update clock from network
-apt-get install -y sudo			# always nice to have...
-apt-get install -y udev			# important
-apt-get install -y dnsutils     # nslookup etc.
-apt-get install -y dhcpcd		# so that we can get an IP address from the access point
-apt-get install -y mtd-utils    # read/write/erase NAND
-apt-get install -y uboot-envtools	# read write U-Boot environment e.g. to trigger boot to boot-menu or reflash
-apt-get install -y i2c-tools    # read/write/scan I2C
-apt-get install -y alsa-utils   # alsamixer, aplay etc.
-apt-get install -y fbset        # to switch to TV-Out
-apt-get install -y usbmount
-apt-get install -y evtest       # allows to check touch screen, keyboard and button events
-apt-get install -y joystick
-apt-get install -y openssh-server openssh-client    # remote access thorugh ssh
-apt-get install -y ppp
-apt-get install -y libertas-firmware wireless-tools # driver for Marvell WLAN
-apt-get install -y bluez-utils bluez-audio          # driver for HCI Bluetooth
-apt-get install -y rfkill
-apt-get install -y dosfstools parted	# to make bootable SD cards
-apt-get install -y man-db		# some tools install a manual anyways - so why not make them readable
-apt-get install -y gcc libc6-dev linux-libc-dev make		# so that we can cc some (simple) binaries from source
+USEFUL="ntp"	# update clock from network
+USEFUL+="sudo"			# always nice to have...
+USEFUL+="udev"			# important
+USEFUL+="dnsutils"     # nslookup etc.
+USEFUL+="dhcpcd"		# so that we can get an IP address from the access point
+USEFUL+="mtd-utils"    # read/write/erase NAND
+USEFUL+="uboot-envtools"	# read write U-Boot environment e.g. to trigger boot to boot-menu or reflash
+USEFUL+="i2c-tools"    # read/write/scan I2C
+USEFUL+="alsa-utils"   # alsamixer, aplay etc.
+USEFUL+="fbset"       # to switch to TV-Out
+USEFUL+="usbmount"
+USEFUL+="evtest"       # allows to check touch screen, keyboard and button events
+USEFUL+="joystick"
+USEFUL+="openssh-server openssh-client"    # remote access thorugh ssh
+USEFUL+="ppp"
+USEFUL+="libertas-firmware wireless-tools" # driver for Marvell WLAN
+USEFUL+="bluez-utils bluez-audio"          # driver for HCI Bluetooth
+USEFUL+="rfkill"
+USEFUL+="dosfstools parted"	# to make bootable SD cards
+USEFUL+="man-db"		# some tools install a manual anyways - so why not make them readable
+USEFUL+="libc6-dev linux-libc-dev make"		# so that we can cc some (simple) binaries from source
+USEFUL+="iptables"	isc-dhcp-server	# for WWAN <-> USB <-> WLAN tethering
+
+apt-get install -y $USEFUL
 apt-get install -y --force-yes media-ctl	# for camera isp control
-apt-get install -y iptables	isc-dhcp-server	# for WWAN <-> USB <-> WLAN tethering
 
 #
 # install X11 driver for omap3
@@ -49,12 +51,11 @@ apt-get install -y iptables	isc-dhcp-server	# for WWAN <-> USB <-> WLAN tetherin
 apt-get install -y xorg
 
 case "$(cat /etc/debian_version)" in
-6.* | 7.* )	# Squeeze and Wheezy good touch screen support
+6.* | 7.* )	# Squeeze touch screen support
 
-apt-get install -y xserver-xorg-video-omap3
-apt-get install -y xserver-xorg-input-tslib xserver-xorg-input-void libts-bin
+apt-get install -y xserver-xorg-video-omap3 xserver-xorg-input-tslib xserver-xorg-input-void libts-bin
 
-# Kernels since 2.6.37 use a different EV_VERSION
+# Kernels newer than 2.6.37 use a different EV_VERSION
 
 case "$(uname -r)" in
 2.6.37 | 2.6.38 | 2.6.39 | 3.* )
@@ -64,12 +65,17 @@ case "$(uname -r)" in
 esac
 
 ;;
+7.* )	# Wheezy touch screen support
+
+apt-get install -y xserver-xorg-video-omap3 xserver-xorg-input-tslib xserver-xorg-input-void libts-bin
+
+;;
+
+5.* )	# Lenny needs a backport
 #
 # backport touch screen driver to fix http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=493942
 # see (German): http://wiki.unixboard.de/index.php/Debian_Backports
 #
-
-5.* )	# Lenny needs a backport
 
 wget -c http://rcn-ee.homeip.net:81/dl/deb-sbuild/lenny/xorg-drivers/xserver-xorg-video-omap3_0.1.1-2_armel.deb
 dpkg -i xserver-xorg-video-omap3_0.1.1-2_armel.deb
@@ -119,9 +125,7 @@ apt-get install -y lxde
 # applications, tools and games
 #
 
-apt-get install -y gpsd dbus-x11 tangogps
-apt-get install -y synaptic
-apt-get install -y matchbox-keyboard matchbox-keyboard-im
+apt-get install -y gpsd dbus-x11 tangogps synaptic matchbox-keyboard matchbox-keyboard-im
 
 #
 # cleanup

@@ -149,6 +149,11 @@ do
 
 		-j ) echo flashing Rootfs as jffs2
 
+			if fgrep -q 'root=/dev/mtdblock4' /proc/cmdline
+			then
+				echo "can't overwrite active rootfs"
+				exit 1
+			fi
 			umount /dev/mtdblock4
 			flash_eraseall -j /dev/mtd4 &&
 			mkdir -p /mnt/nand &&
@@ -159,8 +164,9 @@ do
 				echo "copying files (takes a while)"
 				rm -rf *	# clear previous rootfs (if any) -- this leaves .* files!
 				# copy to jffs2
-				tar --exclude .bash_history --exclude ./boot --exclude ./mnt --exclude ./media --exclude ./var/cache --exclude ./tmp --exclude ./proc --exclude ./sys --exclude lost+found -cf - -C / . | tar xpf - --checkpoint=100
+				tar --exclude .bash_history --exclude ./mnt --exclude ./media --exclude ./var/cache --exclude ./tmp --exclude ./proc --exclude ./sys --exclude lost+found -cf - -C / . | tar xpf - --checkpoint=100
 				echo "copied"
+				echo "patching and syncing"
 				mkdir -p ./mnt ./media ./tmp ./proc ./sys
 				mkdir -p ./var/cache/apt/archives ./var/cache/apt/archives/partial ./var/cache/debconf
 				cp /var/cache/debconf/config.dat ./var/cache/debconf/config.dat
@@ -182,6 +188,11 @@ do
 
 		-u ) echo flashing Rootfs as UBIFS
 			
+			if fgrep -q 'root=/dev/mtdblock4' /proc/cmdline
+			then
+				echo "can't overwrite active rootfs"
+				exit 1
+			fi
 			umount /mnt/nand
 			umount ubi0:gta04-rootfs	# if mounted
 			ubidetach /dev/ubi_ctrl -m 4	# if attached
@@ -195,13 +206,15 @@ do
 				(
 				echo "copying files (takes a while)"
 				rm -rf *	# clear previous rootfs (if any) -- this leaves .* files!
-				tar --exclude .bash_history --exclude ./boot --exclude ./mnt --exclude ./media --exclude ./var/cache --exclude ./tmp --exclude ./proc --exclude ./sys --exclude lost+found -cf - -C / . | tar xpf - --checkpoint=100
+				tar --exclude .bash_history --exclude ./mnt --exclude ./media --exclude ./var/cache --exclude ./tmp --exclude ./proc --exclude ./sys --exclude lost+found -cf - -C / . | tar xpf - --checkpoint=100
 				echo "copied"
-				mkdir -p ./mnt ./media ./tmp ./proc ./sys
+				echo "patching and syncing"
+				mkdir -p ./mnt/nand ./media ./tmp ./proc ./sys ./boot
 				mkdir -p ./var/cache/apt/archives ./var/cache/apt/archives/partial ./var/cache/debconf
 				cp /var/cache/debconf/config.dat ./var/cache/debconf/config.dat
-				sed s/rootfs/#rootfs/ /etc/fstab >./etc/fstab	# comment out the rootfs entry because roofs mounting fails
+				sed s/^rootfs/#rootfs/ /etc/fstab >./etc/fstab	# comment out the rootfs entry because rootfs mounting fails
 				rm -f ./home/.bash_history ./root/.bash_history ./.bash_history
+				echo "MLO/X-Loader, U-Boot and Kernel are stored in NAND partitions" >./boot/booting_from_nand
 				# apply any important patches (which?)
 				# echo "creating new sshd key"
 				# e.g. clear sshd key

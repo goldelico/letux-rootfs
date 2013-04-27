@@ -1,12 +1,17 @@
 # bootstrap a new Debian system from the current one,
 # not copying anything privately changed
 # see http://wiki.debian.org/Debootstrap
+#
+# usage:
+#
+# ./bootstrap [lenny|squeeze|wheezy] [armel|armhf]
+#
 
 # not yet well tested!
 
 # default: same as we already have
 
-case $(/etc/debian_version) in
+case $(cat /etc/debian_version) in
 	4.* ) VERSION=lenny ;;
 	5.* ) VERSION=squeeze ;;
 	6.* ) VERSION=wheezy ;;
@@ -19,16 +24,20 @@ esac
 case "$VERSION" in
 	lenny ) ARCH=armel;;
 	squeeze ) ARCH=armel;;
-	wheezy ) ARHC=armhf;;
-	sid ) ARHC=armhf;;
+	wheezy ) ARCH=armhf;;
+	sid ) ARCH=armhf;;
 	* ) echo "unknown $VERSION"; exit;;
 esac
 
+# user override
+
+[ "$2" ] && ARCH=$2
+
 MY_CHROOT=/debian-$VERSION
 
-echo "Bootstrap $VERSION / $ARCH to $MY_CHROOT"
+echo "bootstrapping $VERSION/$ARCH to $MY_CHROOT"
 
-apt-get install debootstrap
+[ -x /usr/sbin/debootstrap ] || apt-get install debootstrap
 
 [ -r "$MY_CHROOT/etc/debian_version" ] || ( # unless already installed (rm the MY_CHROOT tree to force re-install)
 mkdir -p "$MY_CHROOT"
@@ -36,19 +45,46 @@ cd /
 debootstrap --arch "$ARCH" "$VERSION" "$MY_CHROOT" http://ftp.us.debian.org/debian
 )
 
-# add our GTA04 config
+cd $MY_CHROOT || exit 1
 
-tar xvzf /root/config.tgz
+echo "adding our GTA04 config for network setup"
 
-# fix /etc/apt/sources.list for $VERSION
+cp /root/config.tgz ./root/config.tgz
 
-sed s/wheezy/squeeze/g etc/apt/sources.list
-sed s/squeeze/$VERSION/g etc/apt/sources.list
+tar xvzf ./root/config.tgz
 
-### here we should chroot
+echo "fix /etc/apt/sources.list for $VERSION"
 
-chroot "$MY_CHROOT" /bin/bash <<END
-# commands to finalize install
-/root/useful
-### and finally 'init q' to reload init (?) to boot into the new system
+sed -i s/lenny/squeeze/g etc/apt/sources.list
+sed -i s/wheezy/squeeze/g etc/apt/sources.list
+sed -i s/squeeze/$VERSION/g etc/apt/sources.list
+
+gunzip <./root/config.tgz >./root/config.tar &&
+tar uvf ./root/config.tar ./etc/apt/sources.list &&
+gzip <./root/config.tar >./root/config.tgz &&
+rm ./root/config.tar
+
+chroot "$MY_CHROOT" /bin/bash <<'END'
+echo "running commands to finalize install in chroot"
+yes | dpkg --configure -a	# try to cleanup if previous attempt failed
+apt-get update
+apt-get upgrade
+apt-get install -y sudo			# always nice to have...
+apt-get install -y udev			# important
+apt-get install -y dnsutils     # nslookup etc.
+apt-get install -y openssh-server openssh-client    # remote access thorugh ssh
+apt-get -y autoremove
+apt-get -y autoclean
+apt-get -y clean
+echo "*** the following steps open a big security hole but make development easier ***"
+echo "enabling root login over ssh - since we have no user accounts (yet)"
+sed -i 's/PermitRootLogin.*/PermitRootLogin yes/g' /etc/ssh/sshd_config
+sed -i 's/PermitEmptyPassword.*/PermitEmptyPasswords yes/g' /etc/ssh/sshd_config
+echo "setting empty root password! Note: this is not the same as *no* password"
+# created by "openssl passwd -1 -salt gta04" and empty password
+sed -i 's/root:[^:]*:/root:$1$gta04$cSj3CStbjKc8aDWez77190:/g' /etc/shadow
 END
+
+sync
+
+echo "bootstrapped rootfs $MY_CHROOT"

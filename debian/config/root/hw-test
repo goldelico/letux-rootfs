@@ -422,10 +422,10 @@ done
 }
  
 testing "LED" "enable LEDs"
-echo 31 >/sys/devices/platform/omap_i2c.2/i2c-2/2-0045/leds/gta04:red:power/brightness 2>/dev/null &&
-echo 255 >/sys/devices/platform/omap_i2c.2/i2c-2/2-0045/leds/gta04:green:power/brightness 2>/dev/null &&
-echo 31 >/sys/devices/platform/omap_i2c.2/i2c-2/2-0045/leds/gta04:red:aux/brightness 2>/dev/null &&
-echo 255 >/sys/devices/platform/omap_i2c.2/i2c-2/2-0045/leds/gta04:green:aux/brightness 2>/dev/null &&
+( echo 31 >/sys/devices/platform/omap_i2c.2/i2c-2/2-0045/leds/gta04:red:power/brightness &&
+echo 255 >/sys/devices/platform/omap_i2c.2/i2c-2/2-0045/leds/gta04:green:power/brightness &&
+echo 31 >/sys/devices/platform/omap_i2c.2/i2c-2/2-0045/leds/gta04:red:aux/brightness &&
+echo 255 >/sys/devices/platform/omap_i2c.2/i2c-2/2-0045/leds/gta04:green:aux/brightness ) 2>/dev/null &&
 ok || nok
 
 #[ -r /sys/bus/i2c/devices/2-0068/iio:device0/suspend ] && echo 0 >/sys/bus/i2c/devices/i2c-2/2-0068/suspend 2>/dev/null	# start sampling on gyroscope
@@ -452,7 +452,7 @@ CENTIGRADE=$(expr "${CENTIGRADE:=0}" / 10)
 
 testing "BMA180" "Accelerometer values"
 # read X Y Z < <(sed "s/,/ /g" /sys/bus/i2c/devices/i2c-2/2-0041/coord 2>/dev/null)
-read X Y Z < <(echo $(evtest /dev/input/accel | head -19 | fgrep Value | sed 's/Value//g'))
+[ -r /dev/input/accel ] && read X Y Z < <(echo $(evtest /dev/input/accel | head -19 | fgrep Value | sed 's/Value//g'))
 G=$(expr ${X:=0} '*' ${X} + ${Y:=0} '*' ${Y} + ${Z:=0} '*' ${Z})
 GMIN=$(expr 200 '*' 200)
 GMAX=$(expr 300 '*' 300)
