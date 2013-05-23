@@ -12,9 +12,11 @@
 # default: same as we already have
 
 case $(cat /etc/debian_version) in
-	4.* ) VERSION=lenny ;;
-	5.* ) VERSION=squeeze ;;
-	6.* ) VERSION=wheezy ;;
+	5.* ) VERSION=lenny ;;
+	6.* ) VERSION=squeeze ;;
+	7.* ) VERSION=wheezy ;;
+	8.* ) VERSION=jessie ;;
+	* ) VERSION="can't detect" ;;
 esac
 
 # user override
@@ -66,6 +68,7 @@ rm ./root/config.tar
 
 chroot "$MY_CHROOT" /bin/bash <<'END'
 echo "running commands to finalize install in chroot"
+depmod -a
 yes | dpkg --configure -a	# try to cleanup if previous attempt failed
 apt-get update
 apt-get upgrade

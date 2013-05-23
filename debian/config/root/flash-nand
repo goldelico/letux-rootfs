@@ -79,7 +79,7 @@ do
 			while read FILESYSTEM BLOCKS USED AVAILABLE USEPERCENT MOUNTED
 			do
 				case $FILESYSTEM in
-					rootfs )
+					rootfs | /dev/root )
 						FOUND=true
 						# fixme: we don't copy /var/cache so this estimate is wrong
 						if [ $USED -gt 1000000 ]
@@ -206,7 +206,7 @@ do
 				(
 				echo "copying files (takes a while)"
 				rm -rf *	# clear previous rootfs (if any) -- this leaves .* files!
-				tar --exclude .bash_history --exclude ./mnt --exclude ./media --exclude ./var/cache --exclude ./tmp --exclude ./proc --exclude ./sys --exclude lost+found -cf - -C / . | tar xpf - --checkpoint=100
+				tar --exclude .bash_history --exclude ./mnt --exclude './debian-*' --exclude ./media --exclude ./var/cache --exclude ./tmp --exclude ./proc --exclude ./sys --exclude lost+found -cf - -C / . | tar xpf - --checkpoint=100
 				echo "copied"
 				echo "patching and syncing"
 				mkdir -p ./mnt/nand ./media ./tmp ./proc ./sys ./boot

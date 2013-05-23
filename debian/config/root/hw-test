@@ -4,8 +4,8 @@
 # licenced under GPL
 #
 
-TESTER_VERSION="3.1"
-TESTER_DATE="09 Apr 2013"
+TESTER_VERSION="3.2"
+TESTER_DATE="16 May 2013"
 
 trap "killall hciattach arecord aplay; exit" SIGHUP SIGINT SIGTERM
 make femtocom >/dev/null
@@ -628,7 +628,7 @@ if $OK
 	testing "GTM601-Wakeup" "check for 3G Wakeup through AT_ORESET"
 	for i in 1 2 3
 		do
-		if (echo AT_ORESET; sleep 15) | /root/femtocom "$UMTSDEV" >/dev/null | ( evtest /dev/input/incoming & sleep 15; kill $! ) | fgrep 'type 1 (Key), code 240 (Unknown), value 1' 2>/dev/null 1>&2
+		if (echo AT_ORESET; sleep 15) | /root/femtocom "$UMTSDEV" >/dev/null | ( evtest /dev/input/incoming & sleep 15; kill $! ) | fgrep -e 'type 1 (Key), code 240 (Unknown), value 1' -e 'type 1 (EV_KEY), code 240 (KEY_UNKNOWN), value 1' 2>/dev/null 1>&2
 			then
 			ok "$LINE"
 			break
@@ -706,6 +706,8 @@ then # scan
 	nok
 fi
 
+killall hciattach 2>/dev/null	# stop any running daemon
+
 testing "W2CBW003-WLAN-libertas" "check if kernel did load libertas driver"
 ( lsmod | fgrep libertas_sdio >/dev/null ) && ok || nok
 
@@ -771,6 +773,6 @@ fi
 
 esac
 
-sync	# so that we can safely switch off the device
+sync	# so that we can safely switch off the device after test
 
 $ANYNOK && exit 1 || exit 0

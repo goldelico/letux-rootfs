@@ -16,6 +16,8 @@
 
 [ "$(which mplayer)" ] || apt-get install -y mplayer
 
+[ "$1" ] || set -- sxga
+
 export XAUTHORITY=/.Xauthority
 
 echo "### starting mplayer ###"
