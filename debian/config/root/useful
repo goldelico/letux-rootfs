@@ -149,7 +149,7 @@ yes | apt-get install --no-install-recommends -y lxde
 USEFUL="gpsd"
 USEFUL+=" foxtrotgps"
 USEFUL+=" dbus-x11"
-USEFUL+=" synaptic"
+# USEFUL+=" synaptic"
 USEFUL+=" matchbox-keyboard matchbox-keyboard-im"
 
 if true
