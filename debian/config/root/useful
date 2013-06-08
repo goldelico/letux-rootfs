@@ -30,33 +30,35 @@ USEFUL+=" alsa-utils"   # alsamixer, aplay etc.
 USEFUL+=" fbset"       # to switch to TV-Out
 USEFUL+=" usbmount usbutils"
 USEFUL+=" evtest"       # allows to check touch screen, keyboard and button events
-USEFUL+=" joystick"
+# USEFUL+=" joystick"	# why did we install this in the past?
 USEFUL+=" openssh-server openssh-client"    # remote access thorugh ssh
 USEFUL+=" ppp"
 USEFUL+=" libertas-firmware wireless-tools" # driver for Marvell WLAN
-USEFUL+=" bluez-utils bluez-audio"          # driver for HCI Bluetooth
+USEFUL+=" bluez-utils bluez-audio"          # driver for HCI Bluetooth (big! installs python)
 USEFUL+=" rfkill"
 USEFUL+=" fbcat"
 USEFUL+=" dosfstools parted"	# to make bootable SD cards
 USEFUL+=" man-db"		# some tools install a manual anyways - so why not make them readable
 USEFUL+=" iptables isc-dhcp-server"	# for WWAN <-> USB <-> WLAN tethering
-USEFUL+=" libc6-dev linux-libc-dev make"		# so that we can cc some (simple) binaries from source
-USEFUL+=" media-ctl"		# for camera isp control
+USEFUL+=" libc6-dev linux-libc-dev gcc make"		# so that we can cc some (simple) binaries from source (big!)
+USEFUL+=" media-ctl"	# for omap3 camera isp control
 
 if true
-	# install all in once
-	then yes | apt-get install -y $USEFUL
-	# install one after the other to identify dependencies
-	else for U in $USEFUL
-			do yes | apt-get install -y $U
-		done
+# install all in once
+then
+	yes | apt-get install --no-install-recommends $USEFUL
+# install one after the other to identify dependencies
+else
+	for U in $USEFUL
+		do yes | apt-get install $U
+	done
 fi
 
 #
 # install X11 driver for omap3
 #
 
-yes | apt-get install -y xorg
+yes | apt-get install --no-install-recommends xorg
 
 case "$(cat /etc/debian_version)" in
 
@@ -76,7 +78,7 @@ case "$(cat /etc/debian_version)" in
 	;;
 7.* )	# Wheezy touch screen support
 
-	yes | apt-get install -y xserver-xorg-video-omap3 xserver-xorg-input-void
+	yes | apt-get install --no-install-recommends -y xserver-xorg-video-omap3 xserver-xorg-input-void
 
 	# there is no xserver-xorg-input-tslib in wheezy!
 	# yes | apt-get install -y libts-bin
@@ -137,14 +139,29 @@ esac
 # apt-get install -y matchbox
 # apt-get install -y quantumstep quantumstep-dm
 
-yes | apt-get install -y lxde
-yes | apt-get remove -y network-manager lightdm	# makes interferences if installed
+yes | apt-get install --no-install-recommends -y lxde
+# yes | apt-get remove -y network-manager lightdm	# makes interferences if installed
 
 #
 # applications, tools and games
 #
 
-yes | apt-get install -y gpsd dbus-x11 foxtrotgps synaptic matchbox-keyboard matchbox-keyboard-im
+USEFUL="gpsd"
+USEFUL+=" foxtrotgps"
+USEFUL+=" dbus-x11"
+USEFUL+=" synaptic"
+USEFUL+=" matchbox-keyboard matchbox-keyboard-im"
+
+if true
+# install all in once
+then
+	yes | apt-get install --no-install-recommends $USEFUL
+# install one after the other to identify dependencies
+else
+	for U in $USEFUL
+		do yes | apt-get install $U
+	done
+fi
 
 #
 # cleanup
@@ -152,6 +169,7 @@ yes | apt-get install -y gpsd dbus-x11 foxtrotgps synaptic matchbox-keyboard mat
 
 apt-get -y autoremove
 apt-get -y autoclean
+apt-get -y clean
 rm -f *.deb
 
 #
