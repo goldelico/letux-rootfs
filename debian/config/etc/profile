@@ -23,5 +23,9 @@ export PATH
 
 umask 022
 
+export XAUTHORITY=/.Xauthority
+export DISPLAY=:0.0
+
 [ -r /dev/input/touchscreen ] && export TSLIB_TSDEVICE=/dev/input/touchscreen || export TSLIB_TSDEVICE=/dev/input/event1
 export TSLIB_CONSOLEDEVICE=none
+
