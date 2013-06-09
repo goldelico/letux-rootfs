@@ -1,0 +1,17 @@
+#
+# start fm demo
+#
+# fm-demo freq-in-MHz
+#
+
+make si4721
+
+FREQ=$1; [ "$1" ] || FREQ=92.4
+
+#### NOT TESTED ####
+
+echo ./si4721 /dev/i2c-2 $(python -c "print '%.0f' % ($FREQ*100)")
+./si4721 /dev/i2c-2 $(python -c "print '%.0f' % ($FREQ*100)")
+
+# arecord -fS16_LE -r8000 | aplay -Dhw:1,0 &	# microphone -> transmitter
+arecord -Dhw:1,0 -fS16_LE -r8000 | aplay	# receiver -> earpiece, speaker, headset
