@@ -34,7 +34,8 @@ done
 echo Interface: $IF
 killall arecord
 
-# enable phone mixer
+# enable phone mixer (in software routing mode even on GTA04A4 boards)
+amixer set 'AVADC Clock Priority' 'HiFi high priority'
 amixer set 'DAC1 Analog' off
 amixer set 'DAC2 Analog' on
 #amixer set  'Codec Operation Mode' 'Option 1 (audio)'
