@@ -638,6 +638,9 @@ if $OK
 	nok
 fi
 
+# enable antenna power
+rfkill unblock gps
+
 testing "W2SG0004" "UART2 and GPS receiver"
 for i in 1 2 3 4 5
 	do

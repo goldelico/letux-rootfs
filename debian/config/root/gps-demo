@@ -47,6 +47,7 @@ gpsd $SERIAL
 ;;
 
 3.* )
+	rfkill unblock gps	# enable VSIM
 	echo "### $(cat /sys/devices/platform/extcon-gpio/extcon/gps_antenna/state) antenna ###"
 ;;
 esac
