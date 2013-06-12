@@ -20,6 +20,7 @@ apt-get install -y apt-utils
 
 USEFUL="ntp"	# update clock from network
 USEFUL+=" sudo"			# always nice to have...
+USEFUL+=" bzip2"		# needed for tar xjf 
 USEFUL+=" udev"			# important
 USEFUL+=" dnsutils"     # nslookup etc.
 USEFUL+=" dhcpcd"		# so that we can get an IP address from the access point
