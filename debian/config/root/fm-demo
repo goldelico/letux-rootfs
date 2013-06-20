@@ -4,16 +4,31 @@
 # fm-demo freq-in-MHz
 #
 
-trap "./si4721 /dev/i2c-2 0" INT TERM EXIT	# turn off after exit of this script
-
 make si4721
+
+# turn off after exit of this script
+trap "./si4721 -r 0 -dn; killall arecord" EXIT
+trap "exit 1" INT TERM QUIT HUP
 
 FREQ=$1; [ "$1" ] || FREQ=92.4
 
-#### NOT TESTED ####
-
-echo ./si4721 /dev/i2c-2 $(python -c "print '%.0f' % ($FREQ*100)")
-./si4721 /dev/i2c-2 $(python -c "print '%.0f' % ($FREQ*100)") 48000
-
-# arecord -fS16_LE -r8000 | aplay -Dhw:1,0 &	# microphone -> transmitter
-arecord -Dhw:1,0 -fS16_LE -r48000 | aplay	# receiver -> earpiece, speaker, headset
+# power on (and print chip ID)
+./si4721 -d -up
+# tune to specified frequency
+echo ./si4721 -t $(python -c "print '%.0f' % ($FREQ*100)")
+./si4721 -t $(python -c "print '%.0f' % ($FREQ*100)")
+sleep 1
+./si4721 -ts
+# start PCM (incl. clocks)
+arecord -Dhw:3,0 -c2 -fS16_LE -r48000 | aplay&	# receiver -> earpiece, speaker, headset
+# arecord -fS16_LE -c2 -r48000 | aplay -Dhw:3,0 &	# microphone -> transmitter
+# set sample rate (32 .. 48 kHz)
+./si4721 -r 48000
+# loop and print signal strength
+while true
+## FIXME: loop should abort when arecord aborts (PCM error)
+do
+	# print signal strength
+	./si4721 -s
+	sleep 1
+done
