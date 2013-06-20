@@ -7,8 +7,10 @@
 TESTER_VERSION="3.2"
 TESTER_DATE="16 May 2013"
 
-trap "killall hciattach arecord aplay; exit" SIGHUP SIGINT SIGTERM
-make femtocom >/dev/null
+trap "killall hciattach arecord aplay" EXIT
+trap "exit 1" SIGHUP SIGINT SIGTERM
+
+make femtocom si4721 >/dev/null
 
 # call e.g. as: testing "GTM601" "test if we can access"
 
@@ -483,7 +485,8 @@ testing "M24LR64" "RFID-EEPROM found"
 [ -r /sys/devices/platform/omap_i2c.2/i2c-2/2-0050/eeprom ] && ok || nok
 
 testing "Si47xx" "FM TRX"
-false && ok || nok
+VAL=$(echo $(./si4721 -d -up -dn))
+[ "$VAL" = "init resp: 80 get_chiprev resp: 80 1532300000323042 powered off" ] && ok "$VAL" || nok "$VAL"
 
 testing "TCA6507" "LED controller found"
 [ -d /sys/bus/i2c/drivers/leds-tca6507/2-0045/leds ] && ok || nok
