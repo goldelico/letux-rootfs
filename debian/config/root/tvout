@@ -1,3 +1,10 @@
+#
+# switch on/off TVout
+# must properly resize the framebuffer for othe display given by hardware
+#
+
+MUX=$(expr "$(cat /proc/cmdline)" : ".*mux=\([^ ]*\)")
+
 if [ "$1" == "1" ]
 then # LCD -> TVout
 
@@ -17,7 +24,14 @@ echo 0 > /sys/devices/platform/omapdss/overlay0/enabled
 echo 0,0 > /sys/devices/platform/omapdss/overlay0/position
 echo "" > /sys/devices/platform/omapdss/overlay0/manager
 echo 0 > /sys/devices/platform/omapdss/display1/enabled
-fbset -fb /dev/fb0 -xres 480 -yres 640 -vxres 480 -vyres 640
+case "$MUX" in
+	GTA04B3 )	# WVGA landscape
+		fbset -fb /dev/fb0 -xres 800 -yres 480 -vxres 800 -vyres 480
+		;;
+	* )	# VGA portrait
+		fbset -fb /dev/fb0 -xres 480 -yres 640 -vxres 480 -vyres 640
+		;;
+esac
 echo 1 > /sys/devices/platform/omapdss/display2/enabled
 echo "lcd" > /sys/devices/platform/omapdss/overlay0/manager
 echo 1 > /sys/devices/platform/omapdss/overlay0/enabled

@@ -1,4 +1,25 @@
 #!/bin/sh
 
+# adjust screen size and touch depending on device model
+
+MUX=$(expr "$(cat /proc/cmdline)" : ".*mux=\([^ ]*\)")
+case "$MUX" in
+	GTA04A2 | GTA04A3 | GTA04A3+ )	# Letux 2804
+		cp /etc/X11/xorg.conf.b0 /etc/X11/xorg.conf
+		;;
+	GTA04B2 )	# Letux 3704
+		(
+		cd /root
+		[ -x blanviewd ] || make blanviewd
+		./blanviewd &
+		)
+		cp /etc/X11/xorg.conf.b2 /etc/X11/xorg.conf
+		;;
+	GTA04B3 )	# Letux 7004
+		cp /etc/X11/xorg.conf.b3 /etc/X11/xorg.conf
+		;;
+esac
+
 # exec /usr/bin/X -nolisten tcp "$@"
+# allow to access X11 thorough TCP
 exec /usr/bin/X "$@"
