@@ -226,8 +226,8 @@ do
 				)
 			) || echo erasing/flashing ubifs to NAND failed
 			df
-			umount /mnt/nand
-			rm -rf /mnt/nand
+#			umount /mnt/nand
+#			rm -rf /mnt/nand
 			;;
 
 	esac
