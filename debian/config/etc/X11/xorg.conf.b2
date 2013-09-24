@@ -56,7 +56,7 @@ Section "InputDevice"
 
         Driver          "evdev"
         Option          "Device"        "/dev/input/touchscreen"
-		Option	"Calibration"	"199 3842 3877 156"
+        Option			"Calibration"	"167 3824 158 3889"
 #       Option			"SwapAxes"		"true"
 #       Option			"InvertY"		"true"
 EndSection
