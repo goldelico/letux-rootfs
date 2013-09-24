@@ -39,10 +39,10 @@ echo "AT+CGMM"; sleep 1
 echo "AT+CGSN"; sleep 1
 echo "AT+CIMI"; sleep 1
 echo "AT+CPIN?"; sleep 1
-echo "AT+CSQ?"; sleep 1
-echo "AT_ONCI?"; sleep 1
+echo "AT+CSQ"; sleep 1
 echo "AT_OWANCALL?"; sleep 1
 echo "AT_OWANDATA?"; sleep 1
 echo "AT_OWANNWERROR?"; sleep 1
+echo "AT_ONCI?"; sleep 1
 echo "AT_OSQI=1"; sleep 60
 ) | ./femtocom $IF
