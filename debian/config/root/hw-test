@@ -4,8 +4,9 @@
 # licenced under GPL
 #
 
-TESTER_VERSION="3.2"
-TESTER_DATE="16 May 2013"
+TESTER_VERSION="3.3"
+TESTER_RECOMMENDED_KERNEL="3.12"
+TESTER_DATE="24 Sep 2013"
 
 trap "killall hciattach arecord aplay" EXIT
 trap "exit 1" SIGHUP SIGINT SIGTERM
@@ -50,7 +51,7 @@ testing "Tests-Version"
 ok "$TESTER_VERSION"
 
 testing "Tests-Kernel"
-ok "$(uname -rv)"
+ok "$(uname -rv) - recommended: $TESTER_RECOMMENDED_KERNEL"
 
 testing "Tests-Rootfs"
 if fgrep -q 'root=/dev/mmcblk' /proc/cmdline
@@ -430,9 +431,6 @@ echo 31 >/sys/devices/platform/omap_i2c.2/i2c-2/2-0045/leds/gta04:red:aux/bright
 echo 255 >/sys/devices/platform/omap_i2c.2/i2c-2/2-0045/leds/gta04:green:aux/brightness ) 2>/dev/null &&
 ok || nok
 
-#[ -r /sys/bus/i2c/devices/2-0068/iio:device0/suspend ] && echo 0 >/sys/bus/i2c/devices/i2c-2/2-0068/suspend 2>/dev/null	# start sampling on gyroscope
-#[ -r /sys/bus/i2c/devices/2-001e/iio:device1/sampling_frequency ] && echo 50 >/sys/bus/i2c/devices/i2c-2/2-001e/rate 2>/dev/null	# start sampling on compass
-
 testing "BMP085" "Barometer values"
 PRESSURE=$(cat /sys/bus/i2c/devices/2-0077/pressure0_input 2>/dev/null)
 CENTIGRADE=$(cat /sys/bus/i2c/devices/2-0077/temp0_input 2>/dev/null)
@@ -442,15 +440,18 @@ CENTIGRADE=$(expr "${CENTIGRADE:=0}" / 10)
 
 modprobe itg3200
 testing "ITG3200" "Gyroscope values"
-dev=$(findiio itg3200)
-X=$(cat $dev/in_anglvel_x_raw 2>/dev/null)
-Y=$(cat $dev/in_anglvel_y_raw 2>/dev/null)
-Z=$(cat $dev/in_anglvel_z_raw 2>/dev/null)
-CENTIGRADE=$(cat $dev/unknown 2>/dev/null)
+GYRO=$(findiio itg3200)
+# FIXME: must read values through IIO or evtest
+echo 10 >$GYRO/sampling_frequency
+sleep 1
+X=$(cat $GYRO/in_anglvel_x_raw 2>/dev/null)
+Y=$(cat $GYRO/in_anglvel_y_raw 2>/dev/null)
+Z=$(cat $GYRO/in_anglvel_z_raw 2>/dev/null)
+CENTIGRADE=$(cat $GYRO/unknown 2>/dev/null)
 G=$(expr ${X:=0} '*' ${X} + ${Y:=0} '*' ${Y} + ${Z:=0} '*' ${Z})
 GMAX=$(expr 3 '*' 200 '*' 200)
 CENTIGRADE=$(expr "${CENTIGRADE:=0}" / 10)
-[ "$G" -le "$GMAX" -a "$CENTIGRADE" -ge 20 -a "$CENTIGRADE" -le 60 ] && ok "$X, $Y, $Z, ${CENTIGRADE} °C" || nok "$X, $Y, $Z, ${CENTIGRADE} °C"
+[ "$G" -le "$GMAX" -a "$CENTIGRADE" -ge 20 -a "$CENTIGRADE" -le 60 ] && ok "$X, $Y, $Z, ${CENTIGRADE} °C" || nok "$GYRO: $X, $Y, $Z, ${CENTIGRADE} °C"
 
 testing "BMA180" "Accelerometer values"
 # read X Y Z < <(sed "s/,/ /g" /sys/bus/i2c/devices/i2c-2/2-0041/coord 2>/dev/null)
@@ -462,11 +463,13 @@ GMAX=$(expr 300 '*' 300)
 
 modprobe hmc5843
 testing "HMC5883L" "Compass values"
-dev=$(findiio hmc5883l)
-X=$(cat $dev/in_magn_x_raw 2>/dev/null)
-Y=$(cat $dev/in_magn_y_raw 2>/dev/null)
-Z=$(cat $dev/in_magn_z_raw 2>/dev/null)
-[ "$X$Y$Z" ] && ok "$X, $Y, $Z" || nok "$X, $Y, $Z"
+COMPASS=$(findiio hmc5883l)
+echo 3 >$COMPASS/sampling_frequency
+sleep 1
+X=$(cat $COMPASS/in_magn_x_raw 2>/dev/null)
+Y=$(cat $COMPASS/in_magn_y_raw 2>/dev/null)
+Z=$(cat $COMPASS/in_magn_z_raw 2>/dev/null)
+[ "$X$Y$Z" ] && ok "$X, $Y, $Z" || nok "$COMPASS: $X, $Y, $Z"
 
 testing "TSC2007" "Touch screen values"
 read VAL < <(sed "s/,/ /g" /sys/bus/i2c/devices/i2c-2/2-0048/values 2>/dev/null)
@@ -495,8 +498,8 @@ testing "Batt-Volt" "main battery voltage"
 VOLT=$(cat /sys/devices/platform/twl4030_madc_hwmon/in12_input 2>/dev/null)
 [ "${VOLT:=-1}" -ge 3100 -a "$VOLT" -le 4300 ] && ok "${VOLT} mV" || nok "${VOLT} mV"
 
-testing "Batt-Status" "main battery status"
-STATUS=$(cat /sys/devices/platform/omap_i2c.1/i2c-1/1-004b/twl4030_bci/power_supply/twl4030_usb/status 2>/dev/null)
+testing "Batt-Status" "main battery USB charging status"
+STATUS=$(cat /sys/class/power_supply/twl4030_usb/status 2>/dev/null)
 [ "$STATUS" ] && ok "$STATUS" || nok "$STATUS"
 
 testing "Batt-Temp" "main battery temperature (may not be real value if there is no NTC)"
@@ -512,7 +515,7 @@ VOLT=$(cat /sys/devices/platform/twl4030_madc_hwmon/in9_input 2>/dev/null)
 [ "${VOLT:=-1}" -ge 200 -a "$VOLT" -le 3250 ] && ok "${VOLT} mV" || nok "${VOLT} mV"
 
 testing "Batt-Volt-HDQ" "main battery voltage (hdq)"
-VOLT=$(cat /sys/devices/w1_bus_master1/01-000000000000/bq27000-battery/power_supply/bq27000-battery/voltage_now 2>/dev/null)
+VOLT=$(cat /sys/class/power_supply/bq27000-battery/voltage_now 2>/dev/null)
 VOLT=$(expr "${VOLT:=0}" / 1000)
 [ "${VOLT:=-1}" -ge 3100 -a "$VOLT" -le 4300 ] && ok "${VOLT} mV" || nok "${VOLT} mV"
 
