@@ -1,8 +1,8 @@
 #
 # xorg.conf
-# for Linux 3.x / Wheezy on GTA04b3
+# for Linux 3.x / Wheezy on GTA04
 #
-# configures display, touch (with tslib) and power/aux buttons
+# configures display, touch and power/aux buttons
 #
 
 Section "Module"
@@ -23,9 +23,9 @@ EndSection
 
 Section "Monitor"
 		Identifier		"lcd"
-		VendorName      	"Sharp"
-		ModelName		"LQ070Y3DG3B"
-		DisplaySize 		152 92                   # In millimeters
+		VendorName		"Toppoly"
+		ModelName		"TD028TTEC1"
+		DisplaySize		43 57					# In millimeters
 EndSection
 
 Section "Monitor"
@@ -83,7 +83,7 @@ Section "InputDevice"
 		Option			"CorePointer"
 		Driver			"evdev"
 		Option			"Device"		"/dev/input/touchscreen"
-		Option 			"Calibration"   "126 3946 3731 192"
+		Option			"Calibration"	"254 3817 229 3807"
 EndSection
 
 Section "InputDevice"

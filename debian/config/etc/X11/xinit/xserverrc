@@ -4,10 +4,16 @@
 
 MUX=$(expr "$(cat /proc/cmdline)" : ".*mux=\([^ ]*\)")
 case "$MUX" in
-	GTA04A2 | GTA04A3 | GTA04A3+ )	# Letux 2804
-		cp /etc/X11/xorg.conf.b0 /etc/X11/xorg.conf
+	BeagleBoardB1 )	# OpenmokoBeagleHybrid (with TPO LCD conneced to J4&5)
+		cp /etc/X11/xorg.conf.b1 /etc/X11/xorg.conf
 		;;
-	BeagleBoardB2 | GTA04B2 | GTA04B6 )	# Letux 3704
+	GTA04A2 | GTA04A3 | GTA04A3+ )	# Letux 2804
+		cp /etc/X11/xorg.conf.b1 /etc/X11/xorg.conf
+		;;
+	BeagleBoardB2 )	# BeagleBoard with Ortustech display
+		cp /etc/X11/xorg.conf.b2 /etc/X11/xorg.conf
+		;;
+	GTA04B2 | GTA04B6 )	# Letux 3704
 		(
 		cd /root
 		[ -x blanviewd ] || make blanviewd
@@ -28,7 +34,8 @@ case "$MUX" in
 		cp /etc/X11/xorg.conf.b8 /etc/X11/xorg.conf
 		;;
 	* )
-		echo "unknown motherboard - don't know the display"
+		echo "unknown motherboard $MUX"
+		echo "we don't know how to configure X11 for the display"
 		;;
 esac
 
