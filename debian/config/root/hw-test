@@ -4,9 +4,9 @@
 # licenced under GPL
 #
 
-TESTER_VERSION="3.3"
+TESTER_VERSION="3.4"
 TESTER_RECOMMENDED_KERNEL="3.12"
-TESTER_DATE="24 Sep 2013"
+TESTER_DATE="01 Oct 2013"
 
 trap "killall hciattach arecord aplay" EXIT
 trap "exit 1" SIGHUP SIGINT SIGTERM
@@ -447,11 +447,11 @@ sleep 1
 X=$(cat $GYRO/in_anglvel_x_raw 2>/dev/null)
 Y=$(cat $GYRO/in_anglvel_y_raw 2>/dev/null)
 Z=$(cat $GYRO/in_anglvel_z_raw 2>/dev/null)
-CENTIGRADE=$(cat $GYRO/unknown 2>/dev/null)
+CENTIGRADE=$(echo | awk "{ printf \"%.0f\", ( $(cat $GYRO/in_temp_raw 2>/dev/null) + $(cat $GYRO/in_temp_offset 2>/dev/null) ) * $(cat $GYRO/in_temp_scale 2>/dev/null) * 10 }" 2>/dev/null)
 G=$(expr ${X:=0} '*' ${X} + ${Y:=0} '*' ${Y} + ${Z:=0} '*' ${Z})
 GMAX=$(expr 3 '*' 200 '*' 200)
 CENTIGRADE=$(expr "${CENTIGRADE:=0}" / 10)
-[ "$G" -le "$GMAX" -a "$CENTIGRADE" -ge 20 -a "$CENTIGRADE" -le 60 ] && ok "$X, $Y, $Z, ${CENTIGRADE} °C" || nok "$GYRO: $X, $Y, $Z, ${CENTIGRADE} °C"
+[ "$G" -le "$GMAX" -a "$G" -ge 0 -a "$CENTIGRADE" -ge 20 -a "$CENTIGRADE" -le 60 ] && ok "$X, $Y, $Z, ${CENTIGRADE} °C" || nok "$GYRO: $X, $Y, $Z, ${CENTIGRADE} °C"
 
 testing "BMA180" "Accelerometer values"
 # read X Y Z < <(sed "s/,/ /g" /sys/bus/i2c/devices/i2c-2/2-0041/coord 2>/dev/null)
