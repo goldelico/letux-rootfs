@@ -68,10 +68,10 @@ do
 		++CLIP: )
 			# decode phone number from ARGS
 			echo "ATA" >/tmp/femtocom
-			# arecord -fS16_LE -r8000 | aplay -Dhw:1,0 &	# microphone -> modem
-			cat /usr/share/sounds/alsa/Front_Center.wav | aplay -Dhw:1,0 &	# file -> modem
-			# arecord -Dhw:1,0 -fS16_LE -r8000 | aplay	# modem -> earpiece, speaker, headset
-			arecord -Dhw:1,0 -fS16_LE -r8000 >/tmp/tam.wav	# modem -> earpiece, speaker, headset
+			# arecord -fS16_LE -r8000 | aplay -Ddefault:CARD=gta04voice &	# microphone -> modem
+			cat /usr/share/sounds/alsa/Front_Center.wav | aplay -Ddefault:CARD=gta04voice &	# file -> modem
+			# arecord -Ddefault:CARD=gta04voice -fS16_LE -r8000 | aplay	# modem -> earpiece, speaker, headset
+			arecord -Ddefault:CARD=gta04voice -fS16_LE -r8000 >/tmp/tam.wav	# modem -> earpiece, speaker, headset
 			;;
 	esac
 done

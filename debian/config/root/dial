@@ -62,7 +62,7 @@ else
 	echo "AT_OPCMPROF=0"; sleep 1
 	echo "AT+COPS"; sleep 1
 	echo "ATD$1;"; sleep 1
-	arecord -fS16_LE -r8000 | aplay -Dhw:1,0 &	# microphone -> modem
-	arecord -Dhw:1,0 -fS16_LE -r8000 | aplay	# modem -> earpiece, speaker, headset
+	arecord -fS16_LE -r8000 | aplay -Ddefault:CARD=gta04voice &	# microphone -> modem
+	arecord -Ddefault:CARD=gta04voice -fS16_LE -r8000 | aplay	# modem -> earpiece, speaker, headset
 fi
 ) | ./femtocom $IF
