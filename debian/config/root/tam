@@ -33,12 +33,8 @@ done
 
 echo Interface: $IF
 
-### watch -d 'dmesg | tail -10'
-### check for modem reenumeration
-### watch -d 'dmesg | fgrep usb'
-
-# set up a named fifo so that a shell script can be
-# "bidirectionally piped" to the interface
+# make sure the PCM goes to the SoC
+amixer set 'Voice route' 'Voice to SoC'
 
 rm -rf /tmp/femtocom
 mkfifo /tmp/femtocom

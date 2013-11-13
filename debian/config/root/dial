@@ -1,10 +1,19 @@
 #
 # dial a phone number
 #
-# usage: dial number
+# usage: dial [ -hw | -sw ] number
 # to hang up: dial -
 
 make femtocom
+
+MODE="-sw"
+
+case "$1" in
+	-hw | -sw )
+		MODE="$1"
+		shift
+		;;
+esac
 
 for repeat in 1 2 3 4 5
 	do
@@ -40,6 +49,13 @@ amixer set 'DAC1 Analog' off
 amixer set 'DAC2 Analog' on
 #amixer set  'Codec Operation Mode' 'Option 1 (audio)'
 amixer set  'Codec Operation Mode' 'Option 2 (voice/audio)'
+if "MODE" = "-hw" ]
+	then
+		amixer set 'Voice route' 'Voice to twl4030'
+		## FIXME: we must likely enable some other mixer controls in the twl4030
+	else
+		amixer set 'Voice route' 'Voice to SoC'
+fi
 amixer set Earpiece 100%
 amixer set 'Earpiece Mixer AudioL2' on
 #amixer set 'Earpiece Mixer AudioR2' off # does not exist
@@ -62,7 +78,12 @@ else
 	echo "AT_OPCMPROF=0"; sleep 1
 	echo "AT+COPS"; sleep 1
 	echo "ATD$1;"; sleep 1
-	arecord -fS16_LE -r8000 | aplay -Ddefault:CARD=gta04voice &	# microphone -> modem
-	arecord -Ddefault:CARD=gta04voice -fS16_LE -r8000 | aplay	# modem -> earpiece, speaker, headset
+	if [ "$MODE" = "-sw" ]
+	then
+		arecord -fS16_LE -r8000 | aplay -Ddefault:CARD=gta04voice &	# microphone -> modem
+		arecord -Ddefault:CARD=gta04voice -fS16_LE -r8000 | aplay	# modem -> earpiece, speaker, headset
+	else
+		sleep 9999	# we can't easily detect end of call by a shell script
+	fi
 fi
 ) | ./femtocom $IF
