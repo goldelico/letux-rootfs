@@ -1,17 +1,22 @@
 #!/bin/sh
 
 # adjust screen size and touch depending on device model
+#
+# should in the future be based on the device tree file name because that uniquely defines a device
+# /proc/device-tree/model and /proc/device-tree/name
 
 MUX=$(expr "$(cat /proc/cmdline)" : ".*mux=\([^ ]*\)")
-case "$MUX" in
+[ "$MUX" ] || MUX=$(cat /proc/device-tree/model 2>/dev/null)
+
+case "$MUX$DT" in
 	BeagleBoardB1 )	# OpenmokoBeagleHybrid (with TPO LCD conneced to J4&5)
-		cp /etc/X11/xorg.conf.b1 /etc/X11/xorg.conf
+		cp /etc/X11/xorg.conf.gta04 /etc/X11/xorg.conf
 		;;
 	GTA04A2 | GTA04A3 | GTA04A3+ )	# Letux 2804
-		cp /etc/X11/xorg.conf.b1 /etc/X11/xorg.conf
+		cp /etc/X11/xorg.conf.gta04 /etc/X11/xorg.conf
 		;;
 	BeagleBoardB2 )	# BeagleBoard with Ortustech display
-		cp /etc/X11/xorg.conf.b2 /etc/X11/xorg.conf
+		cp /etc/X11/xorg.conf.gta04b2 /etc/X11/xorg.conf
 		;;
 	GTA04B2 | GTA04B6 )	# Letux 3704
 		(
@@ -19,19 +24,22 @@ case "$MUX" in
 		[ -x blanviewd ] || make blanviewd
 		./blanviewd &
 		)
-		cp /etc/X11/xorg.conf.b2 /etc/X11/xorg.conf
+		cp /etc/X11/xorg.conf.gta04b2 /etc/X11/xorg.conf
 		;;
 	BeagleBoardB3 | GTA04B3 )	# Letux 7004
-		cp /etc/X11/xorg.conf.b3 /etc/X11/xorg.conf
+		cp /etc/X11/xorg.conf.gta04b3 /etc/X11/xorg.conf
 		;;
 	BeagleBoardB4 | GTA04B4 )	# Letux 5004
-		cp /etc/X11/xorg.conf.b4 /etc/X11/xorg.conf
+		cp /etc/X11/xorg.conf.gta04b4 /etc/X11/xorg.conf
 		;;
 	GTA04B7 )	# Neo900
-		cp /etc/X11/xorg.conf.b7 /etc/X11/xorg.conf
+		cp /etc/X11/xorg.conf.gta04b7 /etc/X11/xorg.conf
 		;;
 	GTA04B8 )	# Letux 2204
-		cp /etc/X11/xorg.conf.b8 /etc/X11/xorg.conf
+		cp /etc/X11/xorg.conf.gta04b8 /etc/X11/xorg.conf
+		;;
+	"Pyra-Handheld" )
+		cp /etc/X11/xorg.conf.pyra /etc/X11/xorg.conf
 		;;
 	* )
 		echo "unknown motherboard $MUX"
