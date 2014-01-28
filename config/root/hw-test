@@ -1,14 +1,14 @@
 #
 # GTA04 hardware test script
-# (c) Golden Delicious Computers GmbH&Co. KG, 2012
+# (c) Golden Delicious Computers GmbH&Co. KG, 2013
 # licenced under GPL
 #
 
-TESTER_VERSION="3.7"
+TESTER_VERSION="3.8"
 TESTER_RECOMMENDED_KERNEL="3.12"
-TESTER_DATE="06 Nov 2013"
+TESTER_DATE="09 Jan 2014"
 
-trap "killall hciattach arecord aplay" EXIT
+trap "killall hciattach arecord aplay 2>/dev/null" EXIT
 trap "exit 1" SIGHUP SIGINT SIGTERM
 
 make femtocom si4721 >/dev/null
