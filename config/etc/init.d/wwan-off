@@ -1,0 +1,48 @@
+#
+# make sure to turn off UMTS modem on 'poweroff' or 'halt'
+#
+
+# FIXME:
+# GTA04b7 (Neo900) will have different GPIO and lsusb signature
+#
+# and all this GPIO handling should better be moved into the kernel
+# and it should simply be sufficient to call "rfkill block wwan"
+#
+
+do_stop () {
+for repeat in 1 2 3 4 5
+	do
+	if lsusb | fgrep '0af0:8800 Option' >/dev/null
+		then
+		if [ -w /sys/devices/virtual/gpio/gpio186/value ]
+			then # turn off modem in GTA04A4
+			echo 1 >/sys/devices/virtual/gpio/gpio186/value
+			sleep 1
+			echo 0 >/sys/devices/virtual/gpio/gpio186/value
+			sleep 5
+		fi
+		else
+		echo modem is off
+		break
+	fi
+	done
+}
+
+case "$1" in
+  start)
+	# No-op - we don't turn on the modem on boot...
+	;;
+  restart|reload|force-reload)
+	echo "Error: argument '$1' not supported" >&2
+	exit 3
+	;;
+  stop)
+	do_stop
+	;;
+  *)
+	echo "Usage: $0 start|stop" >&2
+	exit 3
+	;;
+esac
+
+:
