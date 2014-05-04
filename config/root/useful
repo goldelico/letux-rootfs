@@ -1,5 +1,5 @@
 #
-# Copyright Golden Delicious Computers GmbH&Co. KG, 2010-2013
+# Copyright Golden Delicious Computers GmbH&Co. KG, 2010-2014
 # licenced unter GPL 2.0
 #
 # this is part of OM Beagle Hybrid / GTA04
@@ -24,6 +24,7 @@ USEFUL+=" file"			# same
 USEFUL+=" bzip2"		# needed for tar xjf 
 USEFUL+=" udev"			# very important
 USEFUL+=" dnsutils"     # nslookup etc.
+USEFUL+=" cpufrequtils" # check/modify CPU frequency
 USEFUL+=" dhcpcd"		# so that we can get an IP address from the access point
 USEFUL+=" mtd-utils"    # read/write/erase NAND
 USEFUL+=" uboot-envtools"	# read write U-Boot environment e.g. to trigger boot to boot-menu or reflash
