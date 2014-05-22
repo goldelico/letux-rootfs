@@ -141,7 +141,7 @@ esac
 # apt-get install -y matchbox
 # apt-get install -y quantumstep quantumstep-dm
 
-yes | apt-get install --no-install-recommends -y lxde
+yes | apt-get install --no-install-recommends -y lxde lxlauncher lxtask lxmusic
 # yes | apt-get remove -y network-manager lightdm	# makes interferences if installed
 
 #
