@@ -1,0 +1,52 @@
+#
+# resize the root file system
+# to use maximum SD size
+#
+# this is useful if you installed an 1G sd-image
+# through dd and want to use the full SD card
+#
+
+echo "not tested!"
+# well, it is not working. Our kernel does not accept a new partition size by partprobe - we must reboot before doing the resize2fs!
+exit 1
+
+# get last partition
+LAST_PARTITION=""
+START=""
+read LAST_PARTITION START OTHER < <(sfdisk -l /dev/mmcblk0 2>/dev/null | fgrep /dev/mmcblk0p | fgrep -v Empty | sort -r | head -n 1)
+PNUM=$(echo "$LAST_PARTITION" | sed 's|/dev/mmcblk0p||g')
+
+if [ -z "$LAST_PARTITION" -o -z "$PNUM" ]
+then
+	echo "can't determine last partition ($LAST_PARTITION / $PNUM)"
+	exit 1
+fi
+
+if [ -z "$START" ]
+then
+	echo "can't determine first sector ($START)"
+	exit 1
+fi
+
+# read size
+CYLINDERS=""
+read A CYLINDERS B < <(sfdisk -g /dev/mmcblk0)
+if [ -z "$CYLINDERS" ]
+then
+	echo "can't determine disk size ($CYLINDERS)"
+	exit 1
+fi
+
+# calculate new size
+NEWSIZE=$(expr "$CYLINDERS" - "$START")
+
+echo $LAST_PARTITION $P $START $NEWSIZE
+
+# change partition table
+echo ",$NEWSIZE,," | sfdisk --no-reread --force /dev/mmcblk0 -N"$PNUM"
+
+# update kernel partition table
+partprobe
+
+# resize file system to new partiton size
+resize2fs "$LAST_PARTITION"
