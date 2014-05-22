@@ -915,9 +915,11 @@ VOLT=$(cat /sys/class/power_supply/bq27000-battery/voltage_now 2>/dev/null)
 VOLT=$(expr "${VOLT:=0}" / 1000)
 [ "${VOLT:=-1}" -ge 3100 -a "$VOLT" -le 4300 ] && ok "${VOLT} mV" || nok "${VOLT} mV"
 
+if false; then
 testing "Device-Tree" "Board variant stored in u-boot environment"
 read VAL < <(fw_printenv 'devicetree' 2>/dev/null | sed "s/board=//g" 2>/dev/null)
 [ "$VAL" ] && ok "$VAL" || nok "$VAL"
+fi
 
 testing "CPU-Memory" "Memory size (/proc/meminfo)"
 read VAL < <(fgrep MemTotal /proc/meminfo | sed "s/MemTotal.*:/ /g" 2>/dev/null)
@@ -943,6 +945,9 @@ VAL=$(strings /dev/mtd1ro | fgrep U-Boot | head -1 )
 testing "USB-IP" "IP access through Ethernet over USB"
 read VAL < <(host www.goldelico.com | fgrep 'goldelico.com has address ' | sed "s/[.a-zA-Z]*goldelico\.com has address //g" 2>/dev/null)
 [ "$VAL" = "83.151.26.121" ] && ok "$VAL" || nok "$VAL"
+
+testing "Vibra" "running rumble effect demo"
+vibra.py && ok || nok
 
 testing "Sound" "enabling sound"
 killall -9 arecord aplay 2>/dev/null # stop any running audio forwarding (or amixer commands will fail)
