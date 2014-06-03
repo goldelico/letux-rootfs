@@ -24,6 +24,7 @@ then
 		echo ';'	# one big Linux partition
 	} | sfdisk --force -D -uM $DEV
 	/sbin/partprobe $DEV
+	[ -b "${DEV}p1" ] && DEV=${DEV}p
 	mke2fs -j -L "rootfs" ${DEV}1
 else
 	echo "not a block device: $DEV"
