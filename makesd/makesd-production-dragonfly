@@ -82,7 +82,7 @@ fi
 ( cd /media/P1
 wget "$BOOT/MLO"	# must come first
 wget "$BOOT/x-load.flash"
-wget "$BOOT/u-boot.bin"
+wget "$BOOT/u-boot.bin" -O u-boot.img
 wget "$BOOT/u-boot.flash"
 wget "$BOOT/splash.rgb16z"
 wget "$BOOT/menu.rgb16z"
