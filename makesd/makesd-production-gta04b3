@@ -6,7 +6,7 @@
 [ "$KERNEL" ] || export KERNEL="$SERVER/.."
 [ "$CONFIG" ] || export CONFIG="$SERVER/.."
 [ "$ROOTFS" ] || export ROOTFS=http://download.goldelico.com/gta04/debian/latest-lxde.tbz
-[ "$DTBS" ] || export DTBS="omap3-beagle-xm+b3.dtb omap3-gta04+b3.dtb"
+[ "$DTBS" ] || export DTBS="omap3-beagle-xm+b3.dtb omap3-gta04a4+b3.dtb"
 
 #
 # my eeePC has this configuration:

@@ -12,7 +12,7 @@ else
 [ "$CONFIG" ] || export CONFIG="$SERVER/../../gta04/latest"
 fi
 [ "$ROOTFS" ] || export ROOTFS=http://download.goldelico.com/gta04/debian/latest-lxde.tbz
-[ "$DTBS" ] || export DTBS="omap5-uevm.dtb omap5-pyra.dtb"
+[ "$DTBS" ] || export DTBS="omap5-uevm.dtb omap5-pyra.dtb omap5-pyra+lg.dtb omap5-pyra+boe.dtb omap5-pyra+succ.dtb"
 
 #
 # my eeePC has this configuration:

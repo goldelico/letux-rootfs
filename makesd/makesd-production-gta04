@@ -7,14 +7,14 @@
 [ "$SERVER" ] || export SERVER=http://download.goldelico.com/gta04/unstable
 
 # IDEA: check specified version from $SERVER for patterns (gta04, gta04b2, gta04b7 etc.) and initialize accordingly
-# this would allow to use a single makesd script for everything by setting DEV=/dev/sdd SERVER=gta04b2 ./makesd before calling
+# this would allow to use a single makesd script for everything by setting e.g. DEV=/dev/sdd SERVER=gta04b2 ./makesd before calling
 # and/or evaluate $1 where we can pass a device name and maybe a version incl. -l -u to decide between latest and unstable?
 
 [ "$BOOT" ] || export BOOT="$SERVER"
 [ "$KERNEL" ] || export KERNEL="$SERVER"
 [ "$CONFIG" ] || export CONFIG="$SERVER"
 [ "$ROOTFS" ] || export ROOTFS=http://download.goldelico.com/gta04/debian/latest-lxde.tbz
-[ "$DTBS" ] || export DTBS="omap3-gta04a2.dtb omap3-gta04a3.dtb omap3-gta04.dtb omap3-gta04a5.dtb"
+[ "$DTBS" ] || export DTBS="omap3-gta04a2.dtb omap3-gta04a3.dtb omap3-gta04a4.dtb omap3-gta04a5.dtb"
 
 #
 # my eeePC has this configuration:
