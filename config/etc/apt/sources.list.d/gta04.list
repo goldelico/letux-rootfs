@@ -1,0 +1,7 @@
+# Debian non-free (for WiFi drivers)
+deb http://ftp.de.debian.org/debian wheezy non-free
+# mirrors
+deb http://ftp2.de.debian.org/debian wheezy non-free
+deb http://ftp.us.debian.org/debian wheezy non-free
+# GTA04 repository
+deb http://download.goldelico.com/gta04/debian stable main
