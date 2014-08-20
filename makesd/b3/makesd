@@ -1,4 +1,4 @@
-# make an SD suitable for the GTA04b2 (Letux 3704)
+# make an SD suitable for the GTA04b3 (Letux 7004)
 # run on host
 
 [ "$SERVER" ] || export SERVER=http://download.goldelico.com/gta04/unstable/b2
@@ -6,7 +6,7 @@
 [ "$KERNEL" ] || export KERNEL="$SERVER/.."
 [ "$CONFIG" ] || export CONFIG="$SERVER/.."
 [ "$ROOTFS" ] || export ROOTFS=http://download.goldelico.com/gta04/debian/latest-lxde.tbz
-[ "$DTBS" ] || export DTBS="omap3-beagle-xm+b2.dtb omap3-gta04a3+b2.dtb omap3-gta04a4+b2.dtb"
+[ "$DTBS" ] || export DTBS="omap3-beagle-xm+b3.dtb omap3-gta04+b3.dtb"
 
 #
 # my eeePC has this configuration:

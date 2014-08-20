@@ -1,12 +1,18 @@
-# make an SD suitable for the GTA04b3 (Letux 7004)
+# make an SD suitable for the BeagleBoneBlack
 # run on host
 
-[ "$SERVER" ] || export SERVER=http://download.goldelico.com/gta04/unstable/b2
+[ "$SERVER" ] || export SERVER=http://download.goldelico.com/gta04/unstable/beagleboneblack
 [ "$BOOT" ] || export BOOT="$SERVER"
-[ "$KERNEL" ] || export KERNEL="$SERVER/.."
-[ "$CONFIG" ] || export CONFIG="$SERVER/.."
+if [ $(basename $(dirname "$SERVER")) == "unstable" ]
+then # also use unstable kernel
+[ "$KERNEL" ] || export KERNEL="$SERVER/../../../gta04/unstable"
+[ "$CONFIG" ] || export CONFIG="$SERVER/../../../gta04/unstable"
+else
+[ "$KERNEL" ] || export KERNEL="$SERVER/../../../gta04/latest"
+[ "$CONFIG" ] || export CONFIG="$SERVER/../../../gta04/latest"
+fi
 [ "$ROOTFS" ] || export ROOTFS=http://download.goldelico.com/gta04/debian/latest-lxde.tbz
-[ "$DTBS" ] || export DTBS="omap3-beagle-xm+b3.dtb omap3-gta04a4+b3.dtb"
+[ "$DTBS" ] || export DTBS="am335x-boneblack.dtb"
 
 #
 # my eeePC has this configuration:
@@ -76,7 +82,7 @@ fi
 ( cd /media/P1
 wget "$BOOT/MLO"	# must come first
 wget "$BOOT/x-load.flash"
-wget "$BOOT/u-boot.bin"
+wget "$BOOT/u-boot.bin" -O u-boot.img
 wget "$BOOT/u-boot.flash"
 wget "$BOOT/splash.rgb16z"
 wget "$BOOT/menu.rgb16z"
