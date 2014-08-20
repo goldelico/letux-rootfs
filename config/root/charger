@@ -197,7 +197,7 @@ echo status: $(cat /sys/class/power_supply/bq27000-battery/status 2>/dev/null)
 echo level: $(cat /sys/class/power_supply/bq27000-battery/capacity_level 2>/dev/null)
 echo volt: $(cat /sys/class/power_supply/bq27000-battery/voltage_now 2>/dev/null)uV
 echo current: $(cat /sys/class/power_supply/bq27000-battery/current_now 2>/dev/null)uA
-echo temp: $(cat /sys/class/power_supply/bq27000-battery/temp 2>/dev/null)/10°C
+echo temp: $(perl -e "print $(cat /sys/class/power_supply/bq27000-battery/tempi 2>/dev/null)0 / 100")°C
 echo charge: $(cat /sys/class/power_supply/bq27000-battery/charge_now 2>/dev/null)uAh
 echo full: $(cat /sys/class/power_supply/bq27000-battery/charge_full 2>/dev/null)uAh
 echo design: $(cat /sys/class/power_supply/bq27000-battery/charge_full_design 2>/dev/null)uAh
