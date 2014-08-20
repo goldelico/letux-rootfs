@@ -1,7 +1,7 @@
-# make an SD suitable for the BeagleBoneBlack
+# make an SD suitable for the BeagleBoards
 # run on host
 
-[ "$SERVER" ] || export SERVER=http://download.goldelico.com/gta04/unstable/beagleboneblack
+[ "$SERVER" ] || export SERVER=http://download.goldelico.com/gta04/unstable/beagleboard+b4
 [ "$BOOT" ] || export BOOT="$SERVER"
 if [ $(basename $(dirname "$SERVER")) == "unstable" ]
 then # also use unstable kernel
@@ -12,7 +12,7 @@ else
 [ "$CONFIG" ] || export CONFIG="$SERVER/../../../gta04/latest"
 fi
 [ "$ROOTFS" ] || export ROOTFS=http://download.goldelico.com/gta04/debian/latest-lxde.tbz
-[ "$DTBS" ] || export DTBS="am335x-boneblack.dtb"
+[ "$DTBS" ] || export DTBS="omap3-beagle.dtb omap3-beagle+gta04.dtb omap3-beagle+gta04b4.dtb omap3-beagle-xm.dtb omap3-beagle-xm+gta04.dtb omap3-beagle-xm+gta04b1.dtb omap3-beagle-xm+gta04b7.dtb"
 
 #
 # my eeePC has this configuration:
@@ -82,7 +82,7 @@ fi
 ( cd /media/P1
 wget "$BOOT/MLO"	# must come first
 wget "$BOOT/x-load.flash"
-wget "$BOOT/u-boot.img" -O u-boot.img
+wget "$BOOT/u-boot.bin" -O u-boot.img
 wget "$BOOT/u-boot.flash"
 wget "$BOOT/splash.rgb16z"
 wget "$BOOT/menu.rgb16z"
