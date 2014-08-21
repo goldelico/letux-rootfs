@@ -1,7 +1,7 @@
-# make an SD suitable for the Pyra
+# make an SD suitable for the Pandaboard (ES)
 # run on host
 
-[ "$SERVER" ] || export SERVER=http://download.goldelico.com/gta04/unstable/pyra
+[ "$SERVER" ] || export SERVER=http://download.goldelico.com/gta04/unstable/panda-es
 [ "$BOOT" ] || export BOOT="$SERVER"
 if [ $(basename $(dirname "$SERVER")) == "unstable" ]
 then # also use unstable kernel
@@ -12,7 +12,7 @@ else
 [ "$CONFIG" ] || export CONFIG="$SERVER/../../../gta04/latest"
 fi
 [ "$ROOTFS" ] || export ROOTFS=http://download.goldelico.com/gta04/debian/latest-lxde.tbz
-[ "$DTBS" ] || export DTBS="omap4-panda-es.dtb"
+[ "$DTBS" ] || export DTBS="omap4-panda-es.dtb omap4-panda-es+gta04.dtb"
 
 #
 # my eeePC has this configuration:
@@ -81,11 +81,11 @@ fi
 # first partition (FAT)
 ( cd /media/P1
 wget "$BOOT/MLO"	# must come first
-wget "$BOOT/x-load.flash"
+#wget "$BOOT/x-load.flash"
 wget "$BOOT/u-boot.bin" -O u-boot.img
-wget "$BOOT/u-boot.flash"
-wget "$BOOT/splash.rgb16z"
-wget "$BOOT/menu.rgb16z"
+#wget "$BOOT/u-boot.flash"
+#wget "$BOOT/splash.rgb16z"
+#wget "$BOOT/menu.rgb16z"
 wget "$BOOT/boot.scr"
 wget "$KERNEL/uImage"
 wget "$KERNEL/bootargs.scr"

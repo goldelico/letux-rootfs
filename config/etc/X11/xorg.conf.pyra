@@ -25,6 +25,8 @@ Section "Monitor"
 		Identifier		"lcd"
 		VendorName      	"LG"
 		ModelName		"LH500WF1"
+# needs xrandr rotation
+#		Option			"Rotate"		left
 		DisplaySize 		111 62                  # In millimeters
 EndSection
 
@@ -53,14 +55,14 @@ Section "Device"
 		Identifier		"display1"
 #		Driver			"omapfb"
 		Driver			"fbdev"
-		Option			"fb"					"/dev/fb0"
+		Option			"fb"					"/dev/fb1"
 EndSection
 
 Section "Device"
 		Identifier		"display2"
 #		Driver			"omapfb"
 		Driver			"fbdev"
-		Option			"fb"					"/dev/fb0"
+		Option			"fb"					"/dev/fb2"
 EndSection
 
 Section "Screen"

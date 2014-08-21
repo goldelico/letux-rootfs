@@ -915,6 +915,7 @@ VOLT=$(cat /sys/class/power_supply/bq27000-battery/voltage_now 2>/dev/null)
 VOLT=$(expr "${VOLT:=0}" / 1000)
 [ "${VOLT:=-1}" -ge 3100 -a "$VOLT" -le 4300 ] && ok "${VOLT} mV" || nok "${VOLT} mV"
 
+# does not reflect which device tree we have booted since there is no saveenv
 if false; then
 testing "Device-Tree" "Board variant stored in u-boot environment"
 read VAL < <(fw_printenv 'devicetree' 2>/dev/null | sed "s/board=//g" 2>/dev/null)

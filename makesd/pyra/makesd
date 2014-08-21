@@ -5,11 +5,11 @@
 [ "$BOOT" ] || export BOOT="$SERVER"
 if [ $(basename $(dirname "$SERVER")) == "unstable" ]
 then # also use unstable kernel
-[ "$KERNEL" ] || export KERNEL="$SERVER/../../gta04/unstable"
-[ "$CONFIG" ] || export CONFIG="$SERVER/../../gta04/unstable"
+[ "$KERNEL" ] || export KERNEL="$SERVER/../../../gta04/unstable"
+[ "$CONFIG" ] || export CONFIG="$SERVER/../../../gta04/unstable"
 else
-[ "$KERNEL" ] || export KERNEL="$SERVER/../../gta04/latest"
-[ "$CONFIG" ] || export CONFIG="$SERVER/../../gta04/latest"
+[ "$KERNEL" ] || export KERNEL="$SERVER/../../../gta04/latest"
+[ "$CONFIG" ] || export CONFIG="$SERVER/../../../gta04/latest"
 fi
 [ "$ROOTFS" ] || export ROOTFS=http://download.goldelico.com/gta04/debian/latest-lxde.tbz
 [ "$DTBS" ] || export DTBS="omap5-uevm.dtb omap5-pyra.dtb omap5-pyra+lg.dtb omap5-pyra+boe.dtb omap5-pyra+succ.dtb"
@@ -81,11 +81,11 @@ fi
 # first partition (FAT)
 ( cd /media/P1
 wget "$BOOT/MLO"	# must come first
-wget "$BOOT/x-load.flash"
+#wget "$BOOT/x-load.flash"
 wget "$BOOT/u-boot.bin" -O u-boot.img
-wget "$BOOT/u-boot.flash"
-wget "$BOOT/splash.rgb16z"
-wget "$BOOT/menu.rgb16z"
+#wget "$BOOT/u-boot.flash"
+#wget "$BOOT/splash.rgb16z"
+#wget "$BOOT/menu.rgb16z"
 wget "$BOOT/boot.scr"
 wget "$KERNEL/uImage"
 wget "$KERNEL/bootargs.scr"
