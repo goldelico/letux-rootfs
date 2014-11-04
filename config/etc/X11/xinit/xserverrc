@@ -12,13 +12,13 @@ case "$MUX$DT" in
 	BeagleBoardB1 )	# OpenmokoBeagleHybrid (with TPO LCD conneced to J4&5)
 		cp /etc/X11/xorg.conf.gta04 /etc/X11/xorg.conf
 		;;
-	GTA04A2 | GTA04A3 | GTA04A3+ )	# Letux 2804
+	*GTA04A2* | *GTA04A3* | *GTA04A4* | *GTA04A5* | *GTA04A3+* | *Letux2804* )	# Letux 2804
 		cp /etc/X11/xorg.conf.gta04 /etc/X11/xorg.conf
 		;;
 	BeagleBoardB2 )	# BeagleBoard with Ortustech display
 		cp /etc/X11/xorg.conf.gta04b2 /etc/X11/xorg.conf
 		;;
-	GTA04B2 | GTA04B6 )	# Letux 3704
+	*GTA04B2* | *GTA04B6* | *Letux3704* )	# Letux 3704
 		(
 		cd /root
 		[ -x blanviewd ] || make blanviewd
@@ -26,20 +26,24 @@ case "$MUX$DT" in
 		)
 		cp /etc/X11/xorg.conf.gta04b2 /etc/X11/xorg.conf
 		;;
-	BeagleBoardB3 | GTA04B3 )	# Letux 7004
+	BeagleBoardB3 | *GTA04B3* | *Letux7004* )	# Letux 7004
 		cp /etc/X11/xorg.conf.gta04b3 /etc/X11/xorg.conf
 		;;
 	BeagleBoardB4 | GTA04B4 )	# Letux 5004
 		cp /etc/X11/xorg.conf.gta04b4 /etc/X11/xorg.conf
 		;;
-	GTA04B7 )	# Neo900
+	*GTA04B7* | *Neo900* )	# Neo900
 		cp /etc/X11/xorg.conf.gta04b7 /etc/X11/xorg.conf
 		;;
 	GTA04B8 )	# Letux 2204
 		cp /etc/X11/xorg.conf.gta04b8 /etc/X11/xorg.conf
 		;;
+	"Pandaboard GTA04" )
+#		cp /etc/X11/xorg.conf /etc/X11/xorg.conf
+		;;
 	"Pyra-Handheld" )
 		cp /etc/X11/xorg.conf.pyra /etc/X11/xorg.conf
+		/root/bl 1
 		;;
 	* )
 		echo "unknown motherboard $MUX"
