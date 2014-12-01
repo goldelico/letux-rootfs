@@ -19,6 +19,7 @@ apt-get install -y apt-utils
 #
 
 USEFUL="ntp"	# update clock from network
+USEFUL+=" locales"		# otherwise we get errors from perl
 USEFUL+=" sudo"			# always nice to have...
 USEFUL+=" file"			# same
 USEFUL+=" bzip2"		# needed for tar xjf 
@@ -35,7 +36,8 @@ USEFUL+=" usbmount usbutils eject"
 USEFUL+=" evtest"       # allows to check touch screen, keyboard and button events
 USEFUL+=" openssh-server openssh-client"    # remote access thorugh ssh
 USEFUL+=" ppp"
-USEFUL+=" libertas-firmware wireless-tools" # driver for Marvell WLAN
+USEFUL+=" libertas-firmware wireless-tools" # driver for Marvell WLAN (GTA04)
+USEFUL+=" apt-get install firmware-ti-connectivity"	# driver for TiWi WLAN (Pandaboard, Pyra)
 USEFUL+=" bluez-utils bluez-audio"          # driver for HCI Bluetooth (big! installs python)
 USEFUL+=" rfkill"
 USEFUL+=" fbcat"
