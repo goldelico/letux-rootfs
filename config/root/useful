@@ -14,12 +14,22 @@ apt-get install -y --force-yes debian-archive-keyring
 apt-get update		# get latest package list again
 apt-get install -y apt-utils
 
+# fix issue with locale
+
+if [ "$LANG" != "en_US.UTF-8" ]
+then
+	apt-get install locales
+	locale-gen en_US en_US.UTF-8
+	# this opens user dialog!
+	# and we should chose en_US en_US.UTF-8
+	dpkg-reconfigure locales
+fi
+
 #
 # install useful command line tools
 #
 
 USEFUL="ntp"	# update clock from network
-USEFUL+=" locales"		# otherwise we get errors from perl
 USEFUL+=" sudo"			# always nice to have...
 USEFUL+=" file"			# same
 USEFUL+=" bzip2"		# needed for tar xjf 
@@ -37,15 +47,25 @@ USEFUL+=" evtest"       # allows to check touch screen, keyboard and button even
 USEFUL+=" openssh-server openssh-client"    # remote access thorugh ssh
 USEFUL+=" ppp"
 USEFUL+=" libertas-firmware wireless-tools" # driver for Marvell WLAN (GTA04)
-USEFUL+=" apt-get install firmware-ti-connectivity"	# driver for TiWi WLAN (Pandaboard, Pyra)
+USEFUL+=" firmware-ti-connectivity"	# driver for TiWi WLAN (Pandaboard, Pyra)
 USEFUL+=" bluez-utils bluez-audio"          # driver for HCI Bluetooth (big! installs python)
 USEFUL+=" rfkill"
 USEFUL+=" fbcat"
 USEFUL+=" dosfstools parted"	# to make bootable SD cards
+USEFUL+=" autofs"		# automount USB drives (BB, GTA04 in OTG mode), memory cards (Pyra), external hard drives (OMAP5 eSATA)
 USEFUL+=" man-db"		# some tools install a manual anyways - so why not make them readable
 USEFUL+=" iptables isc-dhcp-server"	# for WWAN <-> USB <-> WLAN tethering
 USEFUL+=" libc6-dev linux-libc-dev gcc make"		# so that we can cc some (simple) binaries from source (big!)
 USEFUL+=" media-ctl"	# for omap3 camera isp control
+
+# package name changes between versions
+
+case "$(cat /etc/debian_version)" in
+	7.* )
+		;;
+	8.* )
+		;;
+esac
 
 if true
 # install all in once
@@ -80,6 +100,10 @@ case "$(cat /etc/debian_version)" in
 	esac
 
 	;;
+8.* )	# Jessie touch screen support
+	yes | apt-get install --no-install-recommends -y xserver-xorg-input-void
+	;;
+
 7.* )	# Wheezy touch screen support
 
 	yes | apt-get install --no-install-recommends -y xserver-xorg-video-omap3 xserver-xorg-input-void
