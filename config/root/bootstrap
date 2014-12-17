@@ -4,7 +4,7 @@
 #
 # usage:
 #
-# ./bootstrap [lenny|squeeze|wheezy] [armel|armhf]
+# ./bootstrap [lenny|squeeze|wheezy|jessie] [armel|armhf]
 #
 
 # not yet well tested!
@@ -21,19 +21,20 @@ esac
 
 # user override
 
-[ "$1" ] && VERSION=$1
+[ "$1" ] && VERSION="$1"
 
 case "$VERSION" in
 	lenny ) ARCH=armel;;
 	squeeze ) ARCH=armel;;
 	wheezy ) ARCH=armhf;;
+	jessie ) ARCH=armhf;;
 	sid ) ARCH=armhf;;
 	* ) echo "unknown $VERSION"; exit;;
 esac
 
 # user override
 
-[ "$2" ] && ARCH=$2
+[ "$2" ] && ARCH="$2"
 
 MY_CHROOT=/debian-$VERSION
 
@@ -57,14 +58,16 @@ tar xvzf ./root/config.tgz
 
 echo "fix /etc/apt/sources.list for $VERSION"
 
-sed -i s/lenny/squeeze/g etc/apt/sources.list
-sed -i s/wheezy/squeeze/g etc/apt/sources.list
-sed -i s/squeeze/$VERSION/g etc/apt/sources.list
+sed -i s/lenny/new-version/g etc/apt/sources.list
+sed -i s/wheezy/new-version/g etc/apt/sources.list
+sed -i s/jessie/new-version/g etc/apt/sources.list
+sed -i s/squeeze/new-version/g etc/apt/sources.list
+sed -i s/new-version/$VERSION/g etc/apt/sources.list
 
-gunzip <./root/config.tgz >./root/config.tar &&
-tar uvf ./root/config.tar ./etc/apt/sources.list &&
-gzip <./root/config.tar >./root/config.tgz &&
-rm ./root/config.tar
+#gunzip <./root/config.tgz >./root/config.tar &&
+#tar uvf ./root/config.tar ./etc/apt/sources.list &&
+#gzip <./root/config.tar >./root/config.tgz &&
+#rm ./root/config.tar
 
 chroot "$MY_CHROOT" /bin/bash <<'END'
 echo "running commands to finalize install in chroot"
