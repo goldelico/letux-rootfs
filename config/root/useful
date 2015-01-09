@@ -16,29 +16,19 @@ apt-get install -y apt-utils
 
 # fix issue with locale
 
-if [ "$LANG" != "en_US.UTF-8" ]
-then
-	apt-get install locales
-	locale-gen en_US en_US.UTF-8
-	# this opens user dialog!
-	# and we should chose en_US en_US.UTF-8
-	dpkg-reconfigure locales
-fi
-
 #
 # install useful command line tools
 #
 
 USEFUL="ntp"	# update clock from network
+USEFUL+=" locales"		# or we get tons of error messages
 USEFUL+=" sudo"			# always nice to have...
 USEFUL+=" file"			# same
 USEFUL+=" bzip2"		# needed for tar xjf 
 USEFUL+=" udev"			# very important
 USEFUL+=" dnsutils"     # nslookup etc.
 USEFUL+=" cpufrequtils" # check/modify CPU frequency
-USEFUL+=" dhcpcd"		# so that we can get an IP address from the access point
 USEFUL+=" mtd-utils"    # read/write/erase NAND
-USEFUL+=" uboot-envtools"	# read write U-Boot environment e.g. to trigger boot to boot-menu or reflash
 USEFUL+=" i2c-tools"    # read/write/scan I2C
 USEFUL+=" alsa-utils"   # alsamixer, aplay etc.
 USEFUL+=" fbset"       # to switch to TV-Out
@@ -48,13 +38,12 @@ USEFUL+=" openssh-server openssh-client"    # remote access thorugh ssh
 USEFUL+=" ppp"
 USEFUL+=" libertas-firmware wireless-tools" # driver for Marvell WLAN (GTA04)
 USEFUL+=" firmware-ti-connectivity"	# driver for TiWi WLAN (Pandaboard, Pyra)
-USEFUL+=" bluez-utils bluez-audio"          # driver for HCI Bluetooth (big! installs python)
 USEFUL+=" rfkill"
 USEFUL+=" fbcat"
 USEFUL+=" dosfstools parted"	# to make bootable SD cards
 USEFUL+=" autofs"		# automount USB drives (BB, GTA04 in OTG mode), memory cards (Pyra), external hard drives (OMAP5 eSATA)
 USEFUL+=" man-db"		# some tools install a manual anyways - so why not make them readable
-USEFUL+=" iptables isc-dhcp-server"	# for WWAN <-> USB <-> WLAN tethering
+USEFUL+=" iptables"		# for WWAN <-> USB <-> WLAN tethering
 USEFUL+=" libc6-dev linux-libc-dev gcc make"		# so that we can cc some (simple) binaries from source (big!)
 USEFUL+=" media-ctl"	# for omap3 camera isp control
 
@@ -62,27 +51,37 @@ USEFUL+=" media-ctl"	# for omap3 camera isp control
 
 case "$(cat /etc/debian_version)" in
 	7.* )
+		USEFUL+=" dhcpcd"		# so that we can get an IP address from the access point
+		USEFUL+=" uboot-envtools"	# read write U-Boot environment e.g. to trigger boot to boot-menu or reflash
+		USEFUL+=" bluez-utils bluez-audio"          # driver for HCI Bluetooth (big! installs python)
+		USEFUL+=" isc-dhcp-server"	# for WWAN <-> USB <-> WLAN tethering
 		;;
 	8.* )
+# breaks /etc/resolv.conf	USEFUL+=" dhcpcd5"		# so that we can get an IP address from the access point
+		USEFUL+=" u-boot-tools"	# read write U-Boot environment e.g. to trigger boot to boot-menu or reflash
+		USEFUL+=" bluez-tools bluez"          # driver for HCI Bluetooth
+		USEFUL+=" iw"          # iw (replacement for iwconfig)
 		;;
 esac
 
 if true
 # install all in once
 then
-	yes | apt-get install --no-install-recommends $USEFUL
+	yes | apt-get install -y --force-yes --no-install-recommends $USEFUL
 # install one after the other to identify dependencies
 else
 	for U in $USEFUL
-		do yes | apt-get install $U
+		do yes | apt-get -y --force-yes --no-install-recommends install $U
 	done
 fi
+
+locale-gen en_US en_US.UTF-8
 
 #
 # install X11 driver for omap3
 #
 
-yes | apt-get install --no-install-recommends xorg
+yes | apt-get install -y --force-yes --no-install-recommends xorg
 
 case "$(cat /etc/debian_version)" in
 
@@ -101,15 +100,15 @@ case "$(cat /etc/debian_version)" in
 
 	;;
 8.* )	# Jessie touch screen support
-	yes | apt-get install --no-install-recommends -y xserver-xorg-input-void
+	yes | apt-get install -y --force-yes --no-install-recommends -y xserver-xorg-input-void
 	;;
 
 7.* )	# Wheezy touch screen support
 
-	yes | apt-get install --no-install-recommends -y xserver-xorg-video-omap3 xserver-xorg-input-void
+	yes | apt-get install -y --force-yes --no-install-recommends -y xserver-xorg-video-omap3 xserver-xorg-input-void
 
 	# there is no xserver-xorg-input-tslib in wheezy!
-	# yes | apt-get install -y libts-bin
+	# yes | apt-get install  -y --force-yes-y libts-bin
 
 # makes X11 crash :(
 #	wget http://ftp.de.debian.org/debian/pool/main/x/xf86-input-tslib/xserver-xorg-input-tslib_0.0.6-7+b1_armhf.deb
@@ -148,7 +147,7 @@ case "$(cat /etc/debian_version)" in
 	rm -rf xf86-input-tslib_0.0.4* xf86-input-tslib-0.0.4
 	dpkg -i xserver-xorg-input-tslib_0.0.4-5_armel.deb
 
-	yes | apt-get install -y libts-bin
+	yes | apt-get install -y --force-yes libts-bin
 
 	;;
 * )
@@ -167,8 +166,8 @@ esac
 # apt-get install -y matchbox
 # apt-get install -y quantumstep quantumstep-dm
 
-yes | apt-get install --no-install-recommends -y lxde lxlauncher lxtask lxmusic
-# yes | apt-get remove -y network-manager lightdm	# makes interferences if installed
+yes | apt-get install -y --force-yes --no-install-recommends -y lxde lxlauncher lxtask lxmusic
+# yes | apt-get remove -y --force-yes network-manager lightdm	# makes interferences if installed
 
 #
 # applications, tools and games
