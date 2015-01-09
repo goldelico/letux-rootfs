@@ -79,6 +79,7 @@ apt-get install -y sudo			# always nice to have...
 apt-get install -y udev			# important
 apt-get install -y dnsutils     # nslookup etc.
 apt-get install -y openssh-server openssh-client    # remote access thorugh ssh
+apt-get install -y sysvinit-core systemd-sysv-		# stay with sysvinit on Jessie
 apt-get -y autoremove
 apt-get -y autoclean
 apt-get -y clean
@@ -94,3 +95,4 @@ END
 sync
 
 echo "bootstrapped rootfs $MY_CHROOT"
+echo "you should boot on a device and run ./useful to install useful packages like ntp, openssh, X11, etc."
