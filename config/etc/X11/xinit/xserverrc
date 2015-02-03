@@ -42,6 +42,9 @@ case "$MUX$DT" in
 		cp /etc/X11/xorg.conf.pyra /etc/X11/xorg.conf
 		/root/bl 1
 		;;
+	*Pandora* )
+		cp /etc/X11/xorg.conf.pandora /etc/X11/xorg.conf
+		;;
 	* )
 		echo "unknown motherboard $MUX"
 		echo "we don't know how to configure X11 for the display"
