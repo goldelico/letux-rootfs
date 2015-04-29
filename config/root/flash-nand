@@ -18,10 +18,6 @@ then
 	exit 1
 fi
 
-# clean up current rootfs
-apt-get clean
-depmod -a
-
 # check if requested components are available
 
 for cmd
@@ -75,6 +71,13 @@ do
 			;;
 		-j | -u )
 			FOUND=false
+
+			# clean up current rootfs before copying
+			apt-get clean
+			depmod -a
+			rm -rf /usr/lib/locale/*
+			locale-gen
+
 			if fgrep -q 'root=/dev/mtdblock4' /proc/cmdline
 			then
 				echo "can't overwrite active rootfs"
@@ -99,6 +102,7 @@ do
 				echo rootfs not found
 				exit 1
 			fi
+
 			;;
 		* ) echo unknown option "$cmd"
 			echo "-x x-loader"
@@ -223,17 +227,21 @@ do
 			(
 			cd /mnt/nand &&
 				(
+				UIMAGE="/boot/uImage"	# the uImage on the SD card
+				MODULES=/lib/modules/$(mkimage -l "$UIMAGE" | fgrep "Image Name:" | sed 's/Image Name: *//' | sed 's/Linux-//')
+
 				echo "copying files (takes a while)"
 				rm -rf *	# clear previous rootfs (if any) -- this leaves .* files!
-				tar --exclude .bash_history --exclude ./mnt --exclude './debian-*' --exclude ./media --exclude ./var/cache --exclude ./tmp --exclude ./proc --exclude ./sys --exclude lost+found -cf - -C / . | tar xpf - --checkpoint=100
-				echo "copied"
+				tar --exclude .bash_history --exclude ./mnt --exclude './debian-*' --exclude ./media --exclude ./var/cache --exclude ./var/log  --exclude ./var/spool --exclude ./tmp --exclude ./proc --exclude ./sys --exclude lost+found --exclude ./boot --exclude ./lib/modules -cf - -C / . | tar xpf - --checkpoint=100
+				echo "copied; now adding kernel modules"
+				tar -cf - -C / ./lib/modules/$MODULES | tar xpf - --checkpoint=100
 				echo "patching and syncing"
 				mkdir -p ./mnt/nand ./media ./tmp ./proc ./sys ./boot
 				mkdir -p ./var/cache/apt/archives ./var/cache/apt/archives/partial ./var/cache/debconf
 				cp /var/cache/debconf/config.dat ./var/cache/debconf/config.dat
 				sed s/^rootfs/#rootfs/ /etc/fstab >./etc/fstab	# comment out the rootfs entry because rootfs mounting fails
 				rm -f ./home/.bash_history ./root/.bash_history ./.bash_history
-				echo "MLO/X-Loader, U-Boot and Kernel are stored in NAND partitions" >./boot/booting_from_nand
+				echo "MLO/X-Loader, U-Boot and Kernel are stored in separate NAND partitions and not here" >./boot/booting_from_nand
 				# apply any important patches (which?)
 				# echo "creating new sshd key"
 				# e.g. clear sshd key
