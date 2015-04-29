@@ -1,5 +1,5 @@
 #
-# Copyright Golden Delicious Computers GmbH&Co. KG, 2010-2014
+# Copyright Golden Delicious Computers GmbH&Co. KG, 2010-2015
 # licenced unter GPL 2.0
 #
 # this is part of OM Beagle Hybrid / GTA04
@@ -100,12 +100,12 @@ case "$(cat /etc/debian_version)" in
 
 	;;
 8.* )	# Jessie touch screen support
-	yes | apt-get install -y --force-yes --no-install-recommends -y xserver-xorg-input-void
+	yes | apt-get install -y --force-yes --no-install-recommends xserver-xorg-input-void
 	;;
 
 7.* )	# Wheezy touch screen support
 
-	yes | apt-get install -y --force-yes --no-install-recommends -y xserver-xorg-video-omap3 xserver-xorg-input-void
+	yes | apt-get install -y --force-yes --no-install-recommends xserver-xorg-video-omap3 xserver-xorg-input-void
 
 	# there is no xserver-xorg-input-tslib in wheezy!
 	# yes | apt-get install  -y --force-yes-y libts-bin
