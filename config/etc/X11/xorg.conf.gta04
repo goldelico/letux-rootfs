@@ -51,25 +51,25 @@ EndSection
 Section "Device"
 		Identifier		"display1"
 		Driver			"omapfb"
-		Option			"fb"					"/dev/fb0"
+		Option			"fb"					"/dev/fb1"
 EndSection
 
 Section "Device"
 		Identifier		"display2"
 		Driver			"omapfb"
-		Option			"fb"					"/dev/fb0"
+		Option			"fb"					"/dev/fb2"
 EndSection
 
 Section "Screen"
 		Identifier		"Screen 0"
 		Device			"display0"
-		Monitor			"tv"
+		Monitor			"lcd"
 EndSection
 
 Section "Screen"
 		Identifier		"Screen 1"
 		Device			"display1"
-		Monitor			"lcd"
+		Monitor			"tv"
 EndSection
 
 Section "Screen"
