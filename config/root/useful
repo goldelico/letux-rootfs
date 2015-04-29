@@ -75,7 +75,7 @@ else
 	done
 fi
 
-locale-gen en_US en_US.UTF-8
+/usr/sbin/locale-gen en_US en_US.UTF-8
 
 #
 # install X11 driver for omap3
@@ -164,9 +164,9 @@ esac
 # apt-get install -y gdm
 # apt-get install -y xfce4
 # apt-get install -y matchbox
-# apt-get install -y quantumstep quantumstep-dm
+# apt-get install -y quantumstep quantumstep-displaymanager
 
-yes | apt-get install -y --force-yes --no-install-recommends -y lxde lxlauncher lxtask lxmusic
+# yes | apt-get install -y --force-yes --no-install-recommends -y lxde lxlauncher lxtask lxmusic
 # yes | apt-get remove -y --force-yes network-manager lightdm	# makes interferences if installed
 
 #
