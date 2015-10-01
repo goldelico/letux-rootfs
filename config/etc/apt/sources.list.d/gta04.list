@@ -1,5 +1,7 @@
 # Debian non-free and backports (mainly for WiFi drivers)
 deb http://ftp2.de.debian.org/debian wheezy non-free
+deb http://ftp2.de.debian.org/debian jessie non-free
 deb http://http.debian.net/debian wheezy-backports main non-free
+deb http://http.debian.net/debian jessie-backports main non-free
 # GTA04 repository
 deb http://download.goldelico.com/gta04/debian stable main
