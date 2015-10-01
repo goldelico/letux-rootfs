@@ -85,7 +85,7 @@ yes | apt-get install -y --force-yes --no-install-recommends xorg
 
 case "$(cat /etc/debian_version)" in
 
-6.* )	# Squeeze touch screen support
+6.* )	# Squeeze x-server and touch screen support
 
 	yes | apt-get install -y xserver-xorg-video-omap3 xserver-xorg-input-tslib xserver-xorg-input-void libts-bin
 
@@ -99,11 +99,11 @@ case "$(cat /etc/debian_version)" in
 	esac
 
 	;;
-8.* )	# Jessie touch screen support
-	yes | apt-get install -y --force-yes --no-install-recommends xserver-xorg-input-void
+8.* )	# Jessie x-server and touch screen support
+	yes | apt-get install -y --force-yes --no-install-recommends xserver-xorg-video-omap xserver-xorg-input-void xserver-xorg-video-fbdev- lightdm-
 	;;
 
-7.* )	# Wheezy touch screen support
+7.* )	# Wheezy x-server and touch screen support
 
 	yes | apt-get install -y --force-yes --no-install-recommends xserver-xorg-video-omap3 xserver-xorg-input-void
 

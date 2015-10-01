@@ -4,7 +4,7 @@
 #
 
 # do sanity tests
-# * that the rootfs is not coming from nand
+# * that the rootfs is not already coming from nand
 # * that boot.scr does not overwrite U-Boot
 
 # DEFAULT="-x -b -k -j" ### we can't write X-Loader yet
@@ -18,7 +18,29 @@ then
 	exit 1
 fi
 
-# check if requested components are available
+UIMAGE="/boot/uImage"	# the uImage on the SD card
+
+# copy only modules for the current kernel
+MODULES=$(mkimage -l "$UIMAGE" | fgrep "Image Name:" | sed 's/Image Name: *//' | sed 's/Linux-//')
+
+# copy only the modules we need to boot on this device
+case "$(cat /proc/device-tree/model)" in
+	*GTA04* ) # take all that are currently loaded
+		LOADEDMODULES=$(lsmod | while read MODULE SIZE REFCNT USEDBY
+                        do
+                        [ "$MODULE" != "Module" ] && modprobe -v -D $MODULE | sed 's|insmod |.|g'
+                        done | sort -u)
+		THEMODULES="-C / $(echo "$LOADEDMODULES")"
+		;;
+	* ) # no restriction - copy full set
+		THEMODULES="-C / ./lib/modules/$MODULES "
+		;;
+esac
+
+# OS files
+TAR_SRC="--exclude ./flash-test --exclude .bash_history --exclude ./mnt --exclude './debian-*' --exclude ./media --exclude ./var/cache --exclude ./var/log  --exclude ./var/spool --exclude ./tmp --exclude ./proc --exclude ./sys --exclude lost+found --exclude ./boot --exclude ./lib/modules -cf - -C / ."
+
+# check if requested components are available and fit into given space
 
 for cmd
 do
@@ -70,39 +92,42 @@ do
 			exit 1
 			;;
 		-j | -u )
-			FOUND=false
-
-			# clean up current rootfs before copying
-			apt-get clean
-			depmod -a
-			rm -rf /usr/lib/locale/*
-			locale-gen
-
 			if fgrep -q 'root=/dev/mtdblock4' /proc/cmdline
 			then
 				echo "can't overwrite active rootfs"
 				exit 1
 			fi
-			while read FILESYSTEM BLOCKS USED AVAILABLE USEPERCENT MOUNTED
-			do
-				case $FILESYSTEM in
-					rootfs | /dev/root )
-						FOUND=true
-						# fixme: we don't copy /var/cache so this estimate is wrong
-						if [ $USED -gt 1000000 ]
-						then
-							echo "root file system is definitively too big (${USED}k) for 512 MB NAND flash"
-						##	exit 1
-						fi
-				esac
-			done < <(df /)
 
-			if ! $FOUND
-			then
-				echo rootfs not found
+			echo "cleaning up current rootfs before copying"
+			apt-get clean
+			apt-get autoclean
+			apt-get autoremove
+			depmod -a
+			rm -rf /usr/lib/locale/*
+			# FIXME: keep only UTF8
+			locale-gen
+
+			read USED PERIOD < <(du -s -m / 2>/dev/null )
+			echo "root file system ion SD card is ${USED} MB"
+
+			echo "doing a test copy to estimate total file size (takes some time and needs a lot of space on the SD card!)"
+
+			echo tar $TAR_SRC
+			rm -rf /flash-test
+			tar $TAR_SRC | (mkdir -p /flash-test && cd /flash-test && tar xpf - --checkpoint=100)
+			echo tar -cf - $THEMODULES
+			tar -cf - $THEMODULES | (mkdir -p /flash-test && cd /flash-test && tar xpf - --checkpoint=100)
+
+			read USED PERIOD < <(du -s -m /flash-test 2>/dev/null)
+			echo "root file system wants to copy ${USED} MB to NAND flash"
+			if [ $USED -lt 1 -o $USED -gt 480 ]
+				then
+				echo "this is definitively too big for the NAND flash"
+				echo "check /flash-test what would be copied"
 				exit 1
 			fi
-
+			rm -rf /flash-test
+exit
 			;;
 		* ) echo unknown option "$cmd"
 			echo "-x x-loader"
@@ -187,7 +212,7 @@ do
 				echo "copying files (takes a while)"
 				rm -rf *	# clear previous rootfs (if any) -- this leaves .* files!
 				# copy to jffs2
-				tar --exclude .bash_history --exclude ./mnt --exclude ./media --exclude ./var/cache --exclude ./tmp --exclude ./proc --exclude ./sys --exclude lost+found -cf - -C / . | tar xpf - --checkpoint=100
+				tar $TAR_SRC | tar xpf - --checkpoint=100
 				echo "copied"
 				echo "patching and syncing"
 				mkdir -p ./mnt ./media ./tmp ./proc ./sys
@@ -227,14 +252,12 @@ do
 			(
 			cd /mnt/nand &&
 				(
-				UIMAGE="/boot/uImage"	# the uImage on the SD card
-				MODULES=/lib/modules/$(mkimage -l "$UIMAGE" | fgrep "Image Name:" | sed 's/Image Name: *//' | sed 's/Linux-//')
 
 				echo "copying files (takes a while)"
 				rm -rf *	# clear previous rootfs (if any) -- this leaves .* files!
-				tar --exclude .bash_history --exclude ./mnt --exclude './debian-*' --exclude ./media --exclude ./var/cache --exclude ./var/log  --exclude ./var/spool --exclude ./tmp --exclude ./proc --exclude ./sys --exclude lost+found --exclude ./boot --exclude ./lib/modules -cf - -C / . | tar xpf - --checkpoint=100
+				tar $TAR_SRC | tar xpf - --checkpoint=100
 				echo "copied; now adding kernel modules"
-				tar -cf - -C / ./lib/modules/$MODULES | tar xpf - --checkpoint=100
+				tar -cf - -C / ./lib/modules/$MODULES $THEMODULES | tar xpf - --checkpoint=100
 				echo "patching and syncing"
 				mkdir -p ./mnt/nand ./media ./tmp ./proc ./sys ./boot
 				mkdir -p ./var/cache/apt/archives ./var/cache/apt/archives/partial ./var/cache/debconf
