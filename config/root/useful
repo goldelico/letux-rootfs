@@ -17,7 +17,7 @@ apt-get install -y apt-utils
 # fix issue with locale
 
 #
-# install useful command line tools
+# install useful command line tools (some may be already there by debootstrap)
 #
 
 USEFUL="ntp"	# update clock from network
@@ -46,6 +46,8 @@ USEFUL+=" man-db"		# some tools install a manual anyways - so why not make them 
 USEFUL+=" iptables"		# for WWAN <-> USB <-> WLAN tethering
 USEFUL+=" libc6-dev linux-libc-dev gcc make"		# so that we can cc some (simple) binaries from source (big!)
 USEFUL+=" media-ctl"	# for omap3 camera isp control
+USEFUL+=" devmem2"	# for poking around in SoC registers
+USEFUL+=" isc-dhcp-client"
 
 # package name changes between versions
 
