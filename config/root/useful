@@ -27,7 +27,6 @@ USEFUL+=" file"			# same
 USEFUL+=" bzip2"		# needed for tar xjf 
 USEFUL+=" udev"			# very important
 USEFUL+=" dnsutils"     # nslookup etc.
-USEFUL+=" cpufrequtils" # check/modify CPU frequency
 USEFUL+=" mtd-utils"    # read/write/erase NAND
 USEFUL+=" i2c-tools"    # read/write/scan I2C
 USEFUL+=" alsa-utils"   # alsamixer, aplay etc.
