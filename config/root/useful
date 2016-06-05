@@ -35,7 +35,6 @@ USEFUL+=" fbset"       # to switch to TV-Out
 USEFUL+=" usbmount usbutils eject"
 USEFUL+=" evtest"       # allows to check touch screen, keyboard and button events
 USEFUL+=" openssh-server openssh-client"    # remote access thorugh ssh
-USEFUL+=" ppp"
 USEFUL+=" libertas-firmware wireless-tools" # driver for Marvell WLAN (GTA04)
 USEFUL+=" firmware-ti-connectivity"	# driver for TiWi WLAN (Pandaboard, Pyra)
 USEFUL+=" rfkill"
