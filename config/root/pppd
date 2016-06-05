@@ -1,6 +1,0 @@
-#
-# start pppd demo
-#
-
-echo "### starting pppd ###"
-exec /usr/sbin/pppd -detach
