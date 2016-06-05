@@ -44,7 +44,7 @@ USEFUL+=" autofs"		# automount USB drives (BB, GTA04 in OTG mode), memory cards 
 USEFUL+=" man-db"		# some tools install a manual anyways - so why not make them readable
 USEFUL+=" iptables"		# for WWAN <-> USB <-> WLAN tethering
 USEFUL+=" libc6-dev linux-libc-dev gcc make"		# so that we can cc some (simple) binaries from source (big!)
-USEFUL+=" media-ctl"	# for omap3 camera isp control
+USEFUL+=" v4l-utils"	# for omap3 camera isp control
 USEFUL+=" devmem2"	# for poking around in SoC registers
 USEFUL+=" isc-dhcp-client"
 
