@@ -13,7 +13,6 @@ iface eth0 inet dhcp
 # higher priority (i.e. lower metric) than usb0 - if eth0 is available
 auto eth1
 iface eth1 inet static
-	pre-up depmod
 	address 192.168.2.202
 	netmask 255.255.255.0
 	metric 0
@@ -24,7 +23,6 @@ iface eth1 inet static
 # lower priority (i.e. higher metric) than eth0
 auto usb0
 iface usb0 inet static
-	pre-up depmod
 	pre-up modprobe g_ether
 	address 192.168.0.202
 	netmask 255.255.255.0
