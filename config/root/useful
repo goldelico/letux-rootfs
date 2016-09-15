@@ -1,5 +1,5 @@
 #
-# Copyright Golden Delicious Computers GmbH&Co. KG, 2010-2015
+# Copyright Golden Delicious Computers GmbH&Co. KG, 2010-2016
 # licenced unter GPL 2.0
 #
 # this is part of OM Beagle Hybrid / GTA04
@@ -36,6 +36,7 @@ USEFUL+=" evtest"       # allows to check touch screen, keyboard and button even
 USEFUL+=" openssh-server openssh-client"    # remote access thorugh ssh
 USEFUL+=" libertas-firmware wireless-tools" # driver for Marvell WLAN (GTA04)
 USEFUL+=" firmware-ti-connectivity"	# driver for TiWi WLAN (Pandaboard, Pyra)
+USEFUL+=" wpasupplicant"       # if we want to setup a protected network
 USEFUL+=" rfkill"
 USEFUL+=" fbcat"
 USEFUL+=" dosfstools parted"	# to make bootable SD cards
@@ -100,7 +101,7 @@ case "$(cat /etc/debian_version)" in
 
 	;;
 8.* )	# Jessie x-server and touch screen support
-	yes | apt-get install -y --force-yes --no-install-recommends xserver-xorg-video-omap xserver-xorg-input-void xserver-xorg-video-fbdev- lightdm-
+	yes | apt-get install -y --force-yes --no-install-recommends xserver-xorg-video-omap xserver-xorg-input-void xserver-xorg-video-fbdev- lightdm- xinput-calibrator
 	;;
 
 7.* )	# Wheezy x-server and touch screen support
@@ -204,8 +205,5 @@ rm -f *.deb
 #
 
 (cd / && tar xvzf /root/config.tgz)
-
-# (re) calibrate touch screen
-# ts_calibrate
 
 echo useful packages installed and configured.
