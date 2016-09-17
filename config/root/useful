@@ -44,7 +44,6 @@ USEFUL+=" autofs"		# automount USB drives (BB, GTA04 in OTG mode), memory cards 
 USEFUL+=" man-db"		# some tools install a manual anyways - so why not make them readable
 USEFUL+=" iptables"		# for WWAN <-> USB <-> WLAN tethering
 USEFUL+=" libc6-dev linux-libc-dev gcc make"		# so that we can cc some (simple) binaries from source (big!)
-USEFUL+=" v4l-utils"	# for omap3 camera isp control
 USEFUL+=" devmem2"	# for poking around in SoC registers
 USEFUL+=" isc-dhcp-client"
 
@@ -56,12 +55,14 @@ case "$(cat /etc/debian_version)" in
 		USEFUL+=" uboot-envtools"	# read write U-Boot environment e.g. to trigger boot to boot-menu or reflash
 		USEFUL+=" bluez-utils bluez-audio"          # driver for HCI Bluetooth (big! installs python)
 		USEFUL+=" isc-dhcp-server"	# for WWAN <-> USB <-> WLAN tethering
+		USEFUL+=" mediactl"	# for omap3 camera isp control
 		;;
-	8.* )
+	8.* | 9.* )
 # breaks /etc/resolv.conf	USEFUL+=" dhcpcd5"		# so that we can get an IP address from the access point
 		USEFUL+=" u-boot-tools"	# read write U-Boot environment e.g. to trigger boot to boot-menu or reflash
 		USEFUL+=" bluez-tools bluez"          # driver for HCI Bluetooth
 		USEFUL+=" iw"          # iw (replacement for iwconfig)
+		USEFUL+=" v4l-utils"	# for omap3 camera isp control
 		;;
 esac
 
@@ -85,39 +86,6 @@ fi
 yes | apt-get install -y --force-yes --no-install-recommends xorg
 
 case "$(cat /etc/debian_version)" in
-
-6.* )	# Squeeze x-server and touch screen support
-
-	yes | apt-get install -y xserver-xorg-video-omap3 xserver-xorg-input-tslib xserver-xorg-input-void libts-bin
-
-	# Kernels newer than 2.6.37 use a different EV_VERSION
-
-	case "$(uname -r)" in
-	2.6.37 | 2.6.38 | 2.6.39 | 3.* )
-		wget http://download.goldelico.com/gta04/debian/dists/stable/main/binary-armel/libts-0.0-0_1.0-8lindi1_armel.deb
-		dpkg -i libts-0.0-0_1.0-8lindi1_armel.deb
-		;;
-	esac
-
-	;;
-8.* )	# Jessie x-server and touch screen support
-	yes | apt-get install -y --force-yes --no-install-recommends xserver-xorg-video-omap xserver-xorg-input-void xserver-xorg-video-fbdev- lightdm- xinput-calibrator
-	;;
-
-7.* )	# Wheezy x-server and touch screen support
-
-	yes | apt-get install -y --force-yes --no-install-recommends xserver-xorg-video-omap3 xserver-xorg-input-void
-
-	# there is no xserver-xorg-input-tslib in wheezy!
-	# yes | apt-get install  -y --force-yes-y libts-bin
-
-# makes X11 crash :(
-#	wget http://ftp.de.debian.org/debian/pool/main/x/xf86-input-tslib/xserver-xorg-input-tslib_0.0.6-7+b1_armhf.deb
-#	dpkg -i xserver-xorg-input-tslib_0.0.6-7+b1_armhf.deb
-
-	wget http://launchpadlibrarian.net/86564073/xinput-calibrator_0.7.5-0ubuntu1_armhf.deb
-	dpkg -i xinput-calibrator_0.7.5-0ubuntu1_armhf.deb && rm xinput-calibrator_0.7.5-0ubuntu1_armhf.deb
-	;;
 
 5.* )	# Lenny needs a backport
 	#
@@ -151,6 +119,39 @@ case "$(cat /etc/debian_version)" in
 	yes | apt-get install -y --force-yes libts-bin
 
 	;;
+6.* )	# Squeeze x-server and touch screen support
+
+	yes | apt-get install -y xserver-xorg-video-omap3 xserver-xorg-input-tslib xserver-xorg-input-void libts-bin
+
+	# Kernels newer than 2.6.37 use a different EV_VERSION
+
+	case "$(uname -r)" in
+	2.6.37 | 2.6.38 | 2.6.39 | 3.* )
+		wget http://download.goldelico.com/gta04/debian/dists/stable/main/binary-armel/libts-0.0-0_1.0-8lindi1_armel.deb
+		dpkg -i libts-0.0-0_1.0-8lindi1_armel.deb
+		;;
+	esac
+
+	;;
+7.* )	# Wheezy x-server and touch screen support
+
+	yes | apt-get install -y --force-yes --no-install-recommends xserver-xorg-video-omap3 xserver-xorg-input-void
+
+	# there is no xserver-xorg-input-tslib in wheezy!
+	# yes | apt-get install  -y --force-yes-y libts-bin
+
+# makes X11 crash :(
+#	wget http://ftp.de.debian.org/debian/pool/main/x/xf86-input-tslib/xserver-xorg-input-tslib_0.0.6-7+b1_armhf.deb
+#	dpkg -i xserver-xorg-input-tslib_0.0.6-7+b1_armhf.deb
+
+	wget http://launchpadlibrarian.net/86564073/xinput-calibrator_0.7.5-0ubuntu1_armhf.deb
+	dpkg -i xinput-calibrator_0.7.5-0ubuntu1_armhf.deb && rm xinput-calibrator_0.7.5-0ubuntu1_armhf.deb
+	;;
+
+8.* )	# Jessie x-server and touch screen support
+	yes | apt-get install -y --force-yes --no-install-recommends xserver-xorg-video-omap xserver-xorg-input-void xserver-xorg-video-fbdev- lightdm- xinput-calibrator
+	;;
+
 * )
 	echo "unknown Debian Version: $(cat /etc/debian_version)"
 	;;
