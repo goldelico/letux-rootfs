@@ -10,25 +10,23 @@ iface eth0 inet dhcp
 	dns-nameserver 208.67.222.222
 
 # use OpenDNS
-# higher priority (i.e. lower metric) than usb0 - if eth0 is available
 auto eth1
 iface eth1 inet static
 	address 192.168.2.202
 	netmask 255.255.255.0
 	network 192.168.2.0
-	metric 0
-	gateway 192.168.2.1
+	post-up route add default gw 192.168.2.1 metric 0	# higher priority than usb0 - if eth0 is available
+	pre-down route del default gw 192.168.2.1
 	dns-nameserver 208.67.222.222
 
 # use OpenDNS
-# lower priority (i.e. higher metric) than eth0
 auto usb0
 iface usb0 inet static
 	pre-up modprobe g_ether
 	address 192.168.0.202
 	netmask 255.255.255.0
 	network 192.168.0.0
-	metric 1
-	gatewway 192.168.0.200
+	post-up route add default gw 192.168.0.200 metric 1	# lower priority than eth0
+	pre-down route del default gw 192.168.0.200
 	post-down rmmod g_ether
 	dns-nameserver 208.67.222.222
