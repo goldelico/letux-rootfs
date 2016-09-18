@@ -3,13 +3,11 @@ iface lo inet loopback
 
 # eth0 is connected through internal USB
 # on BeagleBoard XM, BeagleBone, Panda and OMAP5432EVM
-# use OpenDNS
 auto eth0
 iface eth0 inet dhcp
 	pre-up depmod
-	dns-nameserver 208.67.222.222
+	up echo nameserver 208.67.222.222 >/etc/resolv.conf
 
-# use OpenDNS
 auto eth1
 iface eth1 inet static
 	address 192.168.2.202
@@ -17,9 +15,9 @@ iface eth1 inet static
 	network 192.168.2.0
 	post-up route add default gw 192.168.2.1 metric 0	# higher priority than usb0 - if eth0 is available
 	pre-down route del default gw 192.168.2.1
-	dns-nameserver 208.67.222.222
+	# set up OpenDNS by default
+	up echo nameserver 208.67.222.222 >/etc/resolv.conf
 
-# use OpenDNS
 auto usb0
 iface usb0 inet static
 	pre-up modprobe g_ether
@@ -29,4 +27,6 @@ iface usb0 inet static
 	post-up route add default gw 192.168.0.200 metric 1	# lower priority than eth0
 	pre-down route del default gw 192.168.0.200
 	post-down rmmod g_ether
-	dns-nameserver 208.67.222.222
+	# set up OpenDNS by default
+	up echo nameserver 208.67.222.222 >/etc/resolv.conf
+
