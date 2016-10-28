@@ -37,6 +37,7 @@ USEFUL+=" evtest"       # allows to check touch screen, keyboard and button even
 USEFUL+=" openssh-server openssh-client"    # remote access thorugh ssh
 USEFUL+=" libertas-firmware wireless-tools" # driver for Marvell WLAN (GTA04)
 USEFUL+=" firmware-ti-connectivity"	# driver for TiWi WLAN (Pandaboard, Pyra)
+USEFUL+=" firmware-realtek"	# driver for Realtek WiFi adaptors
 USEFUL+=" wpasupplicant"       # if we want to setup a protected network
 USEFUL+=" rfkill"
 USEFUL+=" fbcat"
