@@ -1,4 +1,8 @@
 rootfs  /                auto    defaults,errors=remount-ro,noatime 0 1
 /dev/mmcblk0p1	/boot    vfat    defaults                           0 0
 /dev/mmcblk1p1	/boot    vfat    defaults                           0 0
+/dev/mmcblk0p1	/mnt/mmc0.1    auto    defaults                           0 0
+/dev/mmcblk0p2	/mnt/mmc0.2    auto    defaults                           0 0
+/dev/mmcblk1p1	/mnt/mmc1.1    auto    defaults                           0 0
+/dev/mmcblk1p2	/mnt/mmc1.2    auto    defaults                           0 0
 ubi0:gta04-rootfs /mnt/nand ubifs defaults,noatime,rw               0 0
