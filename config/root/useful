@@ -11,42 +11,41 @@
 apt-get update	# get latest package list
 yes | dpkg --configure -a	# try to cleanup if previous attempt failed
 apt-get install -y --force-yes debian-archive-keyring
-apt-get update		# get latest package list again
+apt-get update			# get latest package list again
 apt-get install -y apt-utils
-
-# fix issue with locale
 
 #
 # install useful command line tools (some may be already there by debootstrap)
 #
 
-USEFUL="ntp"	# update clock from network
+USEFUL+="ntp"			# update clock from network
 USEFUL+=" locales"		# or we get tons of error messages
 USEFUL+=" sudo"			# always nice to have...
 USEFUL+=" file"			# same
 USEFUL+=" bzip2"		# needed for tar xjf 
 USEFUL+=" udev"			# very important
-USEFUL+=" dnsutils"     # nslookup etc.
-USEFUL+=" cpufrequtils" # check/modify CPU frequency
-USEFUL+=" mtd-utils"    # read/write/erase NAND
-USEFUL+=" i2c-tools"    # read/write/scan I2C
-USEFUL+=" alsa-utils"   # alsamixer, aplay etc.
-USEFUL+=" fbset"       # to switch to TV-Out
+USEFUL+=" dnsutils"		# nslookup etc.
+USEFUL+=" cpufrequtils"	# check/modify CPU frequency
+USEFUL+=" mtd-utils"		# read/write/erase NAND
+USEFUL+=" i2c-tools"		# read/write/scan I2C
+USEFUL+=" alsa-utils"		# alsamixer, aplay etc.
+USEFUL+=" fbset"		# to switch to TV-Out
+USEFUL+=" fbcat"
 USEFUL+=" usbmount usbutils eject"
-USEFUL+=" evtest"       # allows to check touch screen, keyboard and button events
-USEFUL+=" openssh-server openssh-client"    # remote access thorugh ssh
-USEFUL+=" libertas-firmware wireless-tools" # driver for Marvell WLAN (GTA04)
+USEFUL+=" evtest"		# allows to check touch screen, keyboard and button events
+USEFUL+=" openssh-server openssh-client"	# remote access thorugh ssh
+USEFUL+=" libertas-firmware wireless-tools"	# driver for Marvell WLAN (GTA04)
 USEFUL+=" firmware-ti-connectivity"	# driver for TiWi WLAN (Pandaboard, Pyra)
 USEFUL+=" firmware-realtek"	# driver for Realtek WiFi adaptors
-USEFUL+=" wpasupplicant"       # if we want to setup a protected network
-USEFUL+=" rfkill"
-USEFUL+=" fbcat"
+USEFUL+=" wpasupplicant"	# if we want to setup a protected network
+USEFUL+=" rfkill"		# for controlling WWAN and GPS
 USEFUL+=" dosfstools parted"	# to make bootable SD cards
-USEFUL+=" autofs"		# automount USB drives (BB, GTA04 in OTG mode), memory cards (Pyra), external hard drives (OMAP5 eSATA)
+# USEFUL+=" autofs"		# automount USB drives (BB, GTA04 in OTG mode), memory cards (Pyra), external hard drives (OMAP5 SATA)
 USEFUL+=" man-db"		# some tools install a manual anyways - so why not make them readable
 USEFUL+=" iptables"		# for WWAN <-> USB <-> WLAN tethering
 USEFUL+=" libc6-dev linux-libc-dev gcc make"		# so that we can cc some (simple) binaries from source (big!)
-USEFUL+=" devmem2"	# for poking around in SoC registers
+USEFUL+=" devmem2"		# for poking around in SoC registers
+USEFUL+=" memtester"		# RAM test
 USEFUL+=" isc-dhcp-client"
 
 # package name changes between versions
@@ -57,14 +56,15 @@ case "$(cat /etc/debian_version)" in
 		USEFUL+=" uboot-envtools"	# read write U-Boot environment e.g. to trigger boot to boot-menu or reflash
 		USEFUL+=" bluez-utils bluez-audio"          # driver for HCI Bluetooth (big! installs python)
 		USEFUL+=" isc-dhcp-server"	# for WWAN <-> USB <-> WLAN tethering
-		USEFUL+=" mediactl"	# for omap3 camera isp control
+		USEFUL+=" mediactl"		# for omap3 camera isp control
 		;;
 	8.* | 9.* )
-# breaks /etc/resolv.conf	USEFUL+=" dhcpcd5"		# so that we can get an IP address from the access point
+# breaks /etc/resolv.conf
+# 		USEFUL+=" dhcpcd5"		# so that we can get an IP address from the access point
 		USEFUL+=" u-boot-tools"	# read write U-Boot environment e.g. to trigger boot to boot-menu or reflash
-		USEFUL+=" bluez-tools bluez"          # driver for HCI Bluetooth
-		USEFUL+=" iw"          # iw (replacement for iwconfig)
-		USEFUL+=" v4l-utils"	# for omap3 camera isp control
+		USEFUL+=" bluez-tools bluez"	# driver for HCI Bluetooth
+		USEFUL+=" iw"			# iw (replacement for iwconfig)
+		USEFUL+=" v4l-utils"		# for omap3 camera isp control
 		;;
 esac
 
@@ -150,12 +150,12 @@ case "$(cat /etc/debian_version)" in
 	dpkg -i xinput-calibrator_0.7.5-0ubuntu1_armhf.deb && rm xinput-calibrator_0.7.5-0ubuntu1_armhf.deb
 	;;
 
-8.* )	# Jessie x-server and touch screen support
+8.* | 9.* )	# Jessie x-server and touch screen support
 	yes | apt-get install -y --force-yes --no-install-recommends xserver-xorg-video-omap xserver-xorg-input-void xserver-xorg-video-fbdev- lightdm- xinput-calibrator
 	;;
 
 * )
-	echo "unknown Debian Version: $(cat /etc/debian_version)"
+	echo "unknown Debian Version for X11: $(cat /etc/debian_version)"
 	;;
 esac
 
