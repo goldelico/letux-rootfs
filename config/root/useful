@@ -151,7 +151,7 @@ case "$(cat /etc/debian_version)" in
 	;;
 
 8.* | 9.* )	# Jessie x-server and touch screen support
-	yes | apt-get install -y --force-yes --no-install-recommends xserver-xorg-video-omap xserver-xorg-input-void xserver-xorg-video-fbdev- lightdm- xinput-calibrator
+	yes | apt-get install -y --force-yes --no-install-recommends xserver-xorg-input-void xserver-xorg-video-omap xserver-xorg-video-fbdev lightdm- xinput-calibrator
 	;;
 
 * )
