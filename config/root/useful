@@ -1,5 +1,5 @@
 #
-# Copyright Golden Delicious Computers GmbH&Co. KG, 2010-2016
+# Copyright Golden Delicious Computers GmbH&Co. KG, 2010-2017
 # licenced unter GPL 2.0
 #
 # this is part of OM Beagle Hybrid / GTA04
@@ -17,6 +17,9 @@ apt-get install -y apt-utils
 #
 # install useful command line tools (some may be already there by debootstrap)
 #
+
+# setup /etc/locale.gen and /etc/local.nopurge
+# yes | DEBIAN_FRONTEND=noninteractive apt-get install -y localepurge locales
 
 USEFUL+="ntp"			# update clock from network
 USEFUL+=" locales"		# or we get tons of error messages
@@ -79,7 +82,8 @@ else
 	done
 fi
 
-/usr/sbin/locale-gen en_US en_US.UTF-8
+locale-gen
+# localepurge
 
 #
 # install X11 driver for omap3

@@ -28,7 +28,7 @@ case "$(cat /proc/device-tree/model)" in
 	*GTA04* ) # take all that are currently loaded
 		LOADEDMODULES=$(lsmod | while read MODULE SIZE REFCNT USEDBY
                         do
-                        [ "$MODULE" != "Module" ] && modprobe -v -D $MODULE | sed 's|insmod |.|g'
+                        [ "$MODULE" != "Module" ] && modprobe -v -D $MODULE | awk '{ print "."$2 }'
                         done | sort -u)
 		THEMODULES="-C / $(echo "$LOADEDMODULES")"
 		;;
@@ -37,14 +37,17 @@ case "$(cat /proc/device-tree/model)" in
 		;;
 esac
 
-# OS files
-TAR_SRC="--exclude ./flash-test --exclude .bash_history --exclude ./mnt --exclude './debian-*' --exclude ./media --exclude ./var/cache --exclude ./var/log  --exclude ./var/spool --exclude ./tmp --exclude ./proc --exclude ./sys --exclude lost+found --exclude ./boot --exclude ./lib/modules -cf - -C / ."
+# OS files for rootfs (without locales)
+TAR_SRC="--exclude ./flash-test --exclude .bash_history --exclude ./mnt --exclude './debian-*' --exclude ./media --exclude ./var/cache --exclude ./var/log  --exclude ./var/spool --exclude ./tmp --exclude ./proc --exclude ./sys --exclude lost+found --exclude ./boot --exclude ./lib/modules --exclude './usr/share/man/??' --exclude './usr/share/man/??_*' -cf - -C / ."
 
 # check if requested components are available and fit into given space
 
 for cmd
 do
 	case "$cmd" in
+		-f ) # force flashing by skipping sanity checks
+			break
+			;;
 		-x )
 			echo "flashing X-Loader from Linux not available (HW-ECC kernel support needed)"
 			exit 1
@@ -98,43 +101,70 @@ do
 				exit 1
 			fi
 
+			NANDSIZE=480
+			read MAJOR MINOR BLOCKS NAME < <(fgrep mtdblock4 /proc/partitions)
+			NANDSIZE=$(expr "$BLOCKS" / 1100)	# sets aside some reserve
+
 			echo "cleaning up current rootfs before copying"
 			apt-get clean
 			apt-get autoclean
 			apt-get autoremove
 			depmod -a
-			rm -rf /usr/lib/locale/*
-			# FIXME: keep only UTF8
+
+			(
+			echo en_US.UTF-8 UTF-8
+			echo de_DE.UTF-8 UTF-8
+			) >/etc/locale.gen
+			(
+			echo MANDELETE
+			echo DONTBOTHERNEWLOCALE
+			echo SHOWFREEDSPACE
+			echo en_US.UTF-8 UTF-8
+			echo de_DE.UTF-8 UTF-8
+			) >/etc/locale.nopurge
+
+			yes | DEBIAN_FRONTEND=noninteractive apt-get install -y localepurge locales
 			locale-gen
+			localepurge
+
+			strip --strip-debug $LOADEDMODULES
 
 			read USED PERIOD < <(du -s -m / 2>/dev/null )
-			echo "root file system ion SD card is ${USED} MB"
+
+			echo "Available flash space is ${NANDSIZE} MB"
+			echo "Root file system on SD card is ${USED} MB"
 
 			echo "doing a test copy to estimate total file size (takes some time and needs a lot of space on the SD card!)"
 
 			echo tar $TAR_SRC
+
 			rm -rf /flash-test
 			tar $TAR_SRC | (mkdir -p /flash-test && cd /flash-test && tar xpf - --checkpoint=100)
+
 			echo tar -cf - $THEMODULES
 			tar -cf - $THEMODULES | (mkdir -p /flash-test && cd /flash-test && tar xpf - --checkpoint=100)
 
-			read USED PERIOD < <(du -s -m /flash-test 2>/dev/null)
-			echo "root file system wants to copy ${USED} MB to NAND flash"
-			if [ $USED -lt 1 -o $USED -gt 480 ]
+			read FUSED PERIOD < <(du -s -m /flash-test 2>/dev/null)
+			echo "Reduced root file system wants to copy ${FUSED} MB to NAND flash"
+
+			if [ $USED -lt 1 -o $FUSED -gt $NANDSIZE ]
 				then
-				echo "this is definitively too big for the NAND flash"
+				echo "this is definitively too big for the NAND flash ($NANDSIZE MB)"
 				echo "check /flash-test what would be copied"
+				echo "20 biggest packages (du /flash-test | sort -n):"
+				du /flash-test | sort -n | tail -20
 				exit 1
 			fi
 			rm -rf /flash-test
 exit
 			;;
 		* ) echo unknown option "$cmd"
-			echo "-x x-loader"
-			echo "-b u-boot and boot scripts"
+			echo "-x x-loader [better done by boot-system]"
+			echo "-b u-boot and boot scripts [better done by boot-system]"
 			echo "-k kernel"
-			echo "-j rootfs in jffs2 format"
-			echo "-u rootfs in UBIFS format (experimental)"
+			echo "-j rootfs in jffs2 format [no longer available]"
+			echo "-u rootfs in UBIFS format"
+			echo "-f force [skips sanity checks; use with care]"
 			echo "default: $DEFAULT"
 			exit 1
 			;;
@@ -146,11 +176,14 @@ done
 for cmd
 do
 	case "$cmd" in
+		-f )
+			;;
+
 		-x ) echo flashing X-loader
 
 			# FIXME: this must be written with HW_ECC enabled!
 
-			flash_eraseall /dev/mtd0 &&
+			flash_erase /dev/mtd0 0 0 &&
 			# write 4 copies at different locations? use -s option
 			nandwrite -p /dev/mtd0 -s 0x00000 /boot/x-load.flash &&
 			nandwrite -p /dev/mtd0 -s 0x20000 /boot/x-load.flash &&
@@ -160,7 +193,7 @@ do
 
 		-b ) echo flashing U-Boot and boot scripts
 
-			flash_eraseall /dev/mtd1 &&
+			flash_erase /dev/mtd1 0 0 &&
 			nandwrite -p /dev/mtd1 -s 0x000000 /boot/u-boot.bin || exit 1
 
 			echo copying boot scripts to end of U-Boot partition
@@ -190,7 +223,7 @@ do
 				echo repacking into "$UIMAGE"
 				mkimage -A arm -O linux -T kernel -C none -a "$LOADADDRESS" -e "$ENTRYPOINT" -n "$VERSION" -d "$ZIMAGE" "$UIMAGE" || exit 1
 			fi
-			flash_eraseall /dev/mtd3 &&
+			flash_erase /dev/mtd3 0 0 &&
 			nandwrite -p /dev/mtd3 "$UIMAGE" || exit 1
 			### someone must ensure that the modules are matching the kernel
 			;;
@@ -252,7 +285,7 @@ do
 			(
 			cd /mnt/nand &&
 				(
-
+# FIXME: should we do exactly the same as the initial test copy?
 				echo "copying files (takes a while)"
 				rm -rf *	# clear previous rootfs (if any) -- this leaves .* files!
 				tar $TAR_SRC | tar xpf - --checkpoint=100
