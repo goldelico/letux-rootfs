@@ -30,6 +30,7 @@ case "$(cat /proc/device-tree/model)" in
                         do
                         [ "$MODULE" != "Module" ] && modprobe -v -D $MODULE | awk '{ print "."$2 }'
                         done | sort -u)
+		(cd / && strip --strip-debug $LOADEDMODULES)
 		THEMODULES="-C / $(echo "$LOADEDMODULES")"
 		;;
 	* ) # no restriction - copy full set
@@ -126,8 +127,6 @@ do
 			yes | DEBIAN_FRONTEND=noninteractive apt-get install -y localepurge locales
 			locale-gen
 			localepurge
-
-			strip --strip-debug $LOADEDMODULES
 
 			read USED PERIOD < <(du -s -m / 2>/dev/null )
 
