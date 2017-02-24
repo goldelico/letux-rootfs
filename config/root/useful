@@ -21,7 +21,7 @@ apt-get install -y apt-utils
 # setup /etc/locale.gen and /etc/local.nopurge
 # yes | DEBIAN_FRONTEND=noninteractive apt-get install -y localepurge locales
 
-USEFUL+="ntp"			# update clock from network
+USEFUL+=" ntp"			# update clock from network
 USEFUL+=" locales"		# or we get tons of error messages
 USEFUL+=" sudo"			# always nice to have...
 USEFUL+=" file"			# same
@@ -30,6 +30,7 @@ USEFUL+=" udev"			# very important
 USEFUL+=" dnsutils"		# nslookup etc.
 USEFUL+=" cpufrequtils"	# check/modify CPU frequency
 USEFUL+=" mtd-utils"		# read/write/erase NAND
+USEFUL+=" sysfsutils"		# systool
 USEFUL+=" i2c-tools"		# read/write/scan I2C
 USEFUL+=" alsa-utils"		# alsamixer, aplay etc.
 USEFUL+=" fbset"		# to switch to TV-Out
@@ -41,7 +42,7 @@ USEFUL+=" libertas-firmware wireless-tools"	# driver for Marvell WLAN (GTA04)
 USEFUL+=" firmware-ti-connectivity"	# driver for TiWi WLAN (Pandaboard, Pyra)
 USEFUL+=" firmware-realtek"	# driver for Realtek WiFi adaptors
 USEFUL+=" wpasupplicant"	# if we want to setup a protected network
-USEFUL+=" rfkill"		# for controlling WWAN and GPS
+USEFUL+=" rfkill"		# for controlling WWAN and GPS power
 USEFUL+=" dosfstools parted"	# to make bootable SD cards
 # USEFUL+=" autofs"		# automount USB drives (BB, GTA04 in OTG mode), memory cards (Pyra), external hard drives (OMAP5 SATA)
 USEFUL+=" man-db"		# some tools install a manual anyways - so why not make them readable
@@ -51,7 +52,7 @@ USEFUL+=" devmem2"		# for poking around in SoC registers
 USEFUL+=" memtester"		# RAM test
 USEFUL+=" isc-dhcp-client"
 
-# package name changes between versions
+# package name or dependency changes between versions
 
 case "$(cat /etc/debian_version)" in
 	7.* )
@@ -61,9 +62,18 @@ case "$(cat /etc/debian_version)" in
 		USEFUL+=" isc-dhcp-server"	# for WWAN <-> USB <-> WLAN tethering
 		USEFUL+=" mediactl"		# for omap3 camera isp control
 		;;
-	8.* | 9.* )
+	8.* )
 # breaks /etc/resolv.conf
 # 		USEFUL+=" dhcpcd5"		# so that we can get an IP address from the access point
+		USEFUL+=" u-boot-tools"	# read write U-Boot environment e.g. to trigger boot to boot-menu or reflash
+		USEFUL+=" bluez-tools bluez"	# driver for HCI Bluetooth
+		USEFUL+=" iw"			# iw (replacement for iwconfig)
+		USEFUL+=" v4l-utils"		# for omap3 camera isp control
+		;;
+	9.* )
+# breaks /etc/resolv.conf
+# 		USEFUL+=" dhcpcd5"		# so that we can get an IP address from the access point
+		USEFUL+=" net-tools"		# ifconfig, route etc.
 		USEFUL+=" u-boot-tools"	# read write U-Boot environment e.g. to trigger boot to boot-menu or reflash
 		USEFUL+=" bluez-tools bluez"	# driver for HCI Bluetooth
 		USEFUL+=" iw"			# iw (replacement for iwconfig)
@@ -81,6 +91,7 @@ else
 		do yes | apt-get -y --force-yes --no-install-recommends install $U
 	done
 fi
+unset USEFUL
 
 locale-gen
 # localepurge
@@ -155,7 +166,7 @@ case "$(cat /etc/debian_version)" in
 	;;
 
 8.* | 9.* )	# Jessie x-server and touch screen support
-	yes | apt-get install -y --force-yes --no-install-recommends xserver-xorg-input-void xserver-xorg-video-omap xserver-xorg-video-fbdev lightdm- nodm xinput-calibrator
+	USEFUL+=" xserver-xorg-input-void xserver-xorg-video-omap xserver-xorg-video-fbdev lightdm- nodm xinput-calibrator"
 	;;
 
 * )
@@ -167,21 +178,21 @@ esac
 # install GUI components
 #
 
-# apt-get install -y gnome-core gdm
-# apt-get install -y kde-core kdm
-# apt-get install -y gdm
-# apt-get install -y xfce4
-# apt-get install -y matchbox
-# apt-get install -y quantumstep quantumstep-displaymanager
+# USEFUL+=" gnome-core gdm"
+# USEFUL+=" kde-core kdm"
+# USEFUL+=" gdm"
+# USEFUL+=" xfce4"
+# USEFUL+=" matchbox"
+# USEFUL+=" quantumstep quantumstep-displaymanager"
 
-# yes | apt-get install -y --force-yes --no-install-recommends -y lxde lxlauncher lxtask lxmusic
-# yes | apt-get remove -y --force-yes network-manager lightdm	# makes interferences if installed
+# USEFUL+=" lxde lxlauncher lxtask lxmusic"
+# USEFUL+=" network-manager- lightdm-"	# makes interferences if installed
 
 #
 # applications, tools and games
 #
 
-USEFUL="gpsd"
+USEFUL+=" gpsd"
 USEFUL+=" foxtrotgps"
 USEFUL+=" dbus-x11"
 # USEFUL+=" synaptic"
@@ -197,6 +208,7 @@ else
 		do yes | apt-get install $U
 	done
 fi
+unset USEFUL
 
 #
 # cleanup
