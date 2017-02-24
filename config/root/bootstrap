@@ -16,6 +16,9 @@ case $(cat /etc/debian_version) in
 	6.* ) VERSION=squeeze ;;
 	7.* ) VERSION=wheezy ;;
 	8.* ) VERSION=jessie ;;
+	9.* ) VERSION=stretch ;;
+	10.* ) VERSION=bullseye ;;
+	11.* ) VERSION=buster ;;
 	* ) VERSION="can't detect" ;;
 esac
 
@@ -28,6 +31,9 @@ case "$VERSION" in
 	squeeze ) ARCH=armel;;
 	wheezy ) ARCH=armhf;;
 	jessie ) ARCH=armhf;;
+	stretch ) ARCH=armhf;;
+	bullseye ) ARCH=armhf;;
+	buster ) ARCH=armhf;;
 	sid ) ARCH=armhf;;
 	* ) echo "unknown $VERSION"; exit;;
 esac
