@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Name=GPS demo
+Comment=Demo to launch Forxtrot GPS for GTA04
+Exec=/root/gps-demo
+Icon=none
+Terminal=false
+Type=Application
+Categories=Utility;
+StartupNotify=true
