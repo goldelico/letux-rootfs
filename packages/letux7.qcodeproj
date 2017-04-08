@@ -21,7 +21,6 @@ export DEBIAN_PACKAGE_NAME="letux7"
 export DEBIAN_SECTION="misc"
 export INSTALL_PATH="/"
 export PRODUCT_NAME="letux"
-export SOURCES="letux.qcodeproj"
 
 # export DEBIAN_DEPENDS+=", lightdm-"
 # should use Provides: lightdm Conflicts: lightdm Replaces: lightdm
