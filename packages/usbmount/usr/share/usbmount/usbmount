@@ -75,6 +75,19 @@ fi
 
 umask 022
 
+DEVINFO=$(/sbin/blkid -p $DEVNAME)
+
+if echo "$DEVINFO" | fgrep -q "LABEL="
+then
+	LABEL=$(echo "$DEVINFO"  | sed 's/.*[[:blank:]]LABEL="\([^"]*\)".*/\1/g; s/[[:blank:]]*//g;')
+fi
+echo "$0: label $LABEL" >/dev/console
+if [ "$LABEL" ]
+then # create dynamic mountpoint name
+	mkdir -p "/media/hns/$LABEL"
+	MOUNTPOINTS="/media/hns/$LABEL $MOUNTPOINTS"
+	echo "Mountpoints $MOUNTPOINTS" >/dev/console
+fi
 
 if [ "$1" = add ]; then
 
@@ -88,14 +101,10 @@ if [ "$1" = add ]; then
     # Grab device information from device and "divide it"
     #   FIXME: improvement: implement mounting by label (notice that labels
     #   can contain spaces, which makes things a little bit less comfortable).
-    DEVINFO=$(/sbin/blkid -p $DEVNAME)
+#    DEVINFO=$(/sbin/blkid -p $DEVNAME)
     FSTYPE=$(echo "$DEVINFO" | sed 's/.*[[:blank:]]TYPE="\([^"]*\)".*/\1/g; s/[[:blank:]]*//g;')
     UUID=$(echo "$DEVINFO"   | sed 's/.*[[:blank:]]UUID="\([^"]*\)".*/\1/g; s/[[:blank:]]*//g;')
     USAGE=$(echo "$DEVINFO"  | sed 's/.*[[:blank:]]USAGE="\([^"]*\)".*/\1/g; s/[[:blank:]]*//g;')
-if echo "$DEVINFO" | fgrep -q "LABEL="
-	then LABEL=$(echo "$DEVINFO"  | sed 's/.*[[:blank:]]LABEL="\([^"]*\)".*/\1/g; s/[[:blank:]]*//g;')
-fi
-echo "Label $LABEL" >/dev/console
     if ! echo $USAGE | egrep -q "(filesystem|disklabel)"; then
 	log info "$DEVNAME does not contain a filesystem or disklabel"
 	exit 1
@@ -118,12 +127,6 @@ echo "Label $LABEL" >/dev/console
 	# types to mount.
 	if in_list "$fstype" "$FILESYSTEMS"; then
 	    # Search an available mountpoint.
-if [ "$LABEL" ]
-then
-	mkdir -p "/media/hns/$LABEL"
-	MOUNTPOINTS="/media/hns/$LABEL $MOUNTPOINTS"
-	echo "Mountpoints $MOUNTPOINTS" >/dev/console
-fi
 	    for v in $MOUNTPOINTS; do
 		if [ -d "$v" ] && ! grep -q "^[^ ][^ ]*  *$v " /proc/mounts; then
 		    mountpoint="$v"
