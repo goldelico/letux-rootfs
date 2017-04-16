@@ -58,7 +58,8 @@ po::powerokwait:/etc/init.d/powerfail stop
 #5:23:respawn:/sbin/getty 38400 tty5
 #6:23:respawn:/sbin/getty 38400 tty6
 
-X1:23:respawn:/usr/bin/startx
+# X11 can be started by nodm (/etc/init.d/nodm)
+# X1:23:respawn:/usr/bin/startx
 
 # Example how to put a getty on a serial line (for a terminal)
 #
