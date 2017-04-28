@@ -80,13 +80,13 @@ DEVINFO=$(/sbin/blkid -p $DEVNAME)
 if echo "$DEVINFO" | fgrep -q "LABEL="
 then
 	LABEL=$(echo "$DEVINFO"  | sed 's/.*[[:blank:]]LABEL="\([^"]*\)".*/\1/g; s/[[:blank:]]*//g;')
-fi
-echo "$0: label $LABEL" >/dev/console
-if [ "$LABEL" ]
-then # create dynamic mountpoint name
-	mkdir -p "/media/hns/$LABEL"
-	MOUNTPOINTS="/media/hns/$LABEL $MOUNTPOINTS"
-	echo "Mountpoints $MOUNTPOINTS" >/dev/console
+	echo "$0: label $LABEL" >/dev/console
+	if [ "$LABEL" ]
+	then # create dynamic mountpoint name
+		# should we remove blanks and other weird characeters from $LABEL?
+		MOUNTPOINTS="/media/hns/$LABEL $MOUNTPOINTS"
+		echo "Mountpoints $MOUNTPOINTS" >/dev/console
+	fi
 fi
 
 if [ "$1" = add ]; then
@@ -97,6 +97,22 @@ if [ "$1" = add ]; then
 	{ log err "cannot acquire lock /var/run/usbmount/.mount.lock"; exit 1; }
     trap '( lockfile-remove /var/run/usbmount/.mount )' 0
     log debug "acquired lock /var/run/usbmount/.mount.lock"
+
+if [ "$LABEL" ]
+then # create dynamic mountpoint name
+	# try to clean up from last mount
+	echo "Mounting $LABEL" >/dev/console
+	for i in /media/hns/*
+	do
+		if [ -d "$i" ] && ! mount | grep -q " on $i "
+		then
+			echo "rmdir $i" >/dev/console
+			rmdir $i
+		fi
+	done
+	mkdir -p "/media/hns/$LABEL"
+	chmod ugo-rwx "/media/hns/$LABEL"	# so that we can't write (unless we are root) if umount fails to remove it
+fi
 
     # Grab device information from device and "divide it"
     #   FIXME: improvement: implement mounting by label (notice that labels
