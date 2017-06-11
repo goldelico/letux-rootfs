@@ -107,7 +107,7 @@ then # create dynamic mountpoint name
 		if [ -d "$i" ] && ! mount | grep -q " on $i "
 		then
 			echo "rmdir $i" >/dev/console
-			rmdir $i
+			rmdir $i 2>/dev/console ||:
 		fi
 	done
 	mkdir -p "/media/hns/$LABEL"
