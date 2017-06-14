@@ -15,4 +15,11 @@
 #tty7
 #tty8
 #ttyS2
+# for Debian Jessie
 console
+# for Debian Stretch
+# whatever console we get on OMAP devices
+ttyO0
+ttyO1
+ttyO2
+ttyO3
