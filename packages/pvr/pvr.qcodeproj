@@ -11,6 +11,7 @@ export INSTALL_PATH="//"
 export PRODUCT_NAME="omap-sgx"
 export SOURCES="omap-sgx530-125.qcodeproj"
 export SOURCES+=" omap-sgx530-121.qcodeproj"
+export SOURCES+=" omap-sgx544-100.qcodeproj"
 
 [ "$QuantumSTEP" ] || export QuantumSTEP="/usr/local/QuantumSTEP"
 cd "$(dirname "${BASH_SOURCE[0]}")" && "$QuantumSTEP/System/Sources/Frameworks/mySTEP.make" $ACTION
