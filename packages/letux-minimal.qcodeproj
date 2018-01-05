@@ -16,6 +16,7 @@ export DEBIAN_DESCRIPTION+=" minimal"
 export DEBIAN_SECTION="misc"
 export INSTALL_PATH="/"
 export PRODUCT_NAME="letux-minimal"
+export DEBIAN_PACKAGE_NAME="letux-minimal"
 
 [ "$QuantumSTEP" ] || export QuantumSTEP="/usr/local/QuantumSTEP"
 cd "$(dirname "${BASH_SOURCE[0]}")" && "$QuantumSTEP/System/Sources/Frameworks/mySTEP.make" $ACTION
