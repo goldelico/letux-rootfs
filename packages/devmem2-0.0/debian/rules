@@ -1,0 +1,9 @@
+#! /usr/bin/make -f
+%:
+	dh $@
+
+override_dh_auto_clean:
+	rm -f devmem2
+
+override_dh_auto_build:
+	$(CC) $(CFLAGS) devmem2.c -o devmem2

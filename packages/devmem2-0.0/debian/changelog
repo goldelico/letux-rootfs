@@ -1,0 +1,5 @@
+devmem2 (0.0-0ubuntu1) maverick; urgency=low
+
+  * Initial release (LP: #607752)
+
+ -- Ricardo Salveti de Araujo <ricardo.salveti@canonical.com>  Mon, 13 Sep 2010 02:18:47 -0300

@@ -1,0 +1,16 @@
+Source: devmem2
+Section: misc
+Priority: optional
+Maintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>
+Build-Depends: debhelper (>= 7)
+Standards-Version: 3.9.1
+Homepage: http://www.lartmaker.nl/lartware/port/
+Vcs-Bzr: lp:~rsalveti/+junk/devmem2
+Vcs-Browser: http://bazaar.launchpad.net/~rsalveti/+junk/devmem2/files
+
+Package: devmem2
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: simple program to read/write from/to any location in memory
+ Simple program to read/write from/to any location in memory. Useful when
+ debugging embedded boards, like beagleboard.
