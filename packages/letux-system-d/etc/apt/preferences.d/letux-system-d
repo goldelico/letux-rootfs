@@ -1,0 +1,9 @@
+### disable systemd related packages in /etc/apt/preferences
+
+Package: systemd
+Pin: origin ""
+Pin-Priority: -1
+
+Package: *systemd*
+Pin: origin ""
+Pin-Priority: -1
