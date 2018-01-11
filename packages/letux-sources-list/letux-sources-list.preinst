@@ -1,5 +1,5 @@
 #! /bin/sh
-# preinst script for letux-minimal
+# preinst script for letux-sources-list
 #
 # see: dh_installdeb(1)
 
@@ -13,9 +13,9 @@ set -e
 # for details, see http://www.debian.org/doc/debian-policy/ or
 # the debian-policy package
 
-# try to fix all automatic entries by letux/config.tgz
-# if we change anything, run apt-ge update and abort
-# because user must restart the install process
+# Try to fix all automatic entries made by old by letux/config.tgz
+# If we change anything, abort because user must
+# manually apt-get upgrade and restart the install process
 
 case "$(cat /etc/debian_version)" in
 	7.* )	DEBIAN_RELEASE=wheezy;;
