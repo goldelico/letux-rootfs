@@ -17,75 +17,49 @@ set -e
 # If we change anything, abort because user must
 # manually apt-get upgrade and restart the install process
 
-case "$(cat /etc/debian_version)" in
-	7.* )	DEBIAN_RELEASE=wheezy;;
-	8.* )	DEBIAN_RELEASE=jessie;;
-	9.* )	DEBIAN_RELEASE=stretch;;
-	10.* )	DEBIAN_RELEASE=buster;;
-	11.* )	DEBIAN_RELEASE=Bullseye;;
-	* )
-		echo "unknown Debian Version \`$(cat /etc/debian_version)'" >&2
-        	exit 1
-		;;
-esac	
-
-ANY=false
-
-# wipe out lists we do not want to see any more
-
-for LIST in pyra.list qtmoko.list
-do
-	FILE=/etc/apt/sources.list.d/$LIST
-	if [ -r $FILE ]
-	then # wipe out old
-		echo rm $FILE >&2
-		rm $FILE
-		ANY=true
-	fi
-done
-
-# replace lists which are considered outdated
-
-FILE=/etc/apt/sources.list.d/letux.list
-if [ ! -r $FILE ] || fgrep -q stable $FILE
-then # replace old version which refers to "stable"
-	echo "cat >$FILE" >&2
-	cat >$FILE <<END
-# Debian non-free and backports (mainly for WiFi drivers)
-deb http://httpredir.debian.org/debian $DEBIAN_RELEASE non-free
-deb http://httpredir.debian.org/debian $DEBIAN_RELEASE-backports main non-free
-# Letux repository
-deb http://download.goldelico.com/letux-debian-rootfs/debian $DEBIAN_RELEASE main
-END
-	ANY=true
-fi
-
-FILE=/etc/apt/sources.list.d/qtmoko2.list
-if [ ! -r $FILE ] || ( fgrep -q jessie $FILE && fgrep -q wheezy $FILE )
-then # replace old version which refers to "stable"
-	echo "cat >$FILE" >&2
-	cat >$FILE <<END
-# qtmoko2
-deb http://www.qtmoko.net/download/ $DEBIAN_RELEASE main
-deb-src http://www.qtmoko.net/download/ $DEBIAN_RELEASE main
-END
-	ANY=true
-fi
-
-FILE=/etc/apt/sources.list.d/quantumstep.list
-if [ ! -r $FILE ] || fgrep -q stable $FILE
-then # replace old version which refers to "stable"
-	echo "cat >$FILE" >&2
-	cat >$FILE <<END
-# QuantumSTEP Repository
-deb http://download.goldelico.com/quantumstep/debian $DEBIAN_RELEASE main
-END
-	ANY=true
-fi
-
-if $ANY
+if [ -r /etc/apt/sources.list.d/pyra.list -o -r /etc/apt/sources.list.d/qtmoko.list ] ||
+	[ ! -r /etc/apt/sources.list.d/letux.list ] ||
+	[ ! -r /etc/apt/sources.list.d/qtmoko2.list -o ! -r /etc/apt/sources.list.d/quantumstep.list ] ||
+	fgrep -q stable /etc/apt/sources.list.d/*.list 2>/dev/null ||
+	( fgrep -q jessie /etc/apt/sources.list.d/qtmoko2.list 2>/dev/null &&
+	  fgrep -q wheezy /etc/apt/sources.list.d/quantumstep.list 2>/dev/null )
 then
-	# apt-get upgrade
+	# old setup detected which needs a cleanup
+
+	case "$(cat /etc/debian_version)" in
+		7.* )	RELEASE=wheezy;;
+		8.* )	RELEASE=jessie;;
+		9.* )	RELEASE=stretch;;
+		10.* )	RELEASE=buster;;
+		11.* )	RELEASE=bullseye;;
+		* )
+			echo "unknown Debian Version \`$(cat /etc/debian_version)'" >&2
+			exit 1
+			;;
+	esac
+
+	rm -f /etc/apt/sources.list.d/pyra.list /etc/apt/sources.list.d/qtmoko.list >&2
+
+	cd /
+	rm -f ./etc/apt/sources.list.d/letux.list ./etc/apt/sources.list.d/qtmoko2.list ./etc/apt/sources.list.d/quantumstep.list >&2
+	cat >./etc/apt/sources.list.d/letux.list <<END
+# Letux repository
+deb http://download.goldelico.com/letux-debian-rootfs/debian $RELEASE main
+
+# Debian non-free and backports (mainly for WiFi drivers)
+deb http://httpredir.debian.org/debian $RELEASE non-free
+deb http://httpredir.debian.org/debian $RELEASE-backports main non-free
+END
+	cat >./etc/apt/sources.list.d/qtmoko2.list <<END
+# QtMoko2 repository
+deb http://www.qtmoko.net/download/ $RELEASE main
+deb-src http://www.qtmoko.net/download/ $RELEASE main
+END
+	cat >./etc/apt/sources.list.d/quantumstep.list <<END
+# QuantumSTEP repository
+deb http://download.goldelico.com/quantumstep/debian $RELEASE main
+END
+
 	echo "*********************************************" >&2
 	echo "*                                           *" >&2
 	echo "* We have fixed the /etc/apt/sources.list.d *" >&2
