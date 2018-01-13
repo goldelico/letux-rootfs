@@ -4,6 +4,10 @@ Package: systemd
 Pin: origin ""
 Pin-Priority: -1
 
-Package: *systemd*
+Package: systemd-shim
+Pin: origin ""
+Pin-Priority: 600
+
+Package: *system*
 Pin: origin ""
 Pin-Priority: -1
