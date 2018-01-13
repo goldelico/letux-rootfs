@@ -29,8 +29,12 @@ export SOURCES+=" letux-apps.qcodeproj"
 export SOURCES+=" letux-base.qcodeproj"
 export SOURCES+=" letux-xorg.qcodeproj"
 export SOURCES+=" letux-system-d/letux-system-d.qcodeproj"
-export SOURCES+=" letux-minimal/letux-minimal.qcodeproj"
 export SOURCES+=" media-ctl/media-ctl.qcodeproj"
+export SOURCES+=" letux-minimal.qcodeproj"
+export SOURCES+=" letux-sources-list/letux-sources-list.qcodeproj"
+export SOURCES+=" letux-ssh-root/letux-ssh-root.qcodeproj"
+export SOURCES+=" letux-user/letux-user.qcodeproj"
+export SOURCES+=" letux-archive-keyring/letux-archive-keyring.qcodeproj"
 
 [ "$QuantumSTEP" ] || export QuantumSTEP="/usr/local/QuantumSTEP"
 cd "$(dirname "${BASH_SOURCE[0]}")" && "$QuantumSTEP/System/Sources/Frameworks/mySTEP.make" $ACTION
