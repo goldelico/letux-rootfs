@@ -1,7 +1,0 @@
-# Debian non-free and backports (mainly for WiFi drivers)
-deb http://httpredir.debian.org/debian wheezy non-free
-deb http://httpredir.debian.org/debian jessie non-free
-deb http://httpredir.debian.org/debian wheezy-backports main non-free
-deb http://httpredir.debian.org/debian jessie-backports main non-free
-# Letux repository
-deb http://download.goldelico.com/letux-debian-rootfs/debian stable main
