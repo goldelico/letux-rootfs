@@ -17,12 +17,29 @@ set -e
 # If we change anything, abort because user must
 # manually apt-get upgrade and restart the install process
 
-if [ -r /etc/apt/sources.list.d/pyra.list -o -r /etc/apt/sources.list.d/qtmoko.list ] ||
-	[ ! -r /etc/apt/sources.list.d/letux.list ] ||
-	[ ! -r /etc/apt/sources.list.d/qtmoko2.list -o ! -r /etc/apt/sources.list.d/quantumstep.list ] ||
-	fgrep -q stable /etc/apt/sources.list.d/*.list 2>/dev/null ||
-	( fgrep -q jessie /etc/apt/sources.list.d/qtmoko2.list 2>/dev/null &&
-	  fgrep -q wheezy /etc/apt/sources.list.d/quantumstep.list 2>/dev/null )
+FIXIT=false
+
+# files missing
+[ -r /etc/apt/sources.list.d/letux.list ] || FIXIT=true
+[ -r /etc/apt/sources.list.d/qtmoko2.list ] || FIXIT=true
+[ -r /etc/apt/sources.list.d/quantumstep.list ] || FIXIT=true
+
+# files that need to be removed
+[ -r /etc/apt/sources.list.d/pyra.list ] && FIXIT=true
+[ -r /etc/apt/sources.list.d/qtmoko.list ] && FIXIT=true
+
+# files explicitly referencing stable release
+fgrep -q ' stable ' /etc/apt/sources.list.d/letux*.list 2>/dev/null && FIXIT=true
+fgrep -q ' stable ' /etc/apt/sources.list.d/qtmoko*.list 2>/dev/null && FIXIT=true
+fgrep -q ' stable ' /etc/apt/sources.list.d/quantumstep*.list 2>/dev/null && FIXIT=true
+
+# files referencing both wheezy and jessie
+fgrep -q ' jessie ' /etc/apt/sources.list.d/qtmoko2.list 2>/dev/null &&
+	fgrep -q ' wheezy ' /etc/apt/sources.list.d/qtmoko2.list 2>/dev/null && FIXIT=true
+fgrep -q ' jessie ' /etc/apt/sources.list.d/quantumstep.list 2>/dev/null &&
+	fgrep -q ' wheezy ' /etc/apt/sources.list.d/quantumstep.list 2>/dev/null && FIXIT=true
+
+if $FIXIT
 then
 	# old setup detected which needs a cleanup
 
