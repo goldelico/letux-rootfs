@@ -25,6 +25,7 @@ FIXIT=false
 [ -r /etc/apt/sources.list.d/quantumstep.list ] || FIXIT=true
 
 # files that need to be removed
+[ -r /etc/apt/sources.list.d/gta04.list ] && FIXIT=true
 [ -r /etc/apt/sources.list.d/pyra.list ] && FIXIT=true
 [ -r /etc/apt/sources.list.d/qtmoko.list ] && FIXIT=true
 
