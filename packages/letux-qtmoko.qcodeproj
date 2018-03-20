@@ -3,6 +3,7 @@
 export DEBIAN_ARCHITECTURES="all"
 export DEBIAN_DEPENDS="letux"
 export DEBIAN_DEPENDS+=", qtmoko-gta04"
+export DEBIAN_DEPENDS+=", sqlite3"
 export DEBIAN_DESCRIPTION="Config for Letux + QtMoko"
 export DEBIAN_PACKAGE_NAME="letux-qtmoko"
 export DEBIAN_SECTION="misc"
