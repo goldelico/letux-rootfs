@@ -8,6 +8,6 @@ Package: systemd-shim
 Pin: origin ""
 Pin-Priority: 600
 
-Package: *system*
+Package: *systemd*
 Pin: origin ""
 Pin-Priority: -1
