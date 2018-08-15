@@ -21,6 +21,8 @@ case "$1" in
     configure)
 
 	# do something...
+	# try first:
+	#   apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 897BF5318B8009BA
 	apt-key add - <<END
 -----BEGIN PGP PUBLIC KEY BLOCK-----
 
