@@ -3,6 +3,7 @@
 export DEBIAN_ARCHITECTURES="all"
 export DEBIAN_DEPENDS="letux"
 export DEBIAN_DEPENDS+=", letux-xorg"
+export DEBIAN_DEPENDS+=", letux-nodm"
 export DEBIAN_DEPENDS+=", jessie:quantumstep"
 export DEBIAN_DEPENDS+=", jessie:quantumstep-displaymanager"
 export DEBIAN_DESCRIPTION="Config for Letux + QuantumSTEP"

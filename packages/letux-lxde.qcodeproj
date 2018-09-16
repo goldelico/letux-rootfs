@@ -3,6 +3,7 @@
 export DEBIAN_ARCHITECTURES="all"
 export DEBIAN_DEPENDS="letux"
 export DEBIAN_DEPENDS+=", letux-xorg"
+export DEBIAN_DEPENDS+=", letux-nodm"
 export DEBIAN_DEPENDS+=", lxde"
 export DEBIAN_DEPENDS+=", mplayer"
 export DEBIAN_DEPENDS+=", dbus-x11"
