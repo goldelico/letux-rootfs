@@ -46,6 +46,7 @@ in_list()
 # Default values for configuration variables.
 ENABLED=1
 MOUNTPOINTS=
+MOUNTDIR="/media/letux"
 FILESYSTEMS=
 MOUNTOPTIONS=
 FS_MOUNTOPTIONS=
@@ -84,7 +85,7 @@ then
 	if [ "$LABEL" ]
 	then # create dynamic mountpoint name
 		# should we remove blanks and other weird characeters from $LABEL?
-		MOUNTPOINTS="/media/hns/$LABEL $MOUNTPOINTS"
+		MOUNTPOINTS="$MOUNTDIR/$LABEL $MOUNTPOINTS"
 		echo "Mountpoints $MOUNTPOINTS" >/dev/console
 	fi
 fi
@@ -102,7 +103,7 @@ if [ "$LABEL" ]
 then # create dynamic mountpoint name
 	# try to clean up from last mount
 	echo "Mounting $LABEL" >/dev/console
-	for i in /media/hns/*
+	for i in "$MOUNTDIR/"*
 	do
 		if [ -d "$i" ] && ! mount | grep -q " on $i "
 		then
@@ -110,8 +111,8 @@ then # create dynamic mountpoint name
 			rmdir $i 2>/dev/console ||:
 		fi
 	done
-	mkdir -p "/media/hns/$LABEL"
-	chmod ugo-rwx "/media/hns/$LABEL"	# so that we can't write (unless we are root) if umount fails to remove it
+	mkdir -p "$MOUNTDIR/$LABEL"
+	chmod ugo-rwx "$MOUNTDIR/$LABEL"	# so that we can't write (unless we are root) if umount fails to remove it
 fi
 
     # Grab device information from device and "divide it"
