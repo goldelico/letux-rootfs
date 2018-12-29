@@ -16,7 +16,7 @@ set -e
 case "$1" in
     install|upgrade)
 	echo "deb https://ci.puri.sm/ scratch librem5" >/etc/apt/sources.list.d/ci-puri-sm.list
-	wget -O - https://ci.puri.sm/ci-repo.key | apt-key add -
+	/usr/bin/wget -O - https://ci.puri.sm/ci-repo.key | apt-key add -
 
 	echo "***********************************************" >&2
 	echo "*                                             *" >&2
