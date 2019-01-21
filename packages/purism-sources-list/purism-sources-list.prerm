@@ -20,7 +20,12 @@ set -e
 case "$1" in
     remove)
 
-	apt-key del D9E4E9BF666C1A90
+	apt-key del D9E4E9BF666C1A90 || true
+
+	deluser purism video || true
+	deluser purism audio || true
+	deluser purism sudo || true
+	deluser purism
 
     ;;
 
