@@ -18,8 +18,15 @@
 # for Debian Jessie
 console
 # for Debian Stretch
+# unknown how to generalise
 # whatever console we get on OMAP devices
 ttyO0
 ttyO1
 ttyO2
 ttyO3
+ttyS0
+ttyS1
+ttyS2
+ttyS3
+# for iMX6 Udoo neo
+ttymxc0
