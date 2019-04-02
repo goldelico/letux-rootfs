@@ -1,0 +1,4 @@
+127.0.0.1 localhost
+127.0.1.1 letux
+192.168.0.200 remoteusb0
+192.168.0.202 localusb0
