@@ -40,6 +40,9 @@ fgrep -q ' jessie ' /etc/apt/sources.list.d/qtmoko2.list 2>/dev/null &&
 fgrep -q ' jessie ' /etc/apt/sources.list.d/quantumstep.list 2>/dev/null &&
 	fgrep -q ' wheezy ' /etc/apt/sources.list.d/quantumstep.list 2>/dev/null && FIXIT=true
 
+# backports have been moved from httpredir to archive
+fgrep -q ' http://httpredir.debian.org/debian jessie-backports ' /etc/apt/sources.list.d/letux*.list 2>/dev/null && FIXIT=true
+
 if $FIXIT
 then
 	# old setup detected which needs a cleanup
@@ -66,7 +69,11 @@ deb http://download.goldelico.com/letux-debian-rootfs/debian $RELEASE main
 
 # Debian non-free and backports (mainly for WiFi drivers)
 deb http://httpredir.debian.org/debian $RELEASE non-free
-deb http://httpredir.debian.org/debian $RELEASE-backports main non-free
+deb http://archive.debian.org/debian $RELEASE-backports main non-free
+END
+	cat >./etc/apt/apt.conf.d/10-no-check-valid-until <<END
+# disable Valid-Until: check for Release file
+Acquire::Check-Valid-Until "0";
 END
 	cat >./etc/apt/sources.list.d/qtmoko2.list <<END
 # QtMoko2 repository
@@ -78,18 +85,18 @@ END
 deb http://download.goldelico.com/quantumstep/debian $RELEASE main
 END
 
-	echo "*********************************************" >&2
-	echo "*                                           *" >&2
-	echo "* We have fixed the /etc/apt/sources.list.d *" >&2
-	echo "* So we must abort the install.             *" >&2
-	echo "*                                           *" >&2
-	echo "* Please manually:                          *" >&2
-	echo "*   apt-get update                          *" >&2
-	echo "*   apt-get install letux-sources-list      *" >&2
-	echo "*                                           *" >&2
-	echo "* Then continue installation or upgrade.    *" >&2
-	echo "*                                           *" >&2
-	echo "*********************************************" >&2
+	echo "********************************************************" >&2
+	echo "*                                                      *" >&2
+	echo "* We have fixed the /etc/apt/sources.list.d            *" >&2
+	echo "* So we must abort the install.                        *" >&2
+	echo "*                                                      *" >&2
+	echo "* Please manually:                                     *" >&2
+	echo "*   apt-get -o Acquire::Check-Valid-Until=false update *" >&2
+	echo "*   apt-get install letux-sources-list                 *" >&2
+	echo "*                                                      *" >&2
+	echo "* Then continue installation or upgrade.               *" >&2
+	echo "*                                                      *" >&2
+	echo "********************************************************" >&2
 	exit 1
 fi
 
