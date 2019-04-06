@@ -41,6 +41,7 @@ fgrep -q ' jessie ' /etc/apt/sources.list.d/quantumstep.list 2>/dev/null &&
 	fgrep -q ' wheezy ' /etc/apt/sources.list.d/quantumstep.list 2>/dev/null && FIXIT=true
 
 # backports have been moved from httpredir to archive
+fgrep -q ' http://http.debian.org/debian jessie-backports ' /etc/apt/sources.list.d/letux*.list 2>/dev/null && FIXIT=true
 fgrep -q ' http://httpredir.debian.org/debian jessie-backports ' /etc/apt/sources.list.d/letux*.list 2>/dev/null && FIXIT=true
 
 if $FIXIT
