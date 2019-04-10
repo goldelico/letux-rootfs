@@ -91,14 +91,14 @@ END
 	echo "* We have fixed the /etc/apt/sources.list.d            *" >&2
 	echo "* So we must abort the install.                        *" >&2
 	echo "*                                                      *" >&2
-	echo "* Please manually:                                     *" >&2
+	echo "* Please run manually:                                 *" >&2
 	echo "*   apt-get -o Acquire::Check-Valid-Until=false update *" >&2
 	echo "*   apt-get install letux-sources-list                 *" >&2
 	echo "*                                                      *" >&2
 	echo "* Then continue installation or upgrade.               *" >&2
 	echo "*                                                      *" >&2
 	echo "********************************************************" >&2
-	exit 1
+	exit
 fi
 
 case "$1" in
