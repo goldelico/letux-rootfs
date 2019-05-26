@@ -28,6 +28,9 @@ case "$1" in
 	sed -i 's/root:[^:]*:/root:\*:/g' /etc/shadow && echo "### ok" || echo "### no"
 	grep ^root /etc/shadow
 	echo "+++ root password disabled +++"
+
+	[ -r /etc/motd.bak ] && mv /etc/motd.bak /etc/motd
+
     ;;
 
     upgrade|deconfigure)

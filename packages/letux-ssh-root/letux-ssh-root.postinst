@@ -31,6 +31,19 @@ case "$1" in
 	echo "!!! setting empty root password."
 	echo "!!! Note: this is not the same as *no* password"
 
+	if ! fgrep -q "LetuxOS WARNING" /etc/motd
+	then
+		[ ! -r /etc/motd.bak ] && cp /etc/motd /etc/motd.bak
+		cat <<END >>/etc/motd
+
+!!!  LetuxOS WARNING                                                      !!!
+!!!  Root access through ssh and console with empty password is enabled.  !!!
+!!!  This is a big security hole.                                         !!!
+!!!  To disable, run 'apt-get remove letux-ssh-root'                      !!!
+
+END
+	fi
+
 	grep ^root /etc/shadow
 	sed -i "s/root:[^:]*:/root:$(echo "$EMPTYROOT" | sed "s|/|\\\\/|g"):/g" /etc/shadow
 	grep ^root /etc/shadow
