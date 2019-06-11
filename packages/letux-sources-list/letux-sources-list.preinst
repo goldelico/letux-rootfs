@@ -41,16 +41,20 @@ fgrep -q ' jessie ' /etc/apt/sources.list.d/quantumstep.list 2>/dev/null &&
 	fgrep -q ' wheezy ' /etc/apt/sources.list.d/quantumstep.list 2>/dev/null && FIXIT=true
 
 # backports have been moved from httpredir to archive
-fgrep -q ' http://http.debian.org/debian jessie-backports ' /etc/apt/sources.list.d/letux*.list 2>/dev/null && FIXIT=true
-fgrep -q ' http://httpredir.debian.org/debian jessie-backports ' /etc/apt/sources.list.d/letux*.list 2>/dev/null && FIXIT=true
+fgrep -q ' http://http.debian.org/debian wheezy' /etc/apt/sources.list.d/letux*.list 2>/dev/null && FIXIT=true
+fgrep -q ' http://httpredir.debian.org/debian wheezy' /etc/apt/sources.list.d/letux*.list 2>/dev/null && FIXIT=true
+fgrep -q ' http://http.debian.org/debian jessie' /etc/apt/sources.list.d/letux*.list 2>/dev/null && FIXIT=true
+fgrep -q ' http://httpredir.debian.org/debian jessie' /etc/apt/sources.list.d/letux*.list 2>/dev/null && FIXIT=true
 
 if $FIXIT
 then
 	# old setup detected which needs a cleanup
 
+	REPO=http://httpredir.debian.org
+
 	case "$(cat /etc/debian_version)" in
-		7.* )	RELEASE=wheezy;;
-		8.* )	RELEASE=jessie;;
+		7.* )	RELEASE=wheezy; REPO=http://archive.debian.org;;
+		8.* )	RELEASE=jessie; REPO=http://archive.debian.org;;
 		9.* )	RELEASE=stretch;;
 		10.* )	RELEASE=buster;;
 		11.* )	RELEASE=bullseye;;
@@ -60,6 +64,7 @@ then
 			;;
 	esac
 
+# remove old stuff
 	rm -f /etc/apt/sources.list.d/pyra.list /etc/apt/sources.list.d/qtmoko.list >&2
 
 	cd /
@@ -68,9 +73,9 @@ then
 # Letux repository
 deb http://download.goldelico.com/letux-debian-rootfs/debian $RELEASE main
 
-# Debian non-free and backports (mainly for WiFi drivers)
-deb http://httpredir.debian.org/debian $RELEASE non-free
-deb http://archive.debian.org/debian $RELEASE-backports main non-free
+# Debian non-free and backports (mainly used for WiFi drivers)
+deb $REPO/debian $RELEASE non-free
+deb $REPO/debian $RELEASE-backports main non-free
 END
 	cat >./etc/apt/apt.conf.d/10-no-check-valid-until <<END
 # disable Valid-Until: check for Release file
