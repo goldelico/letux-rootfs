@@ -65,7 +65,7 @@ then
 	esac
 
 # remove old stuff
-	rm -f /etc/apt/sources.list.d/pyra.list /etc/apt/sources.list.d/qtmoko.list >&2
+	rm -f /etc/apt/sources.list.d/gta04.list /etc/apt/sources.list.d/pyra.list /etc/apt/sources.list.d/qtmoko.list >&2
 
 	cd /
 	rm -f ./etc/apt/sources.list.d/letux.list ./etc/apt/sources.list.d/qtmoko2.list ./etc/apt/sources.list.d/quantumstep.list >&2
