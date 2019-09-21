@@ -21,6 +21,7 @@ if [ "$PS1" ]; then
   fi
 fi
 
+PATH=$PATH:/usr/bin/$HOSTTYPE-$OSTYPE
 export PATH
 
 umask 022
