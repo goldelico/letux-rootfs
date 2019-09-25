@@ -40,6 +40,11 @@ fgrep -q ' jessie ' /etc/apt/sources.list.d/qtmoko2.list 2>/dev/null &&
 fgrep -q ' jessie ' /etc/apt/sources.list.d/quantumstep.list 2>/dev/null &&
 	fgrep -q ' wheezy ' /etc/apt/sources.list.d/quantumstep.list 2>/dev/null && FIXIT=true
 
+# historical entries in /etc/apt/sources.list
+
+fgrep -q ' jessie non-free' /etc/apt/sources.list 2>/dev/null && FIXIT=true
+fgrep -q ' jessie-backports' /etc/apt/sources.list 2>/dev/null && FIXIT=true
+
 # backports have been moved from httpredir to archive
 fgrep -q ' http://http.debian.org/debian wheezy' /etc/apt/sources.list.d/letux*.list 2>/dev/null && FIXIT=true
 fgrep -q ' http://httpredir.debian.org/debian wheezy' /etc/apt/sources.list.d/letux*.list 2>/dev/null && FIXIT=true
@@ -90,6 +95,7 @@ END
 # QuantumSTEP repository
 deb http://download.goldelico.com/quantumstep/debian $RELEASE main
 END
+	sed -i.bak '/deb http:\/\/ftp2.de.debian.org\/debian jessie non-free/d; /deb http:\/\/http.debian.net\/debian jessie-backports main non-free/d' ./etc/apt/sources.list
 
 	echo "********************************************************" >&2
 	echo "*                                                      *" >&2
