@@ -54,3 +54,4 @@ cscope.*
 *.rej
 
 .DS_Store
+build/
