@@ -28,5 +28,7 @@ ttyS0
 ttyS1
 ttyS2
 ttyS3
+# for CI20
+ttyS4
 # for iMX6 Udoo neo
 ttymxc0
