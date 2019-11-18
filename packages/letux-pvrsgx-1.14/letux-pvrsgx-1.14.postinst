@@ -89,7 +89,7 @@ case "$1" in
 				rm -f sgx.tar.xz sgx.tar ci20-sgx-um-1.14.3759903 SGX_DDK_Linux_XOrg_ES1_ES2_OGL_MAIN%403759903_binary_um.tar
 				;;
 			*)
-				echo unknown SoC: $(tr -d '\0' </sys/devices/soc0/machine)
+				echo unknown SoC: $(tr '\0' ' ' </proc/device-tree/compatible)
 				exit 1
 				;;
 		esac
