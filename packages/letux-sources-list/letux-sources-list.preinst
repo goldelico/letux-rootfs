@@ -103,6 +103,7 @@ END
 	echo "* So we must abort the install.                        *" >&2
 	echo "*                                                      *" >&2
 	echo "* Please run manually:                                 *" >&2
+	echo "*   rm -rf /var/lib/apt/lists/                         *" >&2
 	echo "*   apt-get -o Acquire::Check-Valid-Until=false update *" >&2
 	echo "*   apt-get install letux-sources-list                 *" >&2
 	echo "*                                                      *" >&2
