@@ -99,20 +99,13 @@ case "$1" in
 		then	# install through makefile
 			echo installing user space files for $TARGET_PRODUCT >&2
 			export DISCIMAGE=/
+			rm targetfs/*/etc/powervr.ini	# don't overwrite by the version from git
 			make install
 			rm -f /usr/lib/arm-linux-gnueabihf/libgbm.so.2
 			ln -s libgbm.so.1 /usr/lib/arm-linux-gnueabihf/libgbm.so.2
+			[ -f /usr/lib/libGLESv2.so.1 ] || ln -s libGLESv2.so.2 /usr/lib/libGLESv2.so.1
 			cd ..
 			rm -rf sgx-um/
-		fi
-
-		if [ ! -r /etc/powervr.ini ]
-		then
-			tee /etc/powervr.ini <<EOF
-[default]
-WindowSystem=libpvrDRMWSEGL.so
-DefaultPixelFormat=RGB888
-EOF
 		fi
 
 		rm -f /usr/bin/pvrsrvctl.bak

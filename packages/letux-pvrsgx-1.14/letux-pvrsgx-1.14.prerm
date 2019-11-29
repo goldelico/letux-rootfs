@@ -24,7 +24,7 @@ case "$1" in
 		rm -rf omap5-sgx-ddk-um-linux/
 		rm /usr/bin/pvrsrvctl
 		rm /usr/lib/arm-linux-gnueabihf/libgbm.so.2
-		rm /etc/powervr.ini
+		rm /usr/lib/lib*.so.1.14.*
 		# remove more?
 	fi  
     ;;
