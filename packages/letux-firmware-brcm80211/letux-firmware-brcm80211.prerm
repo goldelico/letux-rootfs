@@ -19,7 +19,9 @@ set -e
 
 case "$1" in
     remove)
-	for FILE in BCM4345C5.hcd brcmfmac43455-sdio.bin brcmfmac43455-sdio.clm_blob brcmfmac43455-sdio.txt
+	FIRMWARE="BCM4345C5.hcd brcmfmac43455-sdio.bin brcmfmac43455-sdio.clm_blob brcmfmac43455-sdio.txt" # RasPi
+	FIRMWARE="$FIRMWARE BCM4330B1.hcd bcm4330.hcd brcmfmac4330-sdio.bin brcmfmac4330-sdio.txt" # CI20
+	for FILE in $FIRMWARE
 	do
 		rm -f /lib/firmware/brcm/$FILE
 	done

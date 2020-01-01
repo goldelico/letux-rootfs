@@ -20,7 +20,9 @@ set -e
 case "$1" in
     configure)
 	mkdir -p /lib/firmware/brcm
-	for FILE in BCM4345C5.hcd brcmfmac43455-sdio.bin brcmfmac43455-sdio.clm_blob brcmfmac43455-sdio.txt
+	FIRMWARE="BCM4345C5.hcd brcmfmac43455-sdio.bin brcmfmac43455-sdio.clm_blob brcmfmac43455-sdio.txt" # RasPi
+	FIRMWARE="$FIRMWARE BCM4330B1.hcd bcm4330.hcd brcmfmac4330-sdio.bin brcmfmac4330-sdio.txt" # CI20
+	for FILE in $FIRMWARE
 	do
 		wget -O /lib/firmware/brcm/$FILE https://github.com/armbian/firmware/raw/master/brcm/$FILE || exit 1
 	done
