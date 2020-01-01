@@ -1,2 +1,0 @@
-# should not be needed for latest roofs images
-source /etc/network/interfaces.d/*
