@@ -18,11 +18,11 @@ case "$1" in
 	echo "deb https://ci.puri.sm/ scratch librem5" >/etc/apt/sources.list.d/ci-puri-sm.list
 	/usr/bin/wget -O - https://ci.puri.sm/ci-repo.key | apt-key add -
 
-	adduser --uid 1000 --disabled-login --gecos '' purism || { sync; echo "### adduser failed"; exit 1; }
+	adduser --uid 1000 --disabled-login --gecos '' purism || true
 	echo 123456 | sed 'p' | passwd purism
-	adduser purism sudo # allow to su
-	adduser purism audio
-	adduser purism video
+	adduser purism sudo || true # allow to su
+	adduser purism audio || true
+	adduser purism video || true
 	echo "+++ user purism:123456 added +++"
 
 	echo "***********************************************" >&2
