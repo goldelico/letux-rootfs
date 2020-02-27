@@ -17,7 +17,7 @@ set -e
 # the debian-policy package
 #
 
-patch()	# not working
+patch()
 { # patch binary file
 	_file="$1"
 	_address="$(($2))"	# should have 0x prefix
@@ -52,6 +52,7 @@ case "$1" in
     configure)
 	if ! [ -x /usr/bin/pvrsrvctl ]
 	then
+		cd /var/cache
 		# FIXME: base on 'sgx' compatible
 		echo "installing for $(tr '\0' '@' </proc/device-tree/compatible)"
 		case "@$(tr '\0' '@' </proc/device-tree/compatible)" in
@@ -123,8 +124,6 @@ case "$1" in
 			rm -f /usr/lib/arm-linux-gnueabihf/libgbm.so.2
 			ln -s libgbm.so.1 /usr/lib/arm-linux-gnueabihf/libgbm.so.2
 			[ -f /usr/lib/libGLESv2.so.1 ] || ln -s libGLESv2.so.2 /usr/lib/libGLESv2.so.1
-			cd ..
-			rm -rf sgx-um/
 		fi
 
 		rm -f /usr/bin/pvrsrvctl.bak

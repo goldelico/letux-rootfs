@@ -21,7 +21,7 @@ case "$1" in
     remove)
 	if [ -x /usr/bin/pvrsrvctl ]
 	then
-		rm -rf omap5-sgx-ddk-um-linux/
+		rm -rf /var/cache/sgx-um/ /var/cache/ci20-sgx-um-1.14.3759903 /var/cache/SGX_DDK_Linux_XOrg_ES1_ES2_OGL_MAIN@3759903_binary_um.3759903
 		rm /usr/bin/pvrsrvctl
 		rm /usr/lib/arm-linux-gnueabihf/libgbm.so.2
 		rm /usr/lib/lib*.so.1.14.*
