@@ -62,7 +62,8 @@ then
 		8.* )	RELEASE=jessie; REPO=http://archive.debian.org;;
 		9.* )	RELEASE=stretch;;
 		10.* )	RELEASE=buster;;
-		11.* )	RELEASE=bullseye;;
+		11.* | bullseye/sid )	RELEASE=bullseye;;
+		12.* | bookworm/sid )	RELEASE= bookworm;;
 		* )
 			echo "unknown Debian Version \`$(cat /etc/debian_version)'" >&2
 			exit 1
