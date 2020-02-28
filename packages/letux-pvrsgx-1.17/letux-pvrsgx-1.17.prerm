@@ -1,5 +1,5 @@
 #! /bin/sh
-# prerm script for letux-pvrsgx-1.14
+# prerm script for letux-pvrsgx-1.17
 #
 # see: dh_installdeb(1)
 
@@ -21,7 +21,7 @@ case "$1" in
     remove)
 	if [ -x /usr/bin/pvrsrvctl ]
 	then
-		rm -rf omap5-sgx-ddk-um-linux/
+		rm -rf /var/cache/sgx-um/
 		rm /usr/bin/pvrsrvctl
 		rm /usr/lib/arm-linux-gnueabihf/libgbm.so.2
 		rm /usr/lib/lib*.so.1.17.*

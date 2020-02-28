@@ -17,12 +17,19 @@ set -e
 # the debian-policy package
 #
 
-patch()	# not working
+patch()
 { # patch binary file
 	_file="$1"
 	_address="$(($2))"	# should have 0x prefix
-	_byte=echo -en "\x$3"	# no 0x prefix
-	echo -ne \\xe0 | dd conv=notrunc of="$_file" bs=1 seek="$_address"
+	_byte="$3"	# should have 0x prefix
+	perl -e 'print pack("c",('$_byte'))' | dd conv=notrunc of="$_file" bs=1 seek="$_address"
+}
+
+dumpbyte()
+{
+	_file="$1"
+	_address="$(($2))"	# should have 0x prefix
+	echo $2: $(dd if="$_file" bs=1 count=1 skip="$_address" 2>/dev/null | xxd -p)
 }
 
 clone()
@@ -45,33 +52,38 @@ case "$1" in
     configure)
 	if ! [ -x /usr/bin/pvrsrvctl ]
 	then
+		cd /var/cache
+		# FIXME: base on 'sgx' compatible and machine model
+		echo "installing for $(tr '\0' '@' </proc/device-tree/compatible)"
 		case "@$(tr '\0' '@' </proc/device-tree/compatible)" in
 			*@ti,am33xx@* )
 				# for SGX530-125 with tilcdc
-				clone git://git.ti.com/graphics/omap5-sgx-ddk-um-linux.git ti-img-sgx/thud/1.17.4948957
+				clone git://git.ti.com/graphics/omap5-sgx-ddk-um-linux.git ti-img-sgx/zeus/1.17.4948957
 				export TARGET_PRODUCT=ti335x
 				;;
-			*@ti,am43xx@* | *@ti,omap3630@* | *@ti,omap4@* )
+			*@ti,omap34xx@* )
+				# for SGX530-121 with omapdrm
+				clone git://git.ti.com/graphics/omap5-sgx-ddk-um-linux.git ti-img-sgx/zeus/1.17.4948957
+				export TARGET_PRODUCT=ti343x
+				;;
+			*@ti,am43xx@* | *@ti,omap3630@* )
 				# for SGX530-125 with omapdrm
-				clone git://git.ti.com/graphics/omap5-sgx-ddk-um-linux.git ti-img-sgx/thud/1.17.4948957
+				clone git://git.ti.com/graphics/omap5-sgx-ddk-um-linux.git ti-img-sgx/zeus/1.17.4948957
 				export TARGET_PRODUCT=ti437x
+				;;
+			*@ti,omap44xx@* )
+				# for SGX540-1?? with omapdrm
+				clone git://git.ti.com/graphics/omap5-sgx-ddk-um-linux.git ti-img-sgx/zeus/1.17.4948957
+				export TARGET_PRODUCT=ti443x
 				;;
 			*@ti,am57xx@* | *@ti,omap5@* | *@ti,dra7@* )
 				# for SGX544 with omapdrm
-				clone git://git.ti.com/graphics/omap5-sgx-ddk-um-linux.git ti-img-sgx/thud/1.17.4948957 3af51eb8	# do not checkout latest version
-				# alternates (untested)
-				# clone https://github.com/mvduin/omap5-sgx-ddk-um-linux.git ti-img-sgx/1.14.3699939
-				# clone http://dev.pyra-handheld.com/packages/omap5-sgx-ddk-um-linux.git master
-				# apply magic patch found on https://dev.pyra-handheld.com/packages/omap5-sgx-ddk-um-linux/commit/543c0d0bc7f9472368e58d6e037a1cf35de27da3
-				# patch targetfs/jacinto6evm/lib/libsrv_um.so.1.14.3699939 0x98eb e0
-				dd if=targetfs/jacinto6evm/lib/libsrv_um.so.1.14.3699939 bs=1 count=1 skip=$((0x98eb)) | xxd
-				echo -ne \\xe0 | dd conv=notrunc of=targetfs/jacinto6evm/lib/libsrv_um.so.1.14.3699939 bs=1 seek=$((0x98eb))
-				# read back
-				dd if=targetfs/jacinto6evm/lib/libsrv_um.so.1.14.3699939 bs=1 count=1 skip=$((0x98eb)) | xxd
+				clone git://git.ti.com/graphics/omap5-sgx-ddk-um-linux.git ti-img-sgx/zeus/1.17.4948957
 				export TARGET_PRODUCT=jacinto6evm
 				;;
 			*--am65x--* )
-				clone git://git.ti.com/graphics/omap5-sgx-ddk-um-linux.git ti-img-sgx/thud/1.17.4948957
+				# for SGX5? with omapdrm
+				clone git://git.ti.com/graphics/omap5-sgx-ddk-um-linux.git ti-img-sgx/zeus/1.17.4948957
 				export TARGET_PRODUCT=ti654x
 				;;
 			*@ingenic,jz4780@* )
@@ -101,15 +113,20 @@ case "$1" in
 
 		if [ "$TARGET_PRODUCT" ]
 		then	# install through makefile
-			echo installing user space files for $TARGET_PRODUCT >&2
+			echo "installing user space files for \`$TARGET_PRODUCT'" >&2
 			export DISCIMAGE=/
-			rm targetfs/*/etc/powervr.ini	# don't overwrite by the version from git
+			rm targetfs/*/etc/powervr.ini	# don't overwrite what we installed by the version from git
 			make install
+			# FIXME: somehow find out from lcd definition
+			if [ "$TARGET_PRODUCT" = "ti335x" ]
+			then	# fix pixel format for 16 bit LCDC
+				echo "fix /etc/powervr.ini for \`$TARGET_PRODUCT'" >&2
+				sed -i.bak 's/DefaultPixelFormat=RGB[0-9][0-9][0-9]/DefaultPixelFormat=RGB565/g' /etc/powervr.ini
+			fi
 			rm -f /usr/lib/arm-linux-gnueabihf/libgbm.so.2
 			ln -s libgbm.so.1 /usr/lib/arm-linux-gnueabihf/libgbm.so.2
 			[ -f /usr/lib/libGLESv2.so.1 ] || ln -s libGLESv2.so.2 /usr/lib/libGLESv2.so.1
-			cd ..
-			rm -rf sgx-um/
+			ln -sf pvr_dri.so /usr/lib/dri/omapdrm_dri.so
 		fi
 
 		rm -f /usr/bin/pvrsrvctl.bak
