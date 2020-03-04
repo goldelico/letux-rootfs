@@ -61,17 +61,17 @@ case "$1" in
 				clone git://git.ti.com/graphics/omap5-sgx-ddk-um-linux.git ti-img-sgx/zeus/1.17.4948957
 				export TARGET_PRODUCT=ti335x
 				;;
-			*@ti,omap34xx@* )
+			*@ti,omap34??@* )
 				# for SGX530-121 with omapdrm
 				clone git://git.ti.com/graphics/omap5-sgx-ddk-um-linux.git ti-img-sgx/zeus/1.17.4948957
 				export TARGET_PRODUCT=ti343x
 				;;
-			*@ti,am43xx@* | *@ti,omap3630@* )
+			*@ti,am43xx@* | *@ti,omap36??@* )
 				# for SGX530-125 with omapdrm
 				clone git://git.ti.com/graphics/omap5-sgx-ddk-um-linux.git ti-img-sgx/zeus/1.17.4948957
 				export TARGET_PRODUCT=ti437x
 				;;
-			*@ti,omap44xx@* )
+			*@ti,omap44??@* )
 				# for SGX540-1?? with omapdrm
 				clone git://git.ti.com/graphics/omap5-sgx-ddk-um-linux.git ti-img-sgx/zeus/1.17.4948957
 				export TARGET_PRODUCT=ti443x
