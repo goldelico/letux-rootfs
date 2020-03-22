@@ -22,18 +22,20 @@ patch()
 	_file="$1"
 	_address="$(($2))"	# should have 0x prefix
 	_byte="$3"	# should have 0x prefix
-	perl -e 'print pack("c",('$_byte'))' | dd conv=notrunc of="$_file" bs=1 seek="$_address"
+	perl -e 'print pack("c",('$_byte'))' | dd conv=notrunc of="$_file" bs=1 seek="$_address" 2>/dev/null
 }
 
 dumpbyte()
 {
 	_file="$1"
 	_address="$(($2))"	# should have 0x prefix
-	echo $2: $(dd if="$_file" bs=1 count=1 skip="$_address" 2>/dev/null | xxd -p)
+	_len="$3"
+	[ "$_len" ] || _len=1
+	xxd -p -l $_len -s "$_address" "$_file"
 }
 
 clone()
-{ # clone a repo and optionally select a specific commit
+{ # clone a repo, cd to the download and optionally checkout a specific commit
 	_repo="$1"
 	_branch="$2"
 	_commit="$3"
@@ -76,8 +78,23 @@ case "$1" in
 				clone git://git.ti.com/graphics/omap5-sgx-ddk-um-linux.git ti-img-sgx/zeus/1.17.4948957
 				export TARGET_PRODUCT=ti443x
 				;;
-			*@ti,am57xx@* | *@ti,omap5@* | *@ti,dra7@* )
-				# for SGX544 with omapdrm
+			*@ti,omap5@* )
+				# for SGX544-116 with omapdrm
+				clone git://git.ti.com/graphics/omap5-sgx-ddk-um-linux.git ti-img-sgx/zeus/1.17.4948957
+				export TARGET_PRODUCT=jacinto6evm
+				echo patching user space files for OMAP5432 >&2
+				# patch binary to disable the check /sys/devices/soc0/machine for DRA7[1256]2 built into the code
+				LIBSRV_UM=targetfs/$TARGET_PRODUCT/lib/libsrv_um.so
+				# dumpbyte $LIBSRV_UM 0x8a3a 2
+				# dumpbyte $LIBSRV_UM 0x89ea 2
+				patch $LIBSRV_UM 0x8a3a 0x00	# d7 -> 00
+				patch $LIBSRV_UM 0x8a3b 0xbf	# d1 -> bf
+				patch $LIBSRV_UM 0x89eb 0xe0	# d0 -> e0
+				# dumpbyte $LIBSRV_UM 0x8a3a 2
+				# dumpbyte $LIBSRV_UM 0x89ea 2
+				;;
+			*@ti,am57xx@* | *@ti,dra7@* )
+				# for SGX544-116 with omapdrm
 				clone git://git.ti.com/graphics/omap5-sgx-ddk-um-linux.git ti-img-sgx/zeus/1.17.4948957
 				export TARGET_PRODUCT=jacinto6evm
 				;;
