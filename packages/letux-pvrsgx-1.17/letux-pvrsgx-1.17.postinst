@@ -73,7 +73,7 @@ case "$1" in
 				clone git://git.ti.com/graphics/omap5-sgx-ddk-um-linux.git ti-img-sgx/zeus/1.17.4948957
 				export TARGET_PRODUCT=ti437x
 				;;
-			*@ti,omap44??@* )
+			*@ti,omap44??@* | *@ingenic,jz4780@* )
 				# for SGX540-1?? with omapdrm
 				clone git://git.ti.com/graphics/omap5-sgx-ddk-um-linux.git ti-img-sgx/zeus/1.17.4948957
 				export TARGET_PRODUCT=ti443x
@@ -130,6 +130,11 @@ case "$1" in
 
 		if [ "$TARGET_PRODUCT" ]
 		then	# install through makefile
+			# these files have been removed by the last activities!
+			git checkout 87d7e5c -- targetfs/$TARGET_PRODUCT/bin/eglinfo
+			git checkout 87d7e5c -- targetfs/$TARGET_PRODUCT/bin/gles1test1
+			git checkout 87d7e5c -- targetfs/$TARGET_PRODUCT/bin/gles2test1
+			git checkout 87d7e5c -- targetfs/$TARGET_PRODUCT/bin/pvr
 			echo "installing user space files for \`$TARGET_PRODUCT'" >&2
 			export DISCIMAGE=/
 			rm targetfs/*/etc/powervr.ini	# don't overwrite what we installed by the version from git
