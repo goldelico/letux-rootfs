@@ -132,9 +132,12 @@ case "$1" in
 		then	# install through makefile
 			echo "installing user space files for \`$TARGET_PRODUCT'" >&2
 			# these files have been removed by the last upstream updates!
+			GLES_PRODUCT=$TARGET_PRODUCT
+			[ "$GLES_PRODUCT" = ti343x ] && GLES_PRODUCT=ti335x
+			[ "$GLES_PRODUCT" = ti443x ] && GLES_PRODUCT=ti335x
 			for i in eglinfo gles1test1 gles2test1 pvr
 			do # install if file is available
-				git checkout 87d7e5c -- targetfs/$TARGET_PRODUCT/$i || true
+				git checkout 87d7e5c -- targetfs/$GLES_PRODUCT/bin/$i || true
 			done
 			export DISCIMAGE=/
 			rm targetfs/*/etc/powervr.ini	# don't overwrite what we installed by the version from git
