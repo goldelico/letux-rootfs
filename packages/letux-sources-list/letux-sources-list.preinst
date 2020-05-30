@@ -59,16 +59,17 @@ then
 
 	case "$(cat /etc/debian_version)" in
 		7.* )	RELEASE=wheezy; REPO=http://archive.debian.org;;
-		8.* )	RELEASE=jessie; REPO=http://archive.debian.org;;
+		8.* )	RELEASE=jessie; REPO=http://deb.debian.org; BPREPO=http://archive.debian.org;;
 		9.* )	RELEASE=stretch;;
 		10.* )	RELEASE=buster;;
 		11.* | bullseye/sid )	RELEASE=bullseye;;
-		12.* | bookworm/sid )	RELEASE= bookworm;;
+		12.* | bookworm/sid )	RELEASE=bookworm;;
 		* )
 			echo "unknown Debian Version \`$(cat /etc/debian_version)'" >&2
 			exit 1
 			;;
 	esac
+	[ "$BPREPO" ] || BPREPO=$REPO
 
 # remove old stuff
 	rm -f /etc/apt/sources.list.d/gta04.list /etc/apt/sources.list.d/pyra.list /etc/apt/sources.list.d/qtmoko.list >&2
@@ -81,7 +82,7 @@ deb http://download.goldelico.com/letux-debian-rootfs/debian $RELEASE main
 
 # Debian non-free and backports (mainly used for WiFi drivers)
 deb $REPO/debian $RELEASE non-free
-deb $REPO/debian $RELEASE-backports main non-free
+deb $BPREPO/debian $RELEASE-backports main non-free
 END
 	cat >./etc/apt/apt.conf.d/10-no-check-valid-until <<END
 # disable Valid-Until: check for Release file
