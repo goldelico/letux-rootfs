@@ -1,5 +1,5 @@
 #! /bin/sh
-# prerm script for letux-xorg-kobolino
+# prerm script for letux-xorg-kobolino-epd
 #
 # see: dh_installdeb(1)
 
@@ -22,7 +22,7 @@ case "$1" in
  	BUILD="/var/cache/"
 	cd $BUILD
 	rm -rf xf86-video-fbdev-kobo-epd xf86-video-fbdev-kobolino.zip
-	# restore /usr/lib/xorg/modules/drivers/fbdev_drv.so
+	[ -r /usr/lib/xorg/modules/drivers/fbdev_drv.so.orig ] && mv /usr/lib/xorg/modules/drivers/fbdev_drv.so.orig /usr/lib/xorg/modules/drivers/fbdev_drv.so
    ;;
 
     upgrade|deconfigure)

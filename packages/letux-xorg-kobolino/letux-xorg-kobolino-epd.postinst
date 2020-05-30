@@ -1,5 +1,5 @@
 #! /bin/sh
-# postinst script for letux-xorg-kobolino
+# postinst script for letux-xorg-kobolino-epd
 #
 # see: dh_installdeb(1)
 
@@ -17,7 +17,7 @@ set -e
 # the debian-policy package
 #
 
-LINUX="http://git.goldelico.com/?p=letux-kernel.git;hb=refs/heads/letux/kobolino-epdc;a=blob;f="
+LINUX="https://git.goldelico.com/?p=letux-kernel.git;hb=refs/heads/letux/kobolino-epdc;a=blob;f="
 SRC="/var/cache/"
 
 case "$1" in
@@ -33,7 +33,9 @@ case "$1" in
 	./autogen.sh
 	./configure
 	make
-#	cp fbdev_drv.so /usr/lib/xorg/modules/drivers/fbdev_drv.so
+	# instead of make install
+	[ -r /usr/lib/xorg/modules/drivers/fbdev_drv.so.orig ] || mv -f /usr/lib/xorg/modules/drivers/fbdev_drv.so /usr/lib/xorg/modules/drivers/fbdev_drv.so.orig
+	cp src/.libs/fbdev_drv.so /usr/lib/xorg/modules/drivers/fbdev_drv.so
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)
