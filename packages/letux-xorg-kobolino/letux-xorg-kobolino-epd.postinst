@@ -17,7 +17,7 @@ set -e
 # the debian-policy package
 #
 
-LINUX="https://git.goldelico.com/?p=letux-kernel.git;hb=refs/heads/letux/kobolino-epdc;a=blob;f="
+LINUX="https://git.goldelico.com/?p=letux-kernel.git;hb=refs/heads/letux/kobolino-epdc;a=blob_plain;f="
 SRC="/var/cache/"
 
 case "$1" in
@@ -28,6 +28,7 @@ case "$1" in
 	rm -rf xf86-video-fbdev-kobo-epd/
 	git clone https://github.com/akemnade/xf86-video-fbdev.git xf86-video-fbdev-kobo-epd
 	cd xf86-video-fbdev-kobo-epd/
+	git checkout kobo-epd
 	echo fetch "${LINUX}include/uapi/linux/mxcfb.h"
 	wget -O /usr/include/linux/mxcfb.h "${LINUX}include/uapi/linux/mxcfb.h"	# no $LINUX/
 	./autogen.sh
