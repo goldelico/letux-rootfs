@@ -6,6 +6,7 @@ export DEBIAN_PACKAGE_NAME="letux-config-networking"
 export DEBIAN_RAW_FILES="./etc/network"
 export INSTALL_PATH="//"
 export PRODUCT_NAME="letux-config-networking"
+export SOURCES="letux-config-networking.postinst"
 
 [ "$QuantumSTEP" ] || export QuantumSTEP="/usr/local/QuantumSTEP"
 cd "$(dirname "${BASH_SOURCE[0]}")" && "$QuantumSTEP/System/Sources/Frameworks/mySTEP.make" $ACTION
