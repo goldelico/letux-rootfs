@@ -22,7 +22,8 @@ case "$1" in
 
 	if [ -w /lib/systemd/system/networking.service ]
 	then
-		sed -i.bak 's/TimeoutStartSec=.*/TimeoutStartSec=5min/' /lib/systemd/system/networking.service
+		## seems to break creation of usb0 interface!
+		## sed -i.bak 's/TimeoutStartSec=.*/TimeoutStartSec=5sec/' /lib/systemd/system/networking.service
 		echo Network setup timeout redefined
 	fi
 
