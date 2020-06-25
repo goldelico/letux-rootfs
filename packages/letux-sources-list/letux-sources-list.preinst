@@ -30,26 +30,29 @@ FIXIT=false
 [ -r /etc/apt/sources.list.d/qtmoko.list ] && FIXIT=true
 
 # files explicitly referencing stable release
-fgrep -q ' stable ' /etc/apt/sources.list.d/letux*.list 2>/dev/null && FIXIT=true
-fgrep -q ' stable ' /etc/apt/sources.list.d/qtmoko*.list 2>/dev/null && FIXIT=true
-fgrep -q ' stable ' /etc/apt/sources.list.d/quantumstep*.list 2>/dev/null && FIXIT=true
+fgrep -q 'deb stable ' /etc/apt/sources.list.d/letux*.list 2>/dev/null && FIXIT=true
+fgrep -q 'deb stable ' /etc/apt/sources.list.d/qtmoko*.list 2>/dev/null && FIXIT=true
+fgrep -q 'deb stable ' /etc/apt/sources.list.d/quantumstep*.list 2>/dev/null && FIXIT=true
 
 # files referencing both wheezy and jessie
-fgrep -q ' jessie ' /etc/apt/sources.list.d/qtmoko2.list 2>/dev/null &&
+fgrep -q 'deb jessie ' /etc/apt/sources.list.d/qtmoko2.list 2>/dev/null &&
 	fgrep -q ' wheezy ' /etc/apt/sources.list.d/qtmoko2.list 2>/dev/null && FIXIT=true
-fgrep -q ' jessie ' /etc/apt/sources.list.d/quantumstep.list 2>/dev/null &&
+fgrep -q 'deb jessie ' /etc/apt/sources.list.d/quantumstep.list 2>/dev/null &&
 	fgrep -q ' wheezy ' /etc/apt/sources.list.d/quantumstep.list 2>/dev/null && FIXIT=true
 
 # historical entries in /etc/apt/sources.list
 
-fgrep -q ' jessie non-free' /etc/apt/sources.list 2>/dev/null && FIXIT=true
-fgrep -q ' jessie-backports' /etc/apt/sources.list 2>/dev/null && FIXIT=true
+fgrep -q 'deb jessie non-free' /etc/apt/sources.list 2>/dev/null && FIXIT=true
+fgrep -q 'deb jessie-backports' /etc/apt/sources.list 2>/dev/null && FIXIT=true
 
 # backports have been moved from httpredir to archive
-fgrep -q ' http://http.debian.org/debian wheezy' /etc/apt/sources.list.d/letux*.list 2>/dev/null && FIXIT=true
-fgrep -q ' http://httpredir.debian.org/debian wheezy' /etc/apt/sources.list.d/letux*.list 2>/dev/null && FIXIT=true
-fgrep -q ' http://http.debian.org/debian jessie' /etc/apt/sources.list.d/letux*.list 2>/dev/null && FIXIT=true
-fgrep -q ' http://httpredir.debian.org/debian jessie' /etc/apt/sources.list.d/letux*.list 2>/dev/null && FIXIT=true
+fgrep -q 'deb http://http.debian.org/debian wheezy' /etc/apt/sources.list.d/letux*.list 2>/dev/null && FIXIT=true
+fgrep -q 'deb http://httpredir.debian.org/debian wheezy' /etc/apt/sources.list.d/letux*.list 2>/dev/null && FIXIT=true
+fgrep -q 'deb http://http.debian.org/debian jessie' /etc/apt/sources.list.d/letux*.list 2>/dev/null && FIXIT=true
+fgrep -q 'deb http://httpredir.debian.org/debian jessie' /etc/apt/sources.list.d/letux*.list 2>/dev/null && FIXIT=true
+
+# files still not in archive but main repo
+fgrep -q 'deb http://archive.debian.org/debian jessie non-free' /etc/apt/sources.list.d/letux*.list 2>/dev/null && FIXIT=true
 
 if $FIXIT
 then
@@ -59,7 +62,7 @@ then
 
 	case "$(cat /etc/debian_version)" in
 		7.* )	RELEASE=wheezy; REPO=http://archive.debian.org;;
-		8.* )	RELEASE=jessie; REPO=http://deb.debian.org; BPREPO=http://archive.debian.org;;
+		8.* )	RELEASE=jessie; REPO=http://httpredir.debian.org; BPREPO=http://archive.debian.org;;
 		9.* )	RELEASE=stretch;;
 		10.* )	RELEASE=buster;;
 		11.* | bullseye/sid )	RELEASE=bullseye;;
@@ -72,10 +75,15 @@ then
 	[ "$BPREPO" ] || BPREPO=$REPO
 
 # remove old stuff
-	rm -f /etc/apt/sources.list.d/gta04.list /etc/apt/sources.list.d/pyra.list /etc/apt/sources.list.d/qtmoko.list >&2
+	rm -f /etc/apt/sources.list.d/gta04.list >&2
+	rm -f /etc/apt/sources.list.d/pyra.list >&2
+	rm -f /etc/apt/sources.list.d/qtmoko.list >&2
 
+# recreate
 	cd /
-	rm -f ./etc/apt/sources.list.d/letux.list ./etc/apt/sources.list.d/qtmoko2.list ./etc/apt/sources.list.d/quantumstep.list >&2
+	rm -f ./etc/apt/sources.list.d/letux.list >&2
+	rm -f ./etc/apt/sources.list.d/qtmoko2.list >&2
+	rm -f ./etc/apt/sources.list.d/quantumstep.list >&2
 	cat >./etc/apt/sources.list.d/letux.list <<END
 # Letux repository
 deb http://download.goldelico.com/letux-debian-rootfs/debian $RELEASE main
