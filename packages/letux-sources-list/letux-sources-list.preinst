@@ -17,74 +17,43 @@ set -e
 # If we change anything, abort because user must
 # manually apt-get upgrade and restart the install process
 
-FIXIT=false
+CHANGED=false
 
-# files missing
-[ -r /etc/apt/sources.list.d/letux.list ] || FIXIT=true
-[ -r /etc/apt/sources.list.d/qtmoko2.list ] || FIXIT=true
-[ -r /etc/apt/sources.list.d/quantumstep.list ] || FIXIT=true
+replacefile() {
+	cat >/tmp/$$
+	if [ ! -r "$1" ] || ! diff -q /tmp/$$ "$1" 2>/dev/null
+	then
+		mv /tmp/$$ "$1"
+		CHANGED=true
+	fi
+}
 
-# files that need to be removed
-[ -r /etc/apt/sources.list.d/gta04.list ] && FIXIT=true
-[ -r /etc/apt/sources.list.d/pyra.list ] && FIXIT=true
-[ -r /etc/apt/sources.list.d/qtmoko.list ] && FIXIT=true
+REPO=http://httpredir.debian.org
 
-# files explicitly referencing stable release
-fgrep -q 'deb stable ' /etc/apt/sources.list.d/letux*.list 2>/dev/null && FIXIT=true
-fgrep -q 'deb stable ' /etc/apt/sources.list.d/qtmoko*.list 2>/dev/null && FIXIT=true
-fgrep -q 'deb stable ' /etc/apt/sources.list.d/quantumstep*.list 2>/dev/null && FIXIT=true
-
-# files referencing both wheezy and jessie
-fgrep -q 'deb jessie ' /etc/apt/sources.list.d/qtmoko2.list 2>/dev/null &&
-	fgrep -q ' wheezy ' /etc/apt/sources.list.d/qtmoko2.list 2>/dev/null && FIXIT=true
-fgrep -q 'deb jessie ' /etc/apt/sources.list.d/quantumstep.list 2>/dev/null &&
-	fgrep -q ' wheezy ' /etc/apt/sources.list.d/quantumstep.list 2>/dev/null && FIXIT=true
-
-# historical entries in /etc/apt/sources.list
-
-fgrep -q 'deb jessie non-free' /etc/apt/sources.list 2>/dev/null && FIXIT=true
-fgrep -q 'deb jessie-backports' /etc/apt/sources.list 2>/dev/null && FIXIT=true
-
-# backports have been moved from httpredir to archive
-fgrep -q 'deb http://http.debian.org/debian wheezy' /etc/apt/sources.list.d/letux*.list 2>/dev/null && FIXIT=true
-fgrep -q 'deb http://httpredir.debian.org/debian wheezy' /etc/apt/sources.list.d/letux*.list 2>/dev/null && FIXIT=true
-fgrep -q 'deb http://http.debian.org/debian jessie' /etc/apt/sources.list.d/letux*.list 2>/dev/null && FIXIT=true
-fgrep -q 'deb http://httpredir.debian.org/debian jessie' /etc/apt/sources.list.d/letux*.list 2>/dev/null && FIXIT=true
-
-# files still not in archive but main repo
-fgrep -q 'deb http://archive.debian.org/debian jessie non-free' /etc/apt/sources.list.d/letux*.list 2>/dev/null && FIXIT=true
-
-if $FIXIT
-then
-	# old setup detected which needs a cleanup
-
-	REPO=http://httpredir.debian.org
-
-	case "$(cat /etc/debian_version)" in
-		7.* )	RELEASE=wheezy; REPO=http://archive.debian.org;;
-		8.* )	RELEASE=jessie; REPO=http://httpredir.debian.org; BPREPO=http://archive.debian.org;;
-		9.* )	RELEASE=stretch;;
-		10.* )	RELEASE=buster;;
-		11.* | bullseye/sid )	RELEASE=bullseye;;
-		12.* | bookworm/sid )	RELEASE=bookworm;;
-		* )
-			echo "unknown Debian Version \`$(cat /etc/debian_version)'" >&2
-			exit 1
-			;;
-	esac
-	[ "$BPREPO" ] || BPREPO=$REPO
+case "$(cat /etc/debian_version)" in
+	7.* )	RELEASE=wheezy; REPO=http://archive.debian.org;;
+	8.* )	RELEASE=jessie; REPO=http://httpredir.debian.org; BPREPO=http://archive.debian.org;;
+	9.* )	RELEASE=stretch;;
+	10.* )	RELEASE=buster;;
+	11.* | bullseye/sid )	RELEASE=bullseye;;
+	12.* | bookworm/sid )	RELEASE=bookworm;;
+	13.* | trixie/sid )	RELEASE=trixie;;
+	* )
+		echo "unknown Debian Version \`$(cat /etc/debian_version)'" >&2
+		exit 1
+		;;
+esac
+[ "$BPREPO" ] || BPREPO=$REPO
 
 # remove old stuff
-	rm -f /etc/apt/sources.list.d/gta04.list >&2
-	rm -f /etc/apt/sources.list.d/pyra.list >&2
-	rm -f /etc/apt/sources.list.d/qtmoko.list >&2
+rm /etc/apt/sources.list.d/gta04.list 2>/dev/null && CHANGED=true
+rm /etc/apt/sources.list.d/pyra.list 2>/dev/null && CHANGED=true
+rm /etc/apt/sources.list.d/qtmoko.list 2>/dev/null && CHANGED=true
 
 # recreate
-	cd /
-	rm -f ./etc/apt/sources.list.d/letux.list >&2
-	rm -f ./etc/apt/sources.list.d/qtmoko2.list >&2
-	rm -f ./etc/apt/sources.list.d/quantumstep.list >&2
-	cat >./etc/apt/sources.list.d/letux.list <<END
+cd /
+
+replacefile ./etc/apt/sources.list.d/letux.list <<END
 # Letux repository
 deb http://download.goldelico.com/letux-debian-rootfs/debian $RELEASE main
 
@@ -92,20 +61,28 @@ deb http://download.goldelico.com/letux-debian-rootfs/debian $RELEASE main
 deb $REPO/debian $RELEASE non-free
 deb $BPREPO/debian $RELEASE-backports main non-free
 END
-	cat >./etc/apt/apt.conf.d/10-no-check-valid-until <<END
+
+replacefile ./etc/apt/apt.conf.d/10-no-check-valid-until <<END
 # disable Valid-Until: check for Release file
 Acquire::Check-Valid-Until "0";
 END
-	cat >./etc/apt/sources.list.d/qtmoko2.list <<END
+
+replacefile ./etc/apt/sources.list.d/qtmoko2.list <<END
 # QtMoko2 repository
 deb http://www.qtmoko.net/download/ $RELEASE main
 deb-src http://www.qtmoko.net/download/ $RELEASE main
 END
-	cat >./etc/apt/sources.list.d/quantumstep.list <<END
+
+replacefile ./etc/apt/sources.list.d/quantumstep.list <<END
 # QuantumSTEP repository
 deb http://download.goldelico.com/quantumstep/debian $RELEASE main
 END
-	sed -i.bak '/deb http:\/\/ftp2.de.debian.org\/debian jessie non-free/d; /deb http:\/\/http.debian.net\/debian jessie-backports main non-free/d' ./etc/apt/sources.list
+
+sed -i.bak '/deb http:\/\/ftp2.de.debian.org\/debian jessie non-free/d; /deb http:\/\/http.debian.net\/debian jessie-backports main non-free/d' ./etc/apt/sources.list
+diff -q ./etc/apt/sources.list ./etc/apt/sources.list.bak 2>/dev/null || CHANGED=true
+
+if $CHANGED
+then
 
 	echo "********************************************************" >&2
 	echo "*                                                      *" >&2
