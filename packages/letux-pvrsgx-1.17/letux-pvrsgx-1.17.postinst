@@ -22,6 +22,7 @@ patch()
 	_file="$1"
 	_address="$(($2))"	# should have 0x prefix
 	_byte="$3"	# should have 0x prefix
+	# echo printf "%x: %02x" $((_address)) $(($_byte)) | xxd -r - "$_file"
 	perl -e 'print pack("c",('$_byte'))' | dd conv=notrunc of="$_file" bs=1 seek="$_address" 2>/dev/null
 }
 
@@ -82,16 +83,24 @@ case "$1" in
 				# for SGX544-116 with omapdrm
 				clone git://git.ti.com/graphics/omap5-sgx-ddk-um-linux.git ti-img-sgx/zeus/1.17.4948957
 				export TARGET_PRODUCT=jacinto6evm
-				echo patching user space files for OMAP5432 >&2
+				echo patching user space files for OMAP5432 ... >&2
 				# patch binary to disable the check /sys/devices/soc0/machine for DRA7[1256]2 built into the code
 				LIBSRV_UM=targetfs/$TARGET_PRODUCT/lib/libsrv_um.so
-				# dumpbyte $LIBSRV_UM 0x8a3a 2
-				# dumpbyte $LIBSRV_UM 0x89ea 2
+				#echo before patching... >&2
+				#dumpbyte $LIBSRV_UM 0x8a3a 2
+				#dumpbyte $LIBSRV_UM 0x89ea 2
 				patch $LIBSRV_UM 0x8a3a 0x00	# d7 -> 00
 				patch $LIBSRV_UM 0x8a3b 0xbf	# d1 -> bf
 				patch $LIBSRV_UM 0x89eb 0xe0	# d0 -> e0
-				# dumpbyte $LIBSRV_UM 0x8a3a 2
-				# dumpbyte $LIBSRV_UM 0x89ea 2
+				#echo "...after patching (should be 00bf 04e0)" >&2
+				#dumpbyte $LIBSRV_UM 0x8a3a 2
+				#dumpbyte $LIBSRV_UM 0x89ea 2
+				if [ "$(dumpbyte $LIBSRV_UM 0x8a3a 2)" = 00bf ] && [ "$(dumpbyte $LIBSRV_UM 0x89ea 2)" = 04e0 ]
+				then
+					echo ... successfully patched! >&2
+				else
+					echo patching failed! >&2
+				fi
 				;;
 			*@ti,am57xx@* | *@ti,dra7@* )
 				# for SGX544-116 with omapdrm
