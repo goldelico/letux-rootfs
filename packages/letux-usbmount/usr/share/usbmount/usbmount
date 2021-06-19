@@ -15,7 +15,6 @@
 # PARTICULAR PURPOSE.
 #
 
-echo DEVNAME=$DEVNAME $0 $@ >/dev/console
 # set -e
 exec > /dev/null 2>&1
 
@@ -48,11 +47,13 @@ in_list()
 # Default values for configuration variables.
 ENABLED=1
 MOUNTPOINTS=
-MOUNTDIR="/media/letux"
+MOUNTDIR="/media/letux"	# could become /Volumes for QuantumSTEP
 FILESYSTEMS=
 MOUNTOPTIONS=
 FS_MOUNTOPTIONS=
 VERBOSE=no
+
+log debug "DEVNAME=$DEVNAME $0 $@"
 
 if [ -r /etc/usbmount/usbmount.conf ]; then
     . /etc/usbmount/usbmount.conf
@@ -78,40 +79,32 @@ fi
 
 umask 022
 
-DEVINFO=$(/sbin/blkid -p $DEVNAME)
+DEVINFO=$(/sbin/blkid -p $DEVNAME 2>/dev/null)
 
 if echo "$DEVINFO" | fgrep -q "LABEL="
 then
 	LABEL=$(echo "$DEVINFO"  | sed 's/.*[[:blank:]]LABEL="\([^"]*\)".*/\1/g; s/[[:blank:]]*//g;')
 	echo "$0: label $LABEL" >/dev/console
-	if [ "$LABEL" ]
-	then # create dynamic mountpoint name
-		# should we remove blanks and other weird characeters from $LABEL?
-		MOUNTPOINTS="$MOUNTDIR/$LABEL $MOUNTPOINTS"
-		echo "$0: mountpoints $MOUNTPOINTS" >/dev/console
-	fi
 fi
 
 clean_dynamic () {
     # try to clean up stale directories from last mount
     for mount in "$MOUNTDIR/"*
     do
-# echo $mount >/dev/console
+# cat /proc/mounts >/dev/console
+# echo check for $mount >/dev/console
 # ls -ld $mount >/dev/console
-	[ ! -d "$mount" ] && continue	# not found
-	found=false
-	while read device mountpoint fstype remainder; do
-# echo "$mount == $mountpoint" >/dev/console
-		if [ "$mount" == "$mountpoint" ]
-		then
-			found=true
-		fi
-	done < /proc/mounts
-	if ! $found
-	then
-		echo "$0: clean up $mount" >/dev/console
-		rmdir "$mount" || echo "$0: failed to clean $mount" >/dev/console	# should be empty
+	if [ ! -d "$mount" ] || grep -q "^[^ ][^ ]* *$mount " /proc/mounts
+	then # mountpoint does not exist or is currently mounted
+# echo skip $mount >/dev/console
+# ls -ld $mount >/dev/console
+# grep "^[^ ][^ ]* */media/letux/rootfs" /proc/mounts >/dev/console
+# echo mounts
+# cat /proc/mounts >/dev/console
+		continue
 	fi
+	echo "$0: clean up $mount" >/dev/console
+	rmdir "$mount" || echo "$0: failed to clean $mount" >/dev/console	# should be empty
     done
 }
 
@@ -124,14 +117,32 @@ if [ "$1" = add ]; then
     trap '( lockfile-remove /var/run/usbmount/.mount )' 0
     log debug "acquired lock /var/run/usbmount/.mount.lock"
 
-if [ "$LABEL" ]
-then # create dynamic mountpoint name
-	echo "$0: mounting $LABEL" >/dev/console
-	clean_dynamic
+    clean_dynamic
 
-	mkdir -p "$MOUNTDIR/$LABEL"
-	chmod ugo-rwx "$MOUNTDIR/$LABEL"	# so that we can't write (unless we are root) if umount fails to remove it
-fi
+    if grep -q "^$DEVNAME " /proc/mounts
+    then # add may be called multiple times on insertion
+# grep "^$DEVNAME " /proc/mounts >/dev/console
+	mountpoint=$(grep "^$DEVNAME " /proc/mounts | cut -d ' ' -f2)
+	log debug "$DEVNAME is already mounted on $mountpoint"
+	exit
+    fi
+
+    if [ "$LABEL" ]
+    then # create dynamic mountpoint name
+	mount="$MOUNTDIR/$LABEL"
+	echo "$0: mounting $LABEL as $mount" >/dev/console
+	if grep -q "^[^ ][^ ]* *$mount " /proc/mounts
+	then
+		dev=$(grep "^[^ ][^ ]* *$mount " /proc/mounts | cut -d ' ' -f1)
+		log info "$mount already occupied by device $dev"
+		umount $mount	# umount by mount point
+		# IDEA: add some -1 -2 suffix
+		# exit 1
+	fi
+	MOUNTPOINTS="$mount $MOUNTPOINTS"
+	mkdir -p "$mount"
+	chmod ugo-rwx "$mount"	# so that we can't write (unless we are root) if umount fails to remove it
+    fi
 
     # Grab device information from device and "divide it"
     #   FIXME: improvement: implement mounting by label (notice that labels
@@ -162,8 +173,10 @@ fi
 	# types to mount.
 	if in_list "$fstype" "$FILESYSTEMS"; then
 	    # Search an available mountpoint.
+	    mountpoint=""
 	    for v in $MOUNTPOINTS; do
-		if [ -d "$v" ] && ! grep -q "^[^ ][^ ]*  *$v " /proc/mounts; then
+		if [ -d "$v" ] && ! grep -q "^[^ ][^ ]* *$v " /proc/mounts
+		then
 		    mountpoint="$v"
 		    log debug "mountpoint $mountpoint is available for $DEVNAME"
 		    break
@@ -186,8 +199,8 @@ fi
 		log info "executing command: mount -t$fstype ${options:+-o$options} $DEVNAME $mountpoint"
 
 # id >/dev/console
-# which mount df >/dev/console
-# echo "$0: running: mount -t$fstype ${options:+-o$options} $DEVNAME $mountpoint" >/dev/console
+which mount df >/dev/console
+echo "$0: running: mount -t$fstype ${options:+-o$options} $DEVNAME $mountpoint" >/dev/console
 
 		if ! mount "-t$fstype" "${options:+-o$options}" "$DEVNAME" "$mountpoint"
 		then
@@ -231,11 +244,13 @@ fi
 		export UM_MOUNTOPTIONS="$options"
 		export UM_VENDOR="$vendor"
 		export UM_MODEL="$model"
-		log info "executing command: run-parts /etc/usbmount/mount.d"
-		run-parts /etc/usbmount/mount.d || :
+		#log info "executing command: run-parts /etc/usbmount/mount.d"
+		#run-parts /etc/usbmount/mount.d || :
 	    else
 		# No suitable mount point found.
 		log warning "no mountpoint found for $DEVNAME"
+# grep "^[^ ][^ ]* *$v " /proc/mounts >/dev/console
+# cat /proc/mounts  >/dev/console
 		exit 1
 	    fi
 	fi
@@ -264,7 +279,7 @@ elif [ "$1" = remove ]; then
 	    break
 	fi
     done < /proc/mounts
-    # delete stale dynamic mountpoints
+    # delete (now) stale dynamic mountpoints
     clean_dynamic
 else
     log err "unexpected: action '$1'"
