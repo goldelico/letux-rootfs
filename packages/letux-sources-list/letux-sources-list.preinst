@@ -55,7 +55,7 @@ cd /
 
 replacefile ./etc/apt/sources.list.d/letux.list <<END
 # Letux repository
-deb http://download.goldelico.com/letux-debian-rootfs/debian $RELEASE main
+deb https://download.goldelico.com/letux-debian-rootfs/debian $RELEASE main
 
 # Debian non-free and backports (mainly used for WiFi drivers)
 deb $REPO/debian $RELEASE non-free
@@ -69,13 +69,13 @@ END
 
 replacefile ./etc/apt/sources.list.d/qtmoko2.list <<END
 # QtMoko2 repository
-deb http://www.qtmoko.net/download/ $RELEASE main
-deb-src http://www.qtmoko.net/download/ $RELEASE main
+deb https://www.qtmoko.net/download/ $RELEASE main
+deb-src https://www.qtmoko.net/download/ $RELEASE main
 END
 
 replacefile ./etc/apt/sources.list.d/quantumstep.list <<END
 # QuantumSTEP repository
-deb http://download.goldelico.com/quantumstep/debian $RELEASE main
+deb https://download.goldelico.com/quantumstep/debian $RELEASE main
 END
 
 sed -i.bak '/deb http:\/\/ftp2.de.debian.org\/debian jessie non-free/d; /deb http:\/\/http.debian.net\/debian jessie-backports main non-free/d' ./etc/apt/sources.list
