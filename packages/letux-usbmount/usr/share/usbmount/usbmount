@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # This script mounts USB mass storage devices when they are plugged in
 # and unmounts them when they are removed.
 # Copyright © 2004, 2005 Martin Dickopp
@@ -15,6 +15,14 @@
 # PARTICULAR PURPOSE.
 #
 
+# ideas: get rid of the MOUNTPOINTS mechanism and always use LABEL or UUID
+# improve code by functions to add() remove()
+# streamline code style
+# compare to https://serverfault.com/questions/766506/automount-usb-drives-with-systemd
+# remove debugging code
+
+[ "$DEVNAME" -a -x /bin/systemd ] && exit	# silently ignore call through udev if systemd available; there is another one
+
 # set -e
 exec > /dev/null 2>&1
 
@@ -23,7 +31,7 @@ exec > /dev/null 2>&1
 # Log a string via the syslog facility.
 log()
 {
-    echo $1 $2 >/dev/console
+expr "$VERBOSE" : "[yY]" && echo $1 $2 >/dev/console
     if [ $1 != debug ] || expr "$VERBOSE" : "[yY]" > /dev/null; then
 	logger -p user.$1 -t "usbmount[$$]" -- "$2"
     fi
@@ -40,6 +48,7 @@ in_list()
     return 1
 }
 
+[ "$DEVNAME" ] || DEVNAME="/dev/$2"
 
 ######################################################################
 # Main program
@@ -53,12 +62,12 @@ MOUNTOPTIONS=
 FS_MOUNTOPTIONS=
 VERBOSE=no
 
-log debug "DEVNAME=$DEVNAME $0 $@"
-
 if [ -r /etc/usbmount/usbmount.conf ]; then
     . /etc/usbmount/usbmount.conf
     log debug "loaded usbmount configurations"
 fi
+
+log debug "DEVNAME=$DEVNAME $0 $*"
 
 if [ "${ENABLED:-1}" -eq 0 ]; then
     log info "usbmount is disabled, see /etc/usbmount/usbmount.conf"
@@ -79,13 +88,15 @@ fi
 
 umask 022
 
+# note: there is no DEVINFO on unplug!!!
+
 DEVINFO=$(/sbin/blkid -p $DEVNAME 2>/dev/null)
 
-if echo "$DEVINFO" | fgrep -q "LABEL="
-then
-	LABEL=$(echo "$DEVINFO"  | sed 's/.*[[:blank:]]LABEL="\([^"]*\)".*/\1/g; s/[[:blank:]]*//g;')
-	echo "$0: label $LABEL" >/dev/console
-fi
+LABEL=$(echo "$DEVINFO" | fgrep -q "LABEL=" && echo "$DEVINFO" | sed 's/.*[[:blank:]]LABEL="\([^"]*\)".*/\1/g; s/[[:blank:]]*//g;')
+UUID=$(echo "$DEVINFO" | fgrep -q "UUID=" && echo "$DEVINFO"   | sed 's/.*[[:blank:]]UUID="\([^"]*\)".*/\1/g; s/[[:blank:]]*//g;')
+[ "$LABEL" ] || LABEL="$UUID"	# fall back
+# note: labels should not contain / characters
+# echo "$0: label $LABEL" >/dev/console
 
 clean_dynamic () {
     # try to clean up stale directories from last mount
@@ -103,8 +114,8 @@ clean_dynamic () {
 # cat /proc/mounts >/dev/console
 		continue
 	fi
-	echo "$0: clean up $mount" >/dev/console
-	rmdir "$mount" || echo "$0: failed to clean $mount" >/dev/console	# should be empty
+    	log debug "clean up $mount"
+	rmdir "$mount" || log err "failed to clean $mount"	# should be empty - may contain subdirectories?
     done
 }
 
@@ -130,7 +141,7 @@ if [ "$1" = add ]; then
     if [ "$LABEL" ]
     then # create dynamic mountpoint name
 	mount="$MOUNTDIR/$LABEL"
-	echo "$0: mounting $LABEL as $mount" >/dev/console
+# echo "$0: mounting $LABEL as $mount" >/dev/console
 	if grep -q "^[^ ][^ ]* *$mount " /proc/mounts
 	then
 		dev=$(grep "^[^ ][^ ]* *$mount " /proc/mounts | cut -d ' ' -f1)
@@ -148,9 +159,8 @@ if [ "$1" = add ]; then
     #   FIXME: improvement: implement mounting by label (notice that labels
     #   can contain spaces, which makes things a little bit less comfortable).
 #    DEVINFO=$(/sbin/blkid -p $DEVNAME)
-    FSTYPE=$(echo "$DEVINFO" | sed 's/.*[[:blank:]]TYPE="\([^"]*\)".*/\1/g; s/[[:blank:]]*//g;')
-    UUID=$(echo "$DEVINFO"   | sed 's/.*[[:blank:]]UUID="\([^"]*\)".*/\1/g; s/[[:blank:]]*//g;')
-    USAGE=$(echo "$DEVINFO"  | sed 's/.*[[:blank:]]USAGE="\([^"]*\)".*/\1/g; s/[[:blank:]]*//g;')
+    FSTYPE=$(echo "$DEVINFO" | fgrep -q "TYPE=" && echo "$DEVINFO" | sed 's/.*[[:blank:]]TYPE="\([^"]*\)".*/\1/g; s/[[:blank:]]*//g;')
+    USAGE=$(echo "$DEVINFO" | fgrep -q "USAGE=" && echo "$DEVINFO" | sed 's/.*[[:blank:]]USAGE="\([^"]*\)".*/\1/g; s/[[:blank:]]*//g;')
     if ! echo $USAGE | egrep -q "(filesystem|disklabel)"; then
 	log info "$DEVNAME does not contain a filesystem or disklabel"
 	exit 1
@@ -198,15 +208,21 @@ if [ "$1" = add ]; then
 		# Mount the filesystem.
 		log info "executing command: mount -t$fstype ${options:+-o$options} $DEVNAME $mountpoint"
 
+#		if [ "$(which pmount)" ]	# also available for jessie!
+#		then
+#			pmount "$DEVNAME" "$LABEL"
+#		fi
+
 # id >/dev/console
-which mount df >/dev/console
-echo "$0: running: mount -t$fstype ${options:+-o$options} $DEVNAME $mountpoint" >/dev/console
+# which mount df >/dev/console
+# echo "$0: running: mount -t$fstype ${options:+-o$options} $DEVNAME $mountpoint" >/dev/console
 
 		if ! mount "-t$fstype" "${options:+-o$options}" "$DEVNAME" "$mountpoint"
 		then
 			echo "$0: failed: mount -t$fstype ${options:+-o$options} $DEVNAME $mountpoint" >/dev/console
 			exit
 		fi
+# echo "$0: did run: mount -t$fstype ${options:+-o$options} $DEVNAME $mountpoint" >/dev/console
 
 # df >/dev/console
 
@@ -244,8 +260,8 @@ echo "$0: running: mount -t$fstype ${options:+-o$options} $DEVNAME $mountpoint" 
 		export UM_MOUNTOPTIONS="$options"
 		export UM_VENDOR="$vendor"
 		export UM_MODEL="$model"
-		#log info "executing command: run-parts /etc/usbmount/mount.d"
-		#run-parts /etc/usbmount/mount.d || :
+#		log info "executing command: run-parts /etc/usbmount/mount.d"
+#		run-parts /etc/usbmount/mount.d || :
 	    else
 		# No suitable mount point found.
 		log warning "no mountpoint found for $DEVNAME"
@@ -261,20 +277,22 @@ elif [ "$1" = remove ]; then
     # A block or partition device has been removed.
     # Test if it is mounted.
     while read device mountpoint fstype remainder; do
+# echo "$DEVNAME" = "$device" >/dev/console
 	if [ "$DEVNAME" = "$device" ]; then
 	    # If the mountpoint and filesystem type are maintained by
 	    # this script, unmount the filesystem.
-	    if in_list "$mountpoint" "$MOUNTPOINTS" &&
+# echo "$mountpoint" "$MOUNTPOINTS" >/dev/console
+	    if # in_list "$mountpoint" "$MOUNTPOINTS" &&
 		in_list "$fstype" "$FILESYSTEMS"; then
-		log info "executing command: umount -l $mountpoint"
-		umount -l "$mountpoint"
+		log info "executing command: umount -l $device"
+		umount -l "$device"
 
 		# Run hook scripts; ignore errors.
 		export UM_DEVICE="$DEVNAME"
 		export UM_MOUNTPOINT="$mountpoint"
 		export UM_FILESYSTEM="$fstype"
-		log info "executing command: run-parts /etc/usbmount/umount.d"
-		run-parts /etc/usbmount/umount.d || :
+#		log info "executing command: run-parts /etc/usbmount/umount.d"
+#		run-parts /etc/usbmount/umount.d || :
 	    fi
 	    break
 	fi
@@ -288,3 +306,4 @@ fi
 
 log debug "usbmount execution finished"
 # df >/dev/console
+# grep "/media/" /proc/mounts >/dev/console
