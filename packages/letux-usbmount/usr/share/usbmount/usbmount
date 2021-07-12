@@ -140,6 +140,9 @@ if [ "$1" = add ]; then
 
     if [ "$LABEL" ]
     then # create dynamic mountpoint name
+case "$LABEL" in
+	*/* ) log err "invalid label: $LABEL"; log err "devinfo: $DEVINFO"; exit 1;;
+esac
 	mount="$MOUNTDIR/$LABEL"
 # echo "$0: mounting $LABEL as $mount" >/dev/console
 	if grep -q "^[^ ][^ ]* *$mount " /proc/mounts
