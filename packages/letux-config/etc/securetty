@@ -6,7 +6,7 @@
 # Disable any tty that you do not need by commenting them out # at the beginning of the line. 
 #
 
-#tty1
+tty1
 #tty2
 #tty3
 #tty4
@@ -14,7 +14,6 @@
 #tty6
 #tty7
 #tty8
-#ttyS2
 # for Debian Jessie
 console
 # for Debian Stretch
@@ -24,6 +23,7 @@ ttyO0
 ttyO1
 ttyO2
 ttyO3
+# more general UART console
 ttyS0
 ttyS1
 ttyS2
