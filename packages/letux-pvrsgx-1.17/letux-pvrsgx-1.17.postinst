@@ -166,6 +166,9 @@ case "$1" in
 		fi
 
 		rm -f /usr/bin/pvrsrvctl.bak
+
+		echo "symlinking libffi.so.6"
+		ln -sf libffi.so.7 /usr/lib/arm-linux-gnueabihf/libffi.so.6
 	fi  
     ;;
 
