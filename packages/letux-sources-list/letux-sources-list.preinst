@@ -32,8 +32,8 @@ REPO=http://httpredir.debian.org
 
 case "$(cat /etc/debian_version)" in
 	4.* )	RELEASE=etch; REPO=http://archive.debian.org;;
-	5.* )	RELEASE=squeeze; REPO=http://archive.debian.org;;
-	6.* )	RELEASE=lenny; REPO=http://archive.debian.org;;
+	5.* )	RELEASE=lenny; REPO=http://archive.debian.org;;
+	6.* )	RELEASE=squeeze; REPO=http://archive.debian.org;;
 	7.* )	RELEASE=wheezy; REPO=http://archive.debian.org;;
 	8.* )	RELEASE=jessie; REPO=http://httpredir.debian.org; BPREPO=http://archive.debian.org;;
 	9.* )	RELEASE=stretch;;
