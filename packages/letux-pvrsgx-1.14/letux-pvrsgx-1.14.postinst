@@ -113,7 +113,7 @@ case "$1" in
 		then	# install through makefile
 			echo "installing user space files for \`$TARGET_PRODUCT'" >&2
 			export DISCIMAGE=/
-			rm targetfs/*/etc/powervr.ini	# don't overwrite what we installed by the version from git
+			rm -f targetfs/*/etc/powervr.ini	# don't overwrite what we installed by the version from git
 			make install
 			# FIXME: somehow find out from lcd definition
 			if [ "$TARGET_PRODUCT" = "ti335x" ]
