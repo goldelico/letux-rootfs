@@ -56,7 +56,8 @@ case "$1" in
 	if ! [ -x /usr/bin/pvrsrvctl ]
 	then
 		cd /var/cache
-		# FIXME: base on 'sgx' compatible and machine model
+		# REVISIT: base on 'sgx' compatible and machine model or architecture?
+		# REVISIT: also make depend on /sys/devices/soc0/machine?
 		echo "installing for $(tr '\0' '@' </proc/device-tree/compatible)"
 		case "@$(tr '\0' '@' </proc/device-tree/compatible)" in
 			*@ti,am33xx@* )
@@ -81,25 +82,31 @@ case "$1" in
 				;;
 			*@ti,omap5@* )
 				# for SGX544-116 with omapdrm
-				clone git://git.ti.com/graphics/omap5-sgx-ddk-um-linux.git ti-img-sgx/zeus/1.17.4948957
-				export TARGET_PRODUCT=jacinto6evm
+				clone git://git.ti.com/graphics/omap5-sgx-ddk-um-linux.git ti-img-sgx/zeus/1.17.4948957 ce7b96b88d31
 				echo patching user space files for OMAP5432 ... >&2
 				# patch binary to disable the check /sys/devices/soc0/machine for DRA7[1256]2 built into the code
+				# apply magic patch similar to the one found on https://dev.pyra-handheld.com/packages/omap5-sgx-ddk-um-linux/commit/543c0d0bc7f9472368e58d6e037a1cf35de27da3
+				export TARGET_PRODUCT=jacinto6evm
 				LIBSRV_UM=targetfs/$TARGET_PRODUCT/lib/libsrv_um.so
-				#echo before patching... >&2
-				#dumpbyte $LIBSRV_UM 0x8a3a 2
-				#dumpbyte $LIBSRV_UM 0x89ea 2
-				patch $LIBSRV_UM 0x8a3a 0x00	# d7 -> 00
-				patch $LIBSRV_UM 0x8a3b 0xbf	# d1 -> bf
-				patch $LIBSRV_UM 0x89eb 0xe0	# d0 -> e0
-				#echo "...after patching (should be 00bf 04e0)" >&2
-				#dumpbyte $LIBSRV_UM 0x8a3a 2
-				#dumpbyte $LIBSRV_UM 0x89ea 2
-				if [ "$(dumpbyte $LIBSRV_UM 0x8a3a 2)" = 00bf ] && [ "$(dumpbyte $LIBSRV_UM 0x89ea 2)" = 04e0 ]
+				if [ "$(dumpbyte $LIBSRV_UM 0x8a3a 2)" = d7d1 ] && [ "$(dumpbyte $LIBSRV_UM 0x89ea 2)" = 21d0 ]
 				then
-					echo ... successfully patched! >&2
+					patch $LIBSRV_UM 0x8a3a 0x00	# d7 -> 00
+					patch $LIBSRV_UM 0x8a3b 0xbf	# d1 -> bf
+					patch $LIBSRV_UM 0x89eb 0xe0	# d0 -> e0
+					if [ "$(dumpbyte $LIBSRV_UM 0x8a3a 2)" = 00bf -a "$(dumpbyte $LIBSRV_UM 0x89ea 2)" = 21e0 ]
+					then
+						echo ... successfully patched! >&2
+					else
+						echo ... patching failed! >&2
+						echo 0x8a3a: $(dumpbyte $LIBSRV_UM 0x8a3a 2) should be 00bf
+						echo 0x89ea: $(dumpbyte $LIBSRV_UM 0x89ea 2) should be 21e0
+						exit 1
+					fi
 				else
-					echo patching failed! >&2
+					echo "... patch does not match!" >&2
+					echo 0x8a3a: $(dumpbyte $LIBSRV_UM 0x8a3a 2) should be d7d1
+					echo 0x89ea: $(dumpbyte $LIBSRV_UM 0x89ea 2) should be 21d0
+					exit 1
 				fi
 				;;
 			*@ti,am57xx@* | *@ti,dra7@* )
@@ -113,6 +120,7 @@ case "$1" in
 				export TARGET_PRODUCT=ti654x
 				;;
 			*@ingenic,jz4780@* )
+				# FIXME: try git://git.ti.com/graphics/omap5-sgx-ddk-um-linux.git ti-img-sgx/zeus/1.17.4948957 inside qemu, at least for pvrsrvctl
 				if false	# older/other version?
 				then
 					wget -O sgx.tar.xz ftp://ftp.radix.pro/3pp/Imagination/ci20//sgx-um/1.14/ci20-sgx-um-1.14.3759903.tar.xz
@@ -167,9 +175,12 @@ case "$1" in
 
 		rm -f /usr/bin/pvrsrvctl.bak
 
-		echo "symlinking libffi.so.6"
-		ln -sf libffi.so.7 /usr/lib/arm-linux-gnueabihf/libffi.so.6
-	fi  
+		if [ ! -r /usr/lib/arm-linux-gnueabihf/libffi.so.6 ]
+		then
+			echo "symlinking libffi.so.6"
+			ln -sf libffi.so.7 /usr/lib/arm-linux-gnueabihf/libffi.so.6
+		fi
+	fi
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)
