@@ -78,6 +78,8 @@ case "$1" in
 				# alternates (untested)
 				# clone https://github.com/mvduin/omap5-sgx-ddk-um-linux.git ti-img-sgx/1.14.3699939
 				# clone http://dev.pyra-handheld.com/packages/omap5-sgx-ddk-um-linux.git master
+				echo patching user space files for OMAP5432 ... >&2
+				# patch binary to disable the check /sys/devices/soc0/machine for DRA7[1256]2 built into the code
 				# apply magic patch found on https://dev.pyra-handheld.com/packages/omap5-sgx-ddk-um-linux/commit/543c0d0bc7f9472368e58d6e037a1cf35de27da3
 				dumpbyte targetfs/jacinto6evm/lib/libsrv_um.so.1.14.3699939 0x98eb
 				patch targetfs/jacinto6evm/lib/libsrv_um.so.1.14.3699939 0x98eb 0xe0
