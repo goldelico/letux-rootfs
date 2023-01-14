@@ -35,6 +35,7 @@ export SOURCES+=" pvr/omap-sgx530-121.qcodeproj"
 export SOURCES+=" pvr/omap-sgx530-125.qcodeproj"
 export SOURCES+=" pvr/omap-sgx544-100.qcodeproj"
 export SOURCES+=" pyra-sources-list/pyra-sources-list.qcodeproj"
+export SOURCES+=" letux-usbmount/letux-usbmount.qcodeproj"
 #export DEBIAN_DEPENDS+=", letux-apps"
 #export DEBIAN_DEPENDS+=", letux-config"
 
