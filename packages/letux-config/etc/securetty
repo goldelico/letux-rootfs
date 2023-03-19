@@ -18,17 +18,20 @@ tty1
 console
 # for Debian Stretch
 # unknown how to generalise
-# whatever console we get on OMAP devices
-ttyO0
-ttyO1
-ttyO2
 ttyO3
-# more general UART console
+# general UART consoles
 ttyS0
 ttyS1
 ttyS2
 ttyS3
-# for CI20
+# OMAP devices
+ttyO0
+ttyO1
+ttyO2
+# for CI20 (jz4780)
 ttyS4
-# for iMX6 Udoo neo
+# for Udoo neo (iMX6)
 ttymxc0
+# for Odroid M1
+ttyFIQ0
+
