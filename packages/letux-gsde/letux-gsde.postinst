@@ -23,6 +23,7 @@ case "$1" in
 	./build_world.sh
 	cd ..
 	rm -rf /tmp/gs-desktop
+	echo 'exec /System/bin/startgsde' >> /home/letux/.xsessionrc
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)
