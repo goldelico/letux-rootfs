@@ -23,7 +23,7 @@ case "$1" in
 	then
 		echo "+++ user letux:letux exists +++"
 	else
-		adduser --uid 500 --disabled-login --gecos '' letux || { sync; echo "### adduser failed"; exit 1; }
+		adduser --uid 500 --shell /bin/bash --disabled-login --gecos '' letux || { sync; echo "### adduser failed"; exit 1; }
 		(echo letux; echo letux; echo letux) | passwd letux
 		adduser letux sudo # allow to su
 		echo "+++ user letux:letux added +++"
