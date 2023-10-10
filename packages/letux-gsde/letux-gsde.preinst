@@ -21,6 +21,7 @@ case "$1" in
 		ln -sf clang-6.0 /usr/bin/clang++
 	fi
         echo "*** cloning GNUstep Desktop ***" >&2
+	rm -rf /tmp/gs-desktop
 	git clone https://github.com/onflapp/gs-desktop.git /tmp/gs-desktop
 	cd /tmp/gs-desktop
         echo "*** building GNUstep Desktop ***" >&2
