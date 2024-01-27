@@ -67,7 +67,7 @@ case "$1" in
 				clone git://git.ti.com/graphics/omap5-sgx-ddk-um-linux.git ti-img-sgx/1.14.3699939_k4.4
 				export TARGET_PRODUCT=ti335x
 				;;
-			*@ti,am43xx@* | *@ti,omap3630@* | *@ti,omap4@* )
+			*@ti,am43xx@* | *@ti,omap3630@* )
 				# for SGX530-125 with omapdrm
 				clone git://git.ti.com/graphics/omap5-sgx-ddk-um-linux.git ti-img-sgx/1.14.3699939
 				export TARGET_PRODUCT=ti437x
