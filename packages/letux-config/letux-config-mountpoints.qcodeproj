@@ -3,7 +3,7 @@
 export DEBIAN_ARCHITECTURES="all"
 export DEBIAN_DESCRIPTION="Setup mount points for NAND and mmc"
 export DEBIAN_PACKAGE_NAME="letux-config-mountpoints"
-export DEBIAN_RAW_FILES+=" ./mnt"
+export DEBIAN_RAW_FILES="./mnt"
 export INSTALL_PATH="//"
 export PRODUCT_NAME="letux-config-mountpoints"
 

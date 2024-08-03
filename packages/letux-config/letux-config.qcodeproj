@@ -11,10 +11,10 @@ export DEBIAN_PACKAGE_NAME="letux-config"
 export INSTALL_PATH="//"
 export PRODUCT_NAME="letux-config"
 export SOURCES="letux-config-desktop.qcodeproj"
-export SOURCES+=" letux-config-home-root.qcodeproj"
 export SOURCES+=" letux-config-mountpoints.qcodeproj"
 export SOURCES+=" letux-config-networking.qcodeproj"
 export SOURCES+=" letux-config-etc.qcodeproj"
+export SOURCES+=" letux-config-roothome.qcodeproj"
 
 [ "$QuantumSTEP" ] || export QuantumSTEP="/usr/local/QuantumSTEP"
 cd "$(dirname "${BASH_SOURCE[0]}")" && "$QuantumSTEP/System/Sources/Frameworks/mySTEP.make" $ACTION
