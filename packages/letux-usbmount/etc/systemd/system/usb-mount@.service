@@ -1,3 +1,4 @@
+# this is a template unit file matching usb-mount@unit.service
 [Unit]
 Description=Mount USB Drive on %i
 

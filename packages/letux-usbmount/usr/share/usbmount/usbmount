@@ -53,10 +53,10 @@ in_list()
 ######################################################################
 # Main program
 
-# Default values for configuration variables.
+# Default values for configuration variables. Can be overwritten by usbmount.conf
 ENABLED=1
 MOUNTPOINTS=
-MOUNTDIR="/media/letux"	# could become /Volumes for QuantumSTEP
+MOUNTDIR="/media"	# could become /Volumes for QuantumSTEP
 FILESYSTEMS=
 MOUNTOPTIONS=
 FS_MOUNTOPTIONS=
@@ -67,7 +67,16 @@ if [ -r /etc/usbmount/usbmount.conf ]; then
     log debug "loaded usbmount configurations"
 fi
 
-log debug "DEVNAME=$DEVNAME $0 $*"
+if [ "$DEVNAME" ]
+then
+	MOUNTDIR=$MOUNTDIR/${DEVNAME#/dev/}
+	MOUNTDIR=${MOUNTDIR%%[0-9]}	# remove partition number(s)
+	MOUNTDIR=${MOUNTDIR%p}		# remove partition infix "p" for mmcblk*p* devices
+else
+	MOUNTDIR=$MOUNTDIR/letux	# default
+fi
+
+log debug "DEVNAME=$DEVNAME MOUNTDIR=$MOUNTDIR $0 $*"
 
 if [ "${ENABLED:-1}" -eq 0 ]; then
     log info "usbmount is disabled, see /etc/usbmount/usbmount.conf"
@@ -91,15 +100,16 @@ umask 022
 # note: there is no DEVINFO on unplug!!!
 
 DEVINFO=$(/sbin/blkid -p $DEVNAME 2>/dev/null)
+log debug "DEVINFO=$DEVINFO"
 
 LABEL=$(echo "$DEVINFO" | fgrep -q "LABEL=" && echo "$DEVINFO" | sed 's/.*[[:blank:]]LABEL="\([^"]*\)".*/\1/g; s/[[:blank:]]*//g;')
 UUID=$(echo "$DEVINFO" | fgrep -q "UUID=" && echo "$DEVINFO"   | sed 's/.*[[:blank:]]UUID="\([^"]*\)".*/\1/g; s/[[:blank:]]*//g;')
 [ "$LABEL" ] || LABEL="$UUID"	# fall back
 # note: labels should not contain / characters
-# echo "$0: label $LABEL" >/dev/console
+log debug "label: $LABEL"
 
 clean_dynamic () {
-    # try to clean up stale directories from last mount
+    # try to clean up stale partition directories from last mount
     for mount in "$MOUNTDIR/"*
     do
 # cat /proc/mounts >/dev/console
@@ -115,8 +125,11 @@ clean_dynamic () {
 		continue
 	fi
     	log debug "clean up $mount"
+# FIXME: there may be false triggers since this is run again for all partitions
 	rmdir "$mount" || log err "failed to clean $mount"	# should be empty - may contain subdirectories?
     done
+    log debug "clean up $MOUNTDIR"
+    rmdir "$MOUNTDIR" || log err "failed to clean $MOUNTDIR"
 }
 
 if [ "$1" = add ]; then
@@ -144,7 +157,7 @@ case "$LABEL" in
 	*/* ) log err "invalid label: $LABEL"; log err "devinfo: $DEVINFO"; exit 1;;
 esac
 	mount="$MOUNTDIR/$LABEL"
-# echo "$0: mounting $LABEL as $mount" >/dev/console
+	log debug "mounting $LABEL as $mount"
 	if grep -q "^[^ ][^ ]* *$mount " /proc/mounts
 	then
 		dev=$(grep "^[^ ][^ ]* *$mount " /proc/mounts | cut -d ' ' -f1)
