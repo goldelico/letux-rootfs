@@ -1,13 +1,5 @@
 /dev/root		/		auto	defaults,errors=remount-ro,noatime	0 1
 /dev/mmcblk0p1		/boot		vfat	noauto,defaults				0 0
 # /dev/mmcblk1p1	/boot		vfat	noauto,defaults				0 0
-/dev/mmcblk0p1		/mnt/mmc0.1	auto	x-systemd.automount,noauto,defaults	0 0
-/dev/mmcblk0p2		/mnt/mmc0.2	auto	x-systemd.automount,noauto,defaults	0 0
-# some boards (e.g. BeagleBone, LC8, OMAP5EVM) have eMMC and one SD slot
-/dev/mmcblk1p1		/mnt/mmc1.1	auto	x-systemd.automount,noauto,defaults	0 0
-/dev/mmcblk1p2		/mnt/mmc1.2	auto	x-systemd.automount,noauto,defaults	0 0
-# Pyra has up to 3 MMC/SD interfaces
-/dev/mmcblk2p1		/mnt/mmc2.1	auto	x-systemd.automount,noauto,defaults	0 0
-/dev/mmcblk2p2		/mnt/mmc2.2	auto	x-systemd.automount,noauto,defaults	0 0
 # GTA04 NAND
 ubi0:gta04-rootfs	/mnt/nand	ubifs	x-systemd.automount,noauto,defaults,noatime,rw	0 0
