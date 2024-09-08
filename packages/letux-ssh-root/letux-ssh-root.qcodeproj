@@ -9,6 +9,7 @@ export INSTALL_PATH="/"
 export PRODUCT_NAME="letux-ssh-root"
 export SOURCES="letux-ssh-root.prerm"
 export SOURCES+=" letux-ssh-root.postinst"
+export SOURCES+=" letux-ssh-root.postrm"
 
 [ "$QuantumSTEP" ] || export QuantumSTEP="/usr/local/QuantumSTEP"
 cd "$(dirname "${BASH_SOURCE[0]}")" && "$QuantumSTEP/System/Sources/Frameworks/mySTEP.make" $ACTION

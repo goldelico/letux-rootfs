@@ -47,7 +47,14 @@ END
 	grep ^root /etc/shadow
 	sed -i "s/root:[^:]*:/root:$(echo "$EMPTYROOT" | sed "s|/|\\\\/|g"):/g" /etc/shadow
 	grep ^root /etc/shadow
-    
+
+	if [ "$(which systemctl)" ]
+	then systemctl restart ssh.service
+	else service ssh restart
+	fi
+
+	echo "sshd restarted" >&2
+
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)
