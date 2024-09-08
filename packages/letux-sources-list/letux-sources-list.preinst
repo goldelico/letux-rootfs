@@ -41,6 +41,7 @@ case "$(cat /etc/debian_version)" in
 	11.* | bullseye/sid )	RELEASE=bullseye;;
 	12.* | bookworm/sid )	RELEASE=bookworm;;
 	13.* | trixie/sid )	RELEASE=trixie;;
+	13.* | forky/sid )	RELEASE=forky;;
 	* )
 		echo "unknown Debian Version \`$(cat /etc/debian_version)'" >&2
 		exit 1
