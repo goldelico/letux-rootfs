@@ -50,10 +50,10 @@ END
 
 	if [ "$(which systemctl)" ]
 	then systemctl restart ssh.service
-	else service ssh restart
-	fi
-
-	echo "sshd restarted" >&2
+	elif [ "$(which systemctl)" ]
+	then service ssh restart
+	else false
+	fi && echo "sshd restarted" >&2 || echo "sshd not restarted" >&2
 
     ;;
 
