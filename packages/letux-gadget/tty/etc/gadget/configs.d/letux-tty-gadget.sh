@@ -11,7 +11,12 @@ set -e
 #        * <gadget> `stop'
 #        * <gadget> `status'
 
-SERVICE=getty@ttyGS0.service
+if [ "$(which systemctl)" ]
+then
+	SERVICE=getty@ttyGS0.service
+else
+	SERVICE=ttyGS0
+fi
 
 case "$1" in
 	start)
@@ -20,10 +25,11 @@ case "$1" in
 		then
 			systemctl start $SERVICE
 		else
-			daemon -r --name=$SERVICE -- /sbin/getty -L ttyGS0 115200 vt100
+			daemon -r --name=$SERVICE -- /sbin/getty --noclear $SERVICE vt100
 		fi
 		;;
 	stop)
+		(echo; echo "Stopping USB access to terminal.") >/dev/ttyGS0
 		if [ "$(which systemctl)" ]
 		then
 			systemctl stop $SERVICE
