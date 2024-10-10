@@ -9,27 +9,34 @@ set -e
 
 cd /etc/gadget/configs.d
 
-# check for no gadgets installed
+# check for no gadgets installed (?)
+
+# do initial setup
 
 case "$1" in
-	stop )
-		stop_device
-		;;
 	start )
-# aus Proc/device-tree/model ableiten!
-		setup_device OpenPandora RetRead 000001
+		setup_device "Letux" "$(tr -d '\0' </proc/device-tree/model)" 000001
+		;;
+	status )
+		status
 		;;
 esac
+
+# run device specific configs to setup configfs and daemons
 
 for SCRIPT in *
 	do
 		./$SCRIPT "$1"
 	done
 
+# start/stop USB operation
+
 case "$1" in
+	stop )
+		stop_device
+		;;
 	start )
 		start_device
-		# should start daemons only now...
 		;;
 esac
 

@@ -38,7 +38,7 @@ function status {
 function stop_device {
 echo stop_device
 	for STORAGE in $DEVICE/functions/mass_storage.$USB_IF/lun.*/file
-	do	# stop storage devices by setting the file name to ""
+	do	# safely stop storage devices by setting the file name to ""
 		[ -w "$STORAGE" ] && echo "" >$STORAGE
 	done
 
@@ -50,6 +50,7 @@ echo stop_device
 	find $DEVICE/functions/* -type d -exec rmdir {} \; 2>/dev/null || :
 	find $DEVICE/strings/* -maxdepth 0 -type d -exec rmdir {} \; 2>/dev/null || :
 	find $DEVICE/configs/* -maxdepth 0 -type d -exec rmdir {} \; 2>/dev/null || :
+echo device stopped.
 }
 
 function setup_device {
@@ -93,8 +94,7 @@ echo create_configuration $C
 	done
 }
 
-function start_device {
-echo start_device
+function link_functions {
 	if [ ! -r $DEVICE/configs/c.1 ]
 	then # we need at least one configuration
 		create_configuration
@@ -102,13 +102,28 @@ echo start_device
 
 	for CONFIG in $DEVICE/configs/c.*/
 	do
-echo process config $CONFIG
+echo process config $CONFIG to link configurations
+		for NAME in $DEVICE/functions/*.$USB_IF
+		do
+			[ -d $NAME ] || continue;	# no functions
+			ln -sf "$NAME" "$CONFIG"
+		done
+	done
+}
+
+function update_configuration {
+	for CONFIG in $DEVICE/configs/c.*/
+	do
+echo process config $CONFIG to write configuration
 		CONFIGURATION=""
 		for NAME in $DEVICE/functions/*.$USB_IF
 		do
+			[ -d $NAME ] || continue;	# not found
 echo try function $NAME
 			case $NAME in
-				*/acm.* ) CONFIGURATION+="+CDC ACM";;
+				*/acm.* )
+					CONFIGURATION+="+CDC ACM"
+					;;
 				*/ecm.* )
 					if [ -r "$CONFIG/rndis.$USB_IF" ]
 					then # do not mix RNDIS and ECM in a configuration
@@ -125,15 +140,31 @@ echo try function $NAME
 					fi
 					CONFIGURATION+="+RNDIS"
 					;;
-				*/mass_storage.* ) CONFIGURATION+="+Mass Storage";;
-				*/uvc.* ) CONFIGURATION+="+Video";;
-				*/hid.* ) CONFIGURATION+="+HID";;
-				* ) echo unknown function "$NAME"; exit 1;;
+				*/mass_storage.* )
+					CONFIGURATION+="+Mass Storage"
+					;;
+				*/uvc.* )
+					CONFIGURATION+="+Video"
+					;;
+				*/hid.* )
+					CONFIGURATION+="+HID"
+					;;
+				* ) echo unknown function "$NAME"
+					exit 1
+					;;
 			esac
-			ln -sf "$NAME" "$CONFIG"
 		done
+echo "writing configuration '$CONFIGURATION'"
+		LANGUAGE=0x409
+		mkdir -p $DEVICE/strings/$LANGUAGE
 		echo ${CONFIGURATION:1} >$CONFIG/strings/$LANGUAGE/configuration
 	done
+}
+
+function start_device {
+echo start_device
+	link_functions
+	update_configuration
 
 	udevadm settle -t 5 || : ignore fail
 	ls -1 /sys/class/udc >$DEVICE/UDC
@@ -265,15 +296,15 @@ echo +++ hid
 
 function remove_function # $1=functionname
 { # delete a function from running system
-	# remove from $CONFIG/strings/$LANGUAGE/configuration
+echo remove_function $1
 	for CONFIG in $DEVICE/configs/c.*/
 	do
-echo $0: process config $CONFIG
-		rm -f $CONFIG/$1	# remove symlink
-
-# das führt zu einem "Permission denied"
-###	echo ${CONFIGURATION:1} >$CONFIG/strings/$LANGUAGE/configuration
+#echo $0: process config $CONFIG
+#echo		rm -f $CONFIG/$1.$USB_IF	# remove symlink to config (i.e. disconnect function)
+		rm -f $CONFIG/$1.$USB_IF	# remove symlink to config (i.e. disconnect function)
 	done
 
-	rm -rf $DEVICE/functions/$1
+	rmdir $DEVICE/functions/$1.$USB_IF	# remove function (we can't remove function first!)
+
+	update_configuration || : ignore error
 }
