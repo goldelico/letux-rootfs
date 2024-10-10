@@ -1,0 +1,3 @@
+# Rule for setting up the gadget (configfs) drivers after boot
+
+ACTION=="*", SUBSYSTEM=="gadget", RUN+="/etc/udev/rules.d/gadget.sh"
