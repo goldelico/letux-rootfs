@@ -7,9 +7,9 @@ set -e
 . /etc/gadget/core/libgadget.sh
 
 # summary of how this script can be called:
-#        * <gadget> `start'
-#        * <gadget> `stop'
-#        * <gadget> `status'
+#        * <gadget> `start
+#        * <gadget> `stop
+#        * <gadget> `status
 
 if [ "$(which systemctl)" ]
 then
@@ -35,14 +35,14 @@ case "$1" in
 		else
 			daemon --name=$SERVICE --stop 2>/dev/null
 		fi
-		remove_function uvc
+		remove_function uvc || echo failed to remove uvc gadget
 		;;
 	status)
 		if [ "$(which systemctl)" ]
 		then
-			echo "uvc": "$(systemctl is-active $SERVICE)"
+			echo "$SERVICE: $(systemctl is-active $SERVICE)"
 		else
-			echo "uvc": $(ps -ef | fgrep -v grep | fgrep -q "daemon -r --name=$SERVICE" && echo running)
+			echo "$SERVICE: $(ps -ef | fgrep -v grep | fgrep -q "daemon -r --name=$SERVICE" && echo running)"
 		fi
 		;;
 	*)
