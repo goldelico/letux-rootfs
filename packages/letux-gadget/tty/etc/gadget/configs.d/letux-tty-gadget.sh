@@ -29,7 +29,7 @@ case "$1" in
 		fi
 		;;
 	stop)
-		(echo; echo "Stopping USB access to terminal.") >/dev/ttyGS0
+		(echo; echo "Stopping USB access to terminal.") >/dev/ttyGS0& sleep 0.5
 		if [ "$(which systemctl)" ]
 		then
 			systemctl stop $SERVICE
