@@ -7,9 +7,9 @@ set -e
 . /etc/gadget/core/libgadget.sh
 
 # summary of how this script can be called:
-#        * <gadget> `start'
-#        * <gadget> `stop'
-#        * <gadget> `status'
+#        * <gadget> `start
+#        * <gadget> `stop
+#        * <gadget> `status
 
 if [ "$(which systemctl)" ]
 then
@@ -25,7 +25,7 @@ case "$1" in
 		then
 			systemctl start $SERVICE
 		else
-			daemon -r --name=$SERVICE -- /sbin/getty --noclear $SERVICE vt100
+			daemon -r --name=$SERVICE -- /sbin/agetty --noclear $SERVICE vt100
 		fi
 		;;
 	stop)
@@ -36,14 +36,14 @@ case "$1" in
 		else
 			daemon --name=$SERVICE --stop 2>/dev/null
 		fi
-		remove_function acm
+		remove_function acm || echo failed to remove acm gadget
 		;;
 	status)
 		if [ "$(which systemctl)" ]
 		then
-			echo "ttyGS0": "$(systemctl is-active $SERVICE)"
+			echo "$SERVICE: $(systemctl is-active $SERVICE)"
 		else
-			echo "ttyGS0": $(ps -ef | fgrep -v grep | fgrep -q "daemon -r --name=$SERVICE" && echo running)
+			echo "$SERVICE: $(ps -ef | fgrep -v grep | fgrep -q "daemon -r --name=$SERVICE" && echo running)"
 		fi
 		;;
 	*)
