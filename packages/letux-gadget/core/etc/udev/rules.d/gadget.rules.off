@@ -1,0 +1,4 @@
+# Rule for setting up the gadget (configfs) drivers after boot
+
+ACTION=="add", SUBSYSTEM=="gadget", RUN+="/etc/gadget/core/gadget.sh start"
+ACTION=="remove", SUBSYSTEM=="gadget", RUN+="/etc/gadget/core/gadget.sh stop"
