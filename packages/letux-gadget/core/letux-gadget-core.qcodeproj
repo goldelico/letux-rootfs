@@ -5,7 +5,7 @@ export DEBIAN_ARCHITECTURES="all"
 export DEBIAN_DEPENDS="letux-minimal"
 export DEBIAN_DESCRIPTION="Setup generic gadget configuration based on configfs"
 export DEBIAN_PACKAGE_NAME="letux-gadget-core"
-export DEBIAN_RAW_FILES="./etc/gadget/core"
+export DEBIAN_RAW_FILES="./etc"
 export INSTALL_PATH="//"
 export PRODUCT_NAME="letux-gadget-core"
 
