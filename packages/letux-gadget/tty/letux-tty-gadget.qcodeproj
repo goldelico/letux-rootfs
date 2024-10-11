@@ -10,5 +10,7 @@ export DEBIAN_PACKAGE_NAME="letux-tty-gadget"
 export DEBIAN_RAW_FILES="./etc"
 export INSTALL_PATH="//"
 export PRODUCT_NAME="letux-tty-gadget"
+export SOURCES="letux-tty-gadget.postinst"
+export SOURCES+=" letux-tty-gadget.prerm"
 
 cd "$(dirname "${BASH_SOURCE[0]}")" && "$QuantumSTEP/System/Sources/Frameworks/mySTEP.make" $ACTION
