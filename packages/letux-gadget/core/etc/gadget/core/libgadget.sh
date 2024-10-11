@@ -20,6 +20,7 @@
 
 DEVICE=/sys/kernel/config/usb_gadget/letux
 USB_IF=usb0
+USB_LANGUAGE=0x409
 
 echo $(date) $SUBSYSTEM $ACTION "$@" >>/tmp/udev-gadget.log
 
@@ -44,9 +45,10 @@ echo stop_device
 
 	[ -r "$DEVICE/UDC" -a "$(cat "$DEVICE/UDC")" ] && { echo stop running activities; echo "" >$DEVICE/UDC; } || :
 
+	# there is a very specific sequence to teardown the settings (start with symlinks, then configs lower level, then functions, etc.)
+	find $DEVICE/os_desc/* -maxdepth 0 -type l -exec rm {} \; 2>/dev/null || :
 	find $DEVICE/configs/*/* -maxdepth 0 -type l -exec rm {} \; 2>/dev/null || :
 	find $DEVICE/configs/*/strings/* -maxdepth 0 -type d -exec rmdir {} \; 2>/dev/null || :
-	find $DEVICE/os_desc/* -maxdepth 0 -type l -exec rm {} \; 2>/dev/null || :
 	find $DEVICE/functions/* -type d -exec rmdir {} \; 2>/dev/null || :
 	find $DEVICE/strings/* -maxdepth 0 -type d -exec rmdir {} \; 2>/dev/null || :
 	find $DEVICE/configs/* -maxdepth 0 -type d -exec rmdir {} \; 2>/dev/null || :
@@ -75,11 +77,10 @@ echo setup_device
 	echo 0x02 >$DEVICE/bDeviceSubClass
 	echo 0x01 >$DEVICE/bDeviceProtocol
 
-	LANGUAGE=0x409
-	mkdir -p $DEVICE/strings/$LANGUAGE
-	echo "${1:-Goldelico}" >$DEVICE/strings/$LANGUAGE/manufacturer
-	echo "${2:-LetuxOS}" >$DEVICE/strings/$LANGUAGE/product
-	echo "${3:-000000}" >$DEVICE/strings/$LANGUAGE/serialnumber
+	mkdir -p $DEVICE/strings/$USB_LANGUAGE
+	echo "${1:-Goldelico}" >$DEVICE/strings/$USB_LANGUAGE/manufacturer
+	echo "${2:-LetuxOS}" >$DEVICE/strings/$USB_LANGUAGE/product
+	echo "${3:-000000}" >$DEVICE/strings/$USB_LANGUAGE/serialnumber
 }
 
 function create_configuration {
@@ -89,7 +90,7 @@ function create_configuration {
 echo create_configuration $C
 		mkdir -p $DEVICE/configs/c.$C
 		echo 250 >$DEVICE/configs/c.$C/MaxPower
-		mkdir -p $DEVICE/configs/c.$C/strings/$LANGUAGE/
+		mkdir -p $DEVICE/configs/c.$C/strings/$USB_LANGUAGE/
 		break
 	done
 }
@@ -106,6 +107,22 @@ echo process config $CONFIG to link configurations
 		for NAME in $DEVICE/functions/*.$USB_IF
 		do
 			[ -d $NAME ] || continue;	# no functions
+			case $NAME in
+				*/ecm.* )
+					if [ -r "$CONFIG/rndis.$USB_IF" ]
+					then # do not mix RNDIS and ECM in a configuration
+						echo skipping $NAME in $CONFIG
+						continue;
+					fi
+					;;
+				*/rndis.* )
+					if [ -r "$CONFIG/ecm.$USB_IF" ]
+					then # do not mix RNDIS and ECM in a configuration
+						echo skipping $NAME in $CONFIG
+						continue;
+					fi
+					;;
+			esac
 			ln -sf "$NAME" "$CONFIG"
 		done
 	done
@@ -125,19 +142,12 @@ echo try function $NAME
 					CONFIGURATION+="+CDC ACM"
 					;;
 				*/ecm.* )
-					if [ -r "$CONFIG/rndis.$USB_IF" ]
-					then # do not mix RNDIS and ECM in a configuration
-						echo skipping $NAME in $CONFIG
-						continue;
-					fi
 					CONFIGURATION+="+CDC ECM"
 					;;
+				*/ncm.* )
+					CONFIGURATION+="+CDC NCM"
+					;;
 				*/rndis.* )
-					if [ -r "$CONFIG/ecm.$USB_IF" ]
-					then # do not mix RNDIS and ECM in a configuration
-						echo skipping $NAME in $CONFIG
-						continue;
-					fi
 					CONFIGURATION+="+RNDIS"
 					;;
 				*/mass_storage.* )
@@ -155,9 +165,8 @@ echo try function $NAME
 			esac
 		done
 echo "writing configuration '$CONFIGURATION'"
-		LANGUAGE=0x409
-		mkdir -p $DEVICE/strings/$LANGUAGE
-		echo ${CONFIGURATION:1} >$CONFIG/strings/$LANGUAGE/configuration
+		mkdir -p $DEVICE/strings/$USB_LANGUAGE
+		[ -w $CONFIG/strings/$USB_LANGUAGE/configuration ] && echo ${CONFIGURATION:1} >$CONFIG/strings/$USB_LANGUAGE/configuration
 	done
 }
 
@@ -168,6 +177,11 @@ echo start_device
 
 	udevadm settle -t 5 || : ignore fail
 	ls -1 /sys/class/udc >$DEVICE/UDC
+}
+
+function host_mac { # generate stable and unique address (is only based on device tree type but should include some serial number to make units of same type really unique)
+	MD5=$(md5sum </proc/device-tree/model)
+	echo "32:${MD5:0:2}:${MD5:2:2}:${MD5:4:2}:${MD5:6:2}:${MD5:8:2}"	# 32 is AAI quadrant
 }
 
 function rndis
@@ -188,7 +202,7 @@ echo +++ rndis
 	echo MSFT100 >$DEVICE/os_desc/qw_sign
 
 	# tell Windows to use this config
-	ln -s configs/c.$C $DEVICE/os_desc
+	ln -s $DEVICE/configs/c.$C $DEVICE/os_desc/
 }
 
 function ecm
@@ -200,6 +214,19 @@ echo +++ ecm
 
 	echo 32:70:05:18:ff:78 >$DEVICE/functions/ecm.$USB_IF/host_addr
 	echo 46:10:3a:b3:af:d9 >$DEVICE/functions/ecm.$USB_IF/dev_addr
+}
+
+function ncm
+{ # CDC NCM gadget usb_f_ncm
+echo +++ ncm
+	create_configuration
+
+	mkdir -p $DEVICE/functions/ncm.$USB_IF  # network
+
+#	echo 32:70:05:18:ff:78 >$DEVICE/functions/ncm.$USB_IF/host_addr
+	host_mac >$DEVICE/functions/ncm.$USB_IF/host_addr
+	echo 46:10:3a:b3:af:d9 >$DEVICE/functions/ncm.$USB_IF/dev_addr
+	# os_desc?
 }
 
 function acm
