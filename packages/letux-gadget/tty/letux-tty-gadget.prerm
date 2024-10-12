@@ -19,7 +19,7 @@ set -e
 
 case "$1" in
     remove)
-	/etc/gadget/configs.d/letux-tty-gadget.sh stop || : ignore errors
+	/usr/sbin/service letux-tty-gadget@ttyGS0 stop || : ignore
 
     ;;
 

@@ -19,7 +19,9 @@ set -e
 
 case "$1" in
     configure)
-	/etc/gadget/configs.d/letux-tty-gadget.sh start
+#	/etc/gadget/configs.d/letux-tty-gadget.sh start
+	/bin/systemctl daemon-reload || : ignore
+#	/usr/sbin/service letux-tty-gadget start
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)

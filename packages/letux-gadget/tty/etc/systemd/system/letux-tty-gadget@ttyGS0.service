@@ -1,0 +1,26 @@
+#  This file is part of systemd.
+#
+#  systemd is free software; you can redistribute it and/or modify it
+#  under the terms of the GNU Lesser General Public License as published by
+#  the Free Software Foundation; either version 2.1 of the License, or
+#  (at your option) any later version.
+
+[Unit]
+Description=USB ACM tty service
+Documentation=man:agetty(8) man:systemd-getty-generator(8)
+After=systemd-user-sessions.service rc-local.service usb-gadget.service
+
+[Service]
+ExecStartPre=/etc/gadget/core/letux-gadget.sh add acm
+ExecStart=/bin/systemctl start serial-getty@%I.service
+ExecStopPost=/bin/sh -c "[ -w /dev/%I ] && (echo; echo 'Stopping USB access to terminal.'; sleep 0.5) >/dev/%I"
+ExecStopPost=/etc/gadget/core/letux-gadget.sh remove acm
+Type=idle
+Restart=always
+RestartSec=0
+UtmpIdentifier=%I
+KillMode=process
+
+[Install]
+WantedBy=getty.target
+DefaultInstance=%I
