@@ -42,7 +42,8 @@ case "$1" in
         ;;
   stop)
         log_daemon_msg "Stopping $SERVICE"
-	(echo; echo "Stopping USB access to terminal.") >/dev/$DEVICE& sleep 0.5
+	(echo; echo "Stopping USB access to terminal.") >/dev/$DEVICE &
+	sleep 1
 	daemon --name=$SERVICE --stop 2>/dev/null
 	/etc/gadget/core/letux-gadget.sh remove acm
         log_progress_msg "disabled."
