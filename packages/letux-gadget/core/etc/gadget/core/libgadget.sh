@@ -185,9 +185,12 @@ echo device stopped.
 echo device unmounted.
 }
 
-host_mac() { # generate stable and unique address
-	MD5=$(cd $DEVICE/strings/$USB_LANGUAGE/; cat manufacturer product serialnumber | md5sum)
-	echo "32:${MD5:0:2}:${MD5:2:2}:${MD5:4:2}:${MD5:6:2}:${MD5:8:2}"	# 32 is AAI quadrant
+host_addr() { # generate stable and unique MAC address
+	(
+	cd $DEVICE/strings/$USB_LANGUAGE/
+	cat manufacturer product serialnumber | md5sum |
+		sed 's/\(..\)\(..\)\(..\)\(..\)\(..\).*/32:\1:\2:\3:\4:\5/'	# 32: is AAI quadrant
+	)
 }
 
 rndis()
@@ -226,7 +229,7 @@ echo +++ ncm
 	mkdir -p $DEVICE/functions/ncm.$USB_IF  # network
 
 #	echo 32:70:05:18:ff:78 >$DEVICE/functions/ncm.$USB_IF/host_addr
-	host_mac >$DEVICE/functions/ncm.$USB_IF/host_addr
+	host_addr >$DEVICE/functions/ncm.$USB_IF/host_addr
 	echo 46:10:3a:b3:af:d9 >$DEVICE/functions/ncm.$USB_IF/dev_addr
 	# os_desc?
 	start_device
