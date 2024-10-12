@@ -20,8 +20,13 @@ Conflicts=rescue.service
 Before=rescue.service
 
 [Service]
-ExecStartPre=/bin/sleep 3
-ExecStart=-/etc/gadget/scripts/letux-ip-over-usb-gadget-daemon.sh usb0
+ExecStartPre=/etc/gadget/core/letux-gadget.sh add ncm
+ExecStartPre=/sbin/ifconfig usb0 netmask 255.255.255.192 192.168.0.202 up
+ExecStartPre=/sbin/route add default gw 192.168.0.200 metric 203
+ExecStartPre=/etc/network/letux-setup-resolv-conf.sh
+ExecStart=-/usr/sbin/dhcpd -q -cf /etc/gadget/scripts/letux-ip-over-usb-gadget-dhcpd.conf
+ExecStopPost=-/sbin/ifconfig usb0 down
+ExecStopPost=-/etc/gadget/core/letux-gadget.sh remove ncm
 Type=idle
 Restart=always
 RestartSec=0

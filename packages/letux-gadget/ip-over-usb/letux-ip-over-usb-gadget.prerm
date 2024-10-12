@@ -19,7 +19,7 @@ set -e
 
 case "$1" in
     remove)
-	/etc/gadget/configs.d/letux-ip-over-usb-gadget.sh stop || : ignore errors
+	/usr/sbin/service letux-ip-over-usb-gadget@usb0 stop || : ignore
 
     ;;
 

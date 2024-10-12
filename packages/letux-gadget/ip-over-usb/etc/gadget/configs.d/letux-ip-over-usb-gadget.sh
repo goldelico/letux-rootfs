@@ -2,6 +2,9 @@
 # gadget config script for letux-ip-over-usb-gadget
 #
 
+echo old $0 $@
+exit
+
 set -e
 
 . /etc/gadget/core/libgadget.sh
