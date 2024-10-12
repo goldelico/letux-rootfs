@@ -1,4 +1,4 @@
-#!/bin/bash -c do not call but source this file
+#!/bin/sh -c echo "do not call but source this file"
 # 
 # this script should be sourced by a wrapper
 #
@@ -24,7 +24,7 @@ USB_LANGUAGE=0x409
 
 echo $(date) $SUBSYSTEM $ACTION "$@" >>/tmp/udev-gadget.log
 
-function status {
+status() {
 	if [ ! -d $DEVICE ]
 	then
 		echo not initialized
@@ -36,26 +36,7 @@ function status {
 	echo Files: $(cat $DEVICE/functions/mass_storage.$USB_IF/lun.*/file 2>/dev/null)
 }
 
-function stop_device {
-echo stop_device
-	for STORAGE in $DEVICE/functions/mass_storage.$USB_IF/lun.*/file
-	do	# safely stop storage devices by setting the file name to ""
-		[ -w "$STORAGE" ] && echo "" >$STORAGE
-	done
-
-	[ -r "$DEVICE/UDC" -a "$(cat "$DEVICE/UDC")" ] && { echo stop running activities; echo "" >$DEVICE/UDC; } || :
-
-	# there is a very specific sequence to teardown the settings (start with symlinks, then configs lower level, then functions, etc.)
-	find $DEVICE/os_desc/* -maxdepth 0 -type l -exec rm {} \; 2>/dev/null || :
-	find $DEVICE/configs/*/* -maxdepth 0 -type l -exec rm {} \; 2>/dev/null || :
-	find $DEVICE/configs/*/strings/* -maxdepth 0 -type d -exec rmdir {} \; 2>/dev/null || :
-	find $DEVICE/functions/* -type d -exec rmdir {} \; 2>/dev/null || :
-	find $DEVICE/strings/* -maxdepth 0 -type d -exec rmdir {} \; 2>/dev/null || :
-	find $DEVICE/configs/* -maxdepth 0 -type d -exec rmdir {} \; 2>/dev/null || :
-echo device stopped.
-}
-
-function setup_device {
+setup_device() {
 # $1: Manufacturer
 # $2: Product
 # $3: Serial number
@@ -83,7 +64,7 @@ echo setup_device
 	echo "${3:-000000}" >$DEVICE/strings/$USB_LANGUAGE/serialnumber
 }
 
-function create_configuration {
+create_configuration() {
 	for C in 1 2 3 4 5 6 7 8 9
 	do
 		[ -r $DEVICE/configs/c.$C ] && continue	# find a free slot
@@ -95,14 +76,10 @@ echo create_configuration $C
 	done
 }
 
-function link_functions {
-	if [ ! -r $DEVICE/configs/c.1 ]
-	then # we need at least one configuration
-		create_configuration
-	fi
-
+link_functions() {
 	for CONFIG in $DEVICE/configs/c.*/
 	do
+		[ -d $CONFIG ] || continue;	# no configurarations
 echo process config $CONFIG to link configurations
 		for NAME in $DEVICE/functions/*.$USB_IF
 		do
@@ -128,36 +105,39 @@ echo process config $CONFIG to link configurations
 	done
 }
 
-function update_configuration {
+update_configuration() {
+	ANY=false
 	for CONFIG in $DEVICE/configs/c.*/
 	do
+		[ -d $CONFIG ] || continue;	# no configurarations
 echo process config $CONFIG to write configuration
 		CONFIGURATION=""
 		for NAME in $DEVICE/functions/*.$USB_IF
 		do
 			[ -d $NAME ] || continue;	# not found
 echo try function $NAME
+# CHECKME: do we need this at all? Does anyone care about this string?
 			case $NAME in
 				*/acm.* )
-					CONFIGURATION+="+CDC ACM"
+					CONFIGURATION="$CONFIGURATION+CDC ACM"
 					;;
 				*/ecm.* )
-					CONFIGURATION+="+CDC ECM"
+					CONFIGURATION="$CONFIGURATION+CDC ECM"
 					;;
 				*/ncm.* )
-					CONFIGURATION+="+CDC NCM"
+					CONFIGURATION="$CONFIGURATION+CDC NCM"
 					;;
 				*/rndis.* )
-					CONFIGURATION+="+RNDIS"
+					CONFIGURATION="$CONFIGURATION+RNDIS"
 					;;
 				*/mass_storage.* )
-					CONFIGURATION+="+Mass Storage"
+					CONFIGURATION="$CONFIGURATION+Mass Storage"
 					;;
 				*/uvc.* )
-					CONFIGURATION+="+Video"
+					CONFIGURATION="$CONFIGURATION+Video"
 					;;
 				*/hid.* )
-					CONFIGURATION+="+HID"
+					CONFIGURATION="$CONFIGURATION+HID"
 					;;
 				* ) echo unknown function "$NAME"
 					exit 1
@@ -166,29 +146,53 @@ echo try function $NAME
 		done
 echo "writing configuration '$CONFIGURATION'"
 		mkdir -p $DEVICE/strings/$USB_LANGUAGE
-		[ -w $CONFIG/strings/$USB_LANGUAGE/configuration ] && echo ${CONFIGURATION:1} >$CONFIG/strings/$USB_LANGUAGE/configuration
+		[ -w $CONFIG/strings/$USB_LANGUAGE/configuration ] && { echo ${CONFIGURATION#+} >$CONFIG/strings/$USB_LANGUAGE/configuration; ANY=true; }
 	done
+	if $ANY
+	then
+		ls -1 /sys/class/udc >$DEVICE/UDC
+	else
+		[ -r "$DEVICE/UDC" -a "$(cat "$DEVICE/UDC")" ] && { echo stop running activities; echo "" >$DEVICE/UDC; } || :
+	fi	
 }
 
-function start_device {
+start_device() {
 echo start_device
 	link_functions
 	update_configuration
-
-	udevadm settle -t 5 || : ignore fail
-	ls -1 /sys/class/udc >$DEVICE/UDC
 }
 
-function host_mac { # generate stable and unique address (is only based on device tree type but should include some serial number to make units of same type really unique)
-	MD5=$(md5sum </proc/device-tree/model)
+stop_device() {
+echo stop_device
+	for STORAGE in $DEVICE/functions/mass_storage.$USB_IF/lun.*/file
+	do	# safely stop storage devices by setting the file name to ""
+		[ -w "$STORAGE" ] && echo "" >$STORAGE
+	done
+
+	[ -r "$DEVICE/UDC" -a "$(cat "$DEVICE/UDC")" ] && { echo stop running activities; echo "" >$DEVICE/UDC; } || :
+
+	# there is a very specific sequence to teardown the settings (start with symlinks, then configs lower level, then functions, etc.)
+	find $DEVICE/os_desc/* -maxdepth 0 -type l -exec rm {} \; 2>/dev/null || :
+	find $DEVICE/configs/*/* -maxdepth 0 -type l -exec rm {} \; 2>/dev/null || :
+	find $DEVICE/configs/*/strings/* -maxdepth 0 -type d -exec rmdir {} \; 2>/dev/null || :
+	find $DEVICE/functions/* -type d -exec rmdir {} \; 2>/dev/null || :
+	find $DEVICE/strings/* -maxdepth 0 -type d -exec rmdir {} \; 2>/dev/null || :
+	find $DEVICE/configs/* -maxdepth 0 -type d -exec rmdir {} \; 2>/dev/null || :
+echo device stopped.
+
+	MOUNT="$(dirname "$(dirname "$DEVICE")")"
+	umount "$MOUNT"
+echo device unmounted.
+}
+
+host_mac() { # generate stable and unique address
+	MD5=$(cd $DEVICE/strings/$USB_LANGUAGE/; cat manufacturer product serialnumber | md5sum)
 	echo "32:${MD5:0:2}:${MD5:2:2}:${MD5:4:2}:${MD5:6:2}:${MD5:8:2}"	# 32 is AAI quadrant
 }
 
-function rndis
+rndis()
 { # RNDIS Gadget usb_f_rndis
 echo +++ rndis
-	create_configuration
-
 	mkdir -p $DEVICE/functions/rndis.$USB_IF  # network
 
 	echo 32:70:05:18:ff:78 >$DEVICE/functions/rndis.$USB_IF/host_addr
@@ -203,39 +207,39 @@ echo +++ rndis
 
 	# tell Windows to use this config
 	ln -s $DEVICE/configs/c.$C $DEVICE/os_desc/
+	start_device
 }
 
-function ecm
+ecm()
 { # CDC ECM gadget usb_f_ecm (native) for MacOS X
 echo +++ ecm
-	create_configuration
-
 	mkdir -p $DEVICE/functions/ecm.$USB_IF  # network
 
 	echo 32:70:05:18:ff:78 >$DEVICE/functions/ecm.$USB_IF/host_addr
 	echo 46:10:3a:b3:af:d9 >$DEVICE/functions/ecm.$USB_IF/dev_addr
+	start_device
 }
 
-function ncm
+ncm()
 { # CDC NCM gadget usb_f_ncm
 echo +++ ncm
-	create_configuration
-
 	mkdir -p $DEVICE/functions/ncm.$USB_IF  # network
 
 #	echo 32:70:05:18:ff:78 >$DEVICE/functions/ncm.$USB_IF/host_addr
 	host_mac >$DEVICE/functions/ncm.$USB_IF/host_addr
 	echo 46:10:3a:b3:af:d9 >$DEVICE/functions/ncm.$USB_IF/dev_addr
 	# os_desc?
+	start_device
 }
 
-function acm
+acm()
 { # Serial Console usb_acm_rndis
 echo +++ acm
 	mkdir -p $DEVICE/functions/acm.$USB_IF  # network
+	start_device
 }
 
-function mass_storage # $1=diskpath $2=ro
+mass_storage() # $1=diskpath $2=ro
 { # Mass Storage usb_f_mass_storage
 # $1: raw device path
 echo +++ mass_storage
@@ -264,7 +268,7 @@ echo +++ mass_storage
 	echo "$1" >$DEVICE/functions/mass_storage.$USB_IF/$LUN/file
 }
 
-function video
+video()
 { # UVC usb_f_uvc
 echo +++ video
 # emulates an USB Video Class device: https://developer.ridgerun.com/wiki/index.php?title=How_to_use_the_UVC_gadget_driver_in_Linux
@@ -284,7 +288,7 @@ EOF
 	(cd $DEVICE/functions/uvc.$USB_IF/control/class/hs && ln -sf ../../header/h)
 }
 
-function hid
+hid()
 { # HID: usb_f_hid
 # $1: protocol
 # $2: sibclass
@@ -321,7 +325,7 @@ echo +++ hid
 	# but: we must then translate Linux device events to USB keyboard/joystick messages
 }
 
-function remove_function # $1=functionname
+remove_function() # $1=functionname
 { # delete a function from running system
 echo remove_function $1
 	for CONFIG in $DEVICE/configs/c.*/
