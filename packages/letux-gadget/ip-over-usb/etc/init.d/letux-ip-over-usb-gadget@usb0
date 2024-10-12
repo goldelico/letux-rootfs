@@ -19,7 +19,7 @@ fi
 SERVICE=letux-ip-over-usb-gadget
 
 do_status () {
-	if [ -f /sys/class/net/usb0 ] ; then
+	if [ -e /sys/class/net/usb0 ] ; then
 		echo "$SERVICE is running."
 		return 0
 	else
@@ -44,8 +44,8 @@ case "$1" in
         ;;
   stop)
         log_daemon_msg "Stopping $SERVICE"
-# FIXME: stop dhcpd
-	ifconfig usb0 down || : ignore error
+	/bin/kill -SIGTERM $(cat /run/dhcpd.pid)
+	/sbin/ifconfig usb0 down || : ignore error
 	/etc/gadget/core/letux-gadget.sh remove ncm
         log_progress_msg "disabled."
         log_end_msg 0
