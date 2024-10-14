@@ -1,0 +1,38 @@
+#  This file is part of systemd.
+#
+#  systemd is free software; you can redistribute it and/or modify it
+#  under the terms of the GNU Lesser General Public License as published by
+#  the Free Software Foundation; either version 2.1 of the License, or
+#  (at your option) any later version.
+
+[Unit]
+Description=Letux gadget
+Documentation=man:ifconfigy(8)
+Documentation=http://www.letux.org
+After=systemd-user-sessions.service rc-local.service usb-gadget.service
+
+IgnoreOnIsolate=yes
+
+# IgnoreOnIsolate causes issues with sulogin, if someone isolates
+# rescue.target or starts rescue.service from multi-user.target or
+# graphical.target.
+Conflicts=rescue.service
+Before=rescue.service
+
+[Service]
+ExecStartPre=-/etc/inet.de/letux-gadget@usb0 start
+ExecStopPost=-/etc/inet.de/letux-gadget@usb0 stop
+Type=idle
+Restart=always
+RestartSec=0
+UtmpIdentifier=gadget
+KillMode=process
+IgnoreSIGPIPE=no
+
+# Unset locale for the console getty since the console has problems
+# displaying some internationalized messages.
+Environment=LANG= LANGUAGE= LC_CTYPE= LC_NUMERIC= LC_TIME= LC_COLLATE= LC_MONETARY= LC_MESSAGES= LC_PAPER= LC_NAME= LC_ADDRESS= LC_TELEPHONE= LC_MEASUREMENT= LC_IDENTIFICATION=
+
+[Install]
+# WantedBy=getty.target
+DefaultInstance=usb0

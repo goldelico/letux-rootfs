@@ -1,0 +1,73 @@
+#!/bin/sh
+# kFreeBSD do not accept scripts as interpreters, using #!/bin/sh and sourcing.
+if [ true != "$INIT_D_SCRIPT_SOURCED" ] ; then
+    set "$0" "$@"; INIT_D_SCRIPT_SOURCED=true . /lib/init/init-d-script
+fi
+### BEGIN INIT INFO
+# Provides:          letux-gadget
+# Required-Start:
+# Required-Stop:
+# Default-Start:     1 2 3 4 5
+# Default-Stop:      0 6
+# Short-Description: Start/Stop Letux USB gadgets
+# Description:       This script creates or stops configfs
+#                    
+### END INIT INFO
+
+# Author: H. Nikolaus Schaller <hns@goldelico.com>
+
+SERVICE=letux-gadget
+
+do_status () {
+	if [ -d /sys/kernel/config/usb_gadget/letux/ ] ; then
+		echo "$SERVICE is running."
+		return 0
+	else
+		return 4
+	fi
+}
+
+case "$1" in
+  start)
+        log_daemon_msg "Starting $SERVICE"
+	ifconfig usb0 down
+	rmmod g_ether	# just be sure...
+	/etc/gadget/core/letux-gadget.sh start
+
+	// loop over all letux-*-gadgets
+	// find /etc/init.d -name 'letux-*-gadget' service $(basename {}) start
+	service letux-tty-gadget@ttyGS0 start
+	service letux-ip-over-usb-gadget@usb0 start
+
+        log_progress_msg "$SERVICE started."
+     	exit 0
+        ;;
+  restart|reload|force-reload)
+        echo "Error: argument '$1' not supported" >&2
+        exit 3
+        ;;
+  stop)
+        log_daemon_msg "Stopping $SERVICE"
+
+	// loop over all letux-*-gadgets
+	// find /etc/init.d -name 'letux-*-gadget' service $(basename {}) start
+	service letux-tty-gadget@ttyGS0 stop
+	service letux-ip-over-usb-gadget@usb0 stop
+
+	/etc/gadget/core/letux-gadget.sh stop
+
+        log_progress_msg "$SERVICE disabled."
+        log_end_msg 0
+        exit 0
+        ;;
+  status)
+	do_status
+	exit $?
+	;;
+  *)
+        echo "Usage: $0 start|stop|status" >&2
+        exit 3
+        ;;
+esac
+
+:

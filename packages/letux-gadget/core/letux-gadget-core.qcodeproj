@@ -8,5 +8,8 @@ export DEBIAN_PACKAGE_NAME="letux-gadget-core"
 export DEBIAN_RAW_FILES="./etc ./root"
 export INSTALL_PATH="//"
 export PRODUCT_NAME="letux-gadget-core"
+export SOURCES="letux-gadget.postrm"
+export SOURCES+=" letux-gadget.postinst"
+export SOURCES+=" letux-gadget.preinst"
 
 cd "$(dirname "${BASH_SOURCE[0]}")" && "$QuantumSTEP/System/Sources/Frameworks/mySTEP.make" $ACTION

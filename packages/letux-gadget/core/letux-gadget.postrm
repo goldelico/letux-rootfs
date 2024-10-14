@@ -21,7 +21,7 @@ case "$1" in
 
 		cd /etc || exit 1
 
-		for i in ./default/rcS ./securetty
+		for i in ./default/rcS
 		do
 			if [ -r "$i.bak" ]
 			then

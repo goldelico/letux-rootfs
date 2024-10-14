@@ -18,7 +18,7 @@ case "$1" in
 
 		cd /etc || exit 1
 
-		for i in ./default/rcS ./securetty
+		for i in ./default/rcS
 		do
 			if [ -r "$i" ]
 			then
@@ -31,6 +31,8 @@ case "$1" in
 		if [ "$1" = "install" ]
 		then echo "old /etc config backed up" >&2
 		fi
+		# add to boot
+		/usr/sbin/update-rc.d letux-gadget@usb0 defaults || : ignore errors
     ;;
 
     abort-upgrade)
