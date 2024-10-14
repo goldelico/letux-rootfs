@@ -5,10 +5,10 @@ if [ true != "$INIT_D_SCRIPT_SOURCED" ] ; then
 fi
 ### BEGIN INIT INFO
 # Provides:          letux-tty-gadget
-# Required-Start:
+# Required-Start:    letux-gadget
 # Required-Stop:
-# Default-Start:     1 2 3 4 5
-# Default-Stop:      0 6
+# Default-Start:     
+# Default-Stop:      0 1 2 3 4 5 6
 # Short-Description: Control getty and /dev/ttyGS0
 # Description:       This script adds a /dev/ttyGS0 with agetty to configfs
 #                    
@@ -42,7 +42,7 @@ case "$1" in
         ;;
   stop)
         log_daemon_msg "Stopping $SERVICE"
-	(echo; echo "Stopping USB access to terminal.") >/dev/$DEVICE &
+	(echo; echo "USB access to terminal stopped.") >/dev/$DEVICE &
 	sleep 1
 	daemon --name=$SERVICE --stop 2>/dev/null
 	/etc/gadget/core/letux-gadget.sh remove acm

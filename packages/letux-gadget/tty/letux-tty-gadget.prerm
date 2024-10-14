@@ -19,7 +19,8 @@ set -e
 
 case "$1" in
     remove)
-	/usr/sbin/service letux-tty-gadget@ttyGS0 stop || : ignore
+	/usr/sbin/service letux-tty-gadget@ttyGS0 stop || : ignore errors
+	sed -i.bak '/ttyGS0/d' /etc/securetty || : ignore errors
 
     ;;
 

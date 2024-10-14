@@ -22,6 +22,7 @@ case "$1" in
 #	/etc/gadget/configs.d/letux-tty-gadget.sh start
 #	/usr/sbin/service letux-tty-gadget start
 	/bin/systemctl daemon-reload || : ignore
+	fgrep -q ttyGS0 /etc/securetty || (echo "# permit root login on ttyGS0 (USB gadget)"; echo ttyGS0) >>/etc/securetty
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)
