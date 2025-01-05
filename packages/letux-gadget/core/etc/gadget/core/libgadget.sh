@@ -152,7 +152,7 @@ echo "writing configuration '$CONFIGURATION'"
 	then
 		ls -1 /sys/class/udc >$DEVICE/UDC
 	else
-		[ -r "$DEVICE/UDC" -a "$(cat "$DEVICE/UDC")" ] && { echo stop running activities; echo "" >$DEVICE/UDC; } || :
+		[ -r "$DEVICE/UDC" ] && [ "$(cat "$DEVICE/UDC")" ] && { echo stop running activities; echo "" >$DEVICE/UDC; } || :
 	fi	
 }
 
@@ -338,7 +338,7 @@ echo remove_function $1
 		rm -f $CONFIG/$1.$USB_IF	# remove symlink to config (i.e. disconnect function)
 	done
 
-	rmdir $DEVICE/functions/$1.$USB_IF	# remove function (we can't remove function first!)
+	[ -d $DEVICE/functions/$1.$USB_IF ] && rmdir $DEVICE/functions/$1.$USB_IF	# remove function (we can't remove function first!)
 
 	update_configuration || : ignore error
 }
