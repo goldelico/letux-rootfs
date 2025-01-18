@@ -20,7 +20,7 @@ set -e
 case "$1" in
     remove)
 
-	apt-key del 8B8009BA
+	rm -f /etc/apt/trusted.gpg.d/letux.gpg
 
     ;;
 
