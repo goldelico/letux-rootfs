@@ -19,12 +19,21 @@ set -e
 
 case "$1" in
     configure)
-	cd /tmp/gs-desktop
+	if [ -x /usr/bin/clang-6.0 -a ! -f /usr/bin/clang ]
+	then
+		ln -sf clang-6.0 /usr/bin/clang
+		ln -sf clang-6.0 /usr/bin/clang++
+	fi
+        echo "*** cloning GNUstep Desktop ***" >&2
+	rm -rf /tmp/gsde
+	git clone https://github.com/onflapp/gs-desktop.git /tmp/gsde/gs-desktop
+	cd /tmp/gsde/gs-desktop
+        echo "*** building GNUstep Desktop ***" >&2
+	./fetch_world.sh
 	./build_world.sh
-	cd ..
-	rm -rf /tmp/gs-desktop
-	echo 'exec /System/bin/startgsde' >> /home/letux/.xsessionrc
-    ;;
+	./config/install_wdm.sh
+	rm -rf /tmp/gsde
+	;;
 
     abort-upgrade|abort-remove|abort-deconfigure)
 
