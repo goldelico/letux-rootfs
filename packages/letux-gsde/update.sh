@@ -7,6 +7,8 @@ function dependencies() {
 
 # this is not correct...
 # wget -O - https://raw.githubusercontent.com/onflapp/gs-desktop/refs/heads/main/dependencies/debian.txt
+	echo letux
+	echo letux-xorg
 	cat debian.txt
 }
 
