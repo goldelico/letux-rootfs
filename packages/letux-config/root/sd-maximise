@@ -1,4 +1,4 @@
-#
+#!/bin/bash
 # resize the root file system
 # to use maximum SD size
 #
@@ -6,47 +6,29 @@
 # through dd and want to use the full SD card
 #
 
-echo "not tested!"
-# well, it is not working. Our kernel does not accept a new partition size by partprobe - we must reboot before doing the resize2fs!
-exit 1
+[ "$(which growpart)" ] || apt-get install cloud-guest-utils
 
-# get last partition
-LAST_PARTITION=""
-START=""
-read LAST_PARTITION START OTHER < <(sfdisk -l /dev/mmcblk0 2>/dev/null | fgrep /dev/mmcblk0p | fgrep -v Empty | sort -r | head -n 1)
-PNUM=$(echo "$LAST_PARTITION" | sed 's|/dev/mmcblk0p||g')
+# default to last active partition???
 
-if [ -z "$LAST_PARTITION" -o -z "$PNUM" ]
+if [ ! "$1" -o ! "$2" ]
 then
-	echo "can't determine last partition ($LAST_PARTITION / $PNUM)"
+	echo "usage: $0 /dev/device partition"
+	echo
+	echo "example2:"
+	echo "sd-maximize /dev/mmcblk0 2"
+	echo "sd-maximize /dev/sdb 2"
 	exit 1
 fi
 
-if [ -z "$START" ]
-then
-	echo "can't determine first sector ($START)"
-	exit 1
-fi
-
-# read size
-CYLINDERS=""
-read A CYLINDERS B < <(sfdisk -g /dev/mmcblk0)
-if [ -z "$CYLINDERS" ]
-then
-	echo "can't determine disk size ($CYLINDERS)"
-	exit 1
-fi
-
-# calculate new size
-NEWSIZE=$(expr "$CYLINDERS" - "$START")
-
-echo $LAST_PARTITION $P $START $NEWSIZE
-
-# change partition table
-echo ",$NEWSIZE,," | sfdisk --no-reread --force /dev/mmcblk0 -N"$PNUM"
+growpart $1 $2
 
 # update kernel partition table
 partprobe
 
-# resize file system to new partiton size
-resize2fs "$LAST_PARTITION"
+case "$1" in
+	/dev/mmcblk* ) PART="${1}p${2}";;
+	* ) PART="$1$2";;
+esac
+
+# resize file system to new partition size
+resize2fs "$PART"
