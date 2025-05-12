@@ -73,8 +73,8 @@ END
 
 replacefile ./etc/apt/sources.list.d/qtmoko2.list <<END
 # QtMoko2 repository
-deb https://www.qtmoko.net/download/ $RELEASE main
-deb-src https://www.qtmoko.net/download/ $RELEASE main
+deb https://download.goldelico.com/qtmoko2/debian stretch main
+deb-src https://download.goldelico.com/qtmoko2/debian stretch main
 END
 
 replacefile ./etc/apt/sources.list.d/quantumstep.list <<END
