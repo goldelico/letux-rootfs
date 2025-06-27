@@ -71,11 +71,17 @@ replacefile ./etc/apt/apt.conf.d/10-no-check-valid-until <<END
 Acquire::Check-Valid-Until "0";
 END
 
-replacefile ./etc/apt/sources.list.d/qtmoko2.list <<END
-# QtMoko2 repository
-deb https://download.goldelico.com/qtmoko2/debian stretch main
-deb-src https://download.goldelico.com/qtmoko2/debian stretch main
+# currently, QtMoko is only available for ARMHF and Wheezy or Jessie
+if [ "$(dpkg --print-architecture)" = armhf -a "(" "$RELEASE" = wheezy -o "$RELEASE" = jessie ")" ]
+then
+	replacefile ./etc/apt/sources.list.d/qtmoko2.list <<END
+	# QtMoko2 repository
+	deb https://download.goldelico.com/qtmoko2/debian $RELEASE main
+	deb-src https://download.goldelico.com/qtmoko2/debian $RELEASE main
 END
+else
+	rm /etc/apt/sources.list.d/qtmoko2.list 2>/dev/null && CHANGED=true
+fi
 
 replacefile ./etc/apt/sources.list.d/quantumstep.list <<END
 # QuantumSTEP repository
