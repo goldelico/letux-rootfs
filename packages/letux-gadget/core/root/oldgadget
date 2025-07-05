@@ -1,0 +1,11 @@
+# attempt to switch back from configfs to g_ether
+
+/root/g stop || : ignore errors
+
+ifdown usb0
+sleep 1
+modprobe -r g_ether
+sleep 1
+modprobe g_ether host_addr=32:70:05:18:ff:78 dev_addr=46:10:3a:b3:af:d9
+sleep 1
+ifup usb0

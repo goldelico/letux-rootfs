@@ -1,0 +1,30 @@
+# start all gadgets
+
+case "$1" in
+	start )
+		# just be sure...
+		ifconfig usb0 down
+		rmmod g_ether
+		# /etc/gadget/core/letux-gadget.sh $1
+		service letux-gadget@usb0 $1
+		service letux-tty-gadget@ttyGS0 $1
+		service letux-ip-over-usb-gadget@usb0 $1
+		;;
+	status )
+		service letux-tty-gadget@ttyGS0 $1
+		service letux-ip-over-usb-gadget@usb0 $1
+		service --status-all 2>&1 | fgrep gadget
+		;;
+	stop )
+		# reverse order
+# NOTE: each "remove" stops the other services for a moment? so reverse order isn't the best idea
+		service letux-tty-gadget@ttyGS0 $1
+		service letux-ip-over-usb-gadget@usb0 $1
+		# /etc/gadget/core/letux-gadget.sh $1
+		service letux-gadget@usb0 $1
+		;;
+	* )
+		echo unknown command
+		;;
+esac
+
