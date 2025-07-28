@@ -25,7 +25,7 @@ case "$1" in
 	setup_device "$(cut -d ' ' -f 1 /proc/device-tree/model)" "$(cut -d ' ' -f 2- /proc/device-tree/model)" "$(echo 000001)"
 	start_device
 	create_configuration	# create first configuration
-        log_daemon_msg "tarted."
+        log_daemon_msg "started."
         exit 0
         ;;
   restart|reload|force-reload)
