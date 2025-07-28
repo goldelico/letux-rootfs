@@ -19,7 +19,7 @@ set -e
 
 case "$1" in
     configure)
-	/bin/systemctl daemon-reload || : ignore
+	[ -x /bin/systemctl ] && /bin/systemctl daemon-reload || : ignore
 #	/etc/init.d/letux-ip-over-usb-gadget@usb start
 #	/bin/systemctl letux-ip-over-usb-gadget@usb0 || : ignore
    ;;

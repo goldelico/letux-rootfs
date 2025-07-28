@@ -19,7 +19,7 @@ set -e
 
 case "$1" in
     remove)
-	/usr/sbin/service letux-ip-over-usb-gadget@usb0 stop || : ignore
+	[ -x /usr/sbin/service ] && /usr/sbin/service letux-ip-over-usb-gadget@usb0 stop || : ignore
 
     ;;
 
