@@ -48,14 +48,14 @@
 int main(int argc, char **argv) {
     int fd;
     void *map_base, *virt_addr; 
-	unsigned long read_result, writeval;
+	unsigned long long read_result, writeval;
 	off_t target;
 	int access_type = 'w';
 	
 	if(argc < 2) {
 		fprintf(stderr, "\nUsage:\t%s { address } [ type [ data ] ]\n"
 			"\taddress : memory address to act upon\n"
-			"\ttype    : access operation type : [b]yte, [h]alfword, [w]ord\n"
+			"\ttype    : access operation type : [b]yte, [h]alfword, [w]ord, [l]ong word\n"
 			"\tdata    : data to be written\n\n",
 			argv[0]);
 		exit(1);
@@ -76,7 +76,7 @@ int main(int argc, char **argv) {
     printf("Memory mapped at address %p.\n", map_base); 
     fflush(stdout);
     
-    virt_addr = map_base + (target & MAP_MASK);
+    virt_addr = ((unsigned char *) map_base) + (target & MAP_MASK);
     switch(access_type) {
 		case 'b':
 			read_result = *((unsigned char *) virt_addr);
@@ -87,11 +87,14 @@ int main(int argc, char **argv) {
 		case 'w':
 			read_result = *((unsigned long *) virt_addr);
 			break;
+        case 'l':
+            read_result = *((unsigned long long *) virt_addr);
+            break;
 		default:
 			fprintf(stderr, "Illegal data type '%c'.\n", access_type);
 			exit(2);
 	}
-    printf("Value at address 0x%X (%p): 0x%X\n", target, virt_addr, read_result); 
+    printf("Value at address 0x%p (%p): 0x%llX\n", (void *) target, virt_addr, read_result);
     fflush(stdout);
 
 	if(argc > 3) {
@@ -109,8 +112,12 @@ int main(int argc, char **argv) {
 				*((unsigned long *) virt_addr) = writeval;
 				read_result = *((unsigned long *) virt_addr);
 				break;
+            case 'l':
+                *((unsigned long *) virt_addr) = writeval;
+                read_result = *((unsigned long long *) virt_addr);
+                break;
 		}
-		printf("Written 0x%X; readback 0x%X\n", writeval, read_result); 
+		printf("Written 0x%llX; readback 0x%llX\n", writeval, read_result);
 		fflush(stdout);
 	}
 	
