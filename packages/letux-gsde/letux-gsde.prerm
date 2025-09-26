@@ -1,5 +1,5 @@
 #! /bin/sh
-# prerm script for letux-user
+# prerm script for letux-gsde
 #
 # see: dh_installdeb(1)
 
