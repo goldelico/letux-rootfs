@@ -58,7 +58,19 @@ rm /etc/apt/sources.list.d/qtmoko.list 2>/dev/null && CHANGED=true
 # recreate
 cd /
 
-replacefile ./etc/apt/sources.list.d/letux.list <<END
+case "$RELEASE" in
+	bookworm | trixie | forky )
+		replacefile ./etc/apt/sources.list.d/letux.list <<END
+# Letux repository
+deb $SCHEME://download.goldelico.com/letux-debian-rootfs/debian $RELEASE main
+
+# Debian non-free and backports (mainly used for WiFi drivers)
+deb $MAIN_REPO/debian $RELEASE non-free
+deb $BACKPORT_REPO/debian $RELEASE-backports main non-free non-free-firmware
+END
+		;;
+	* )
+		replacefile ./etc/apt/sources.list.d/letux.list <<END
 # Letux repository
 deb $SCHEME://download.goldelico.com/letux-debian-rootfs/debian $RELEASE main
 
@@ -66,6 +78,8 @@ deb $SCHEME://download.goldelico.com/letux-debian-rootfs/debian $RELEASE main
 deb $MAIN_REPO/debian $RELEASE non-free
 deb $BACKPORT_REPO/debian $RELEASE-backports main non-free
 END
+		;;
+esac
 
 replacefile ./etc/apt/apt.conf.d/10-no-check-valid-until <<END
 // disable Valid-Until: check for Release file
@@ -96,16 +110,17 @@ diff -q ./etc/apt/sources.list ./etc/apt/sources.list.bak 2>/dev/null || CHANGED
 
 if $CHANGED
 then
+	rm -rf /var/lib/apt/lists/
 
 	echo "********************************************************" >&2
 	echo "*                                                      *" >&2
 	echo "* We have fixed the /etc/apt/sources.list.d            *" >&2
-	echo "* So we must abort the install.                        *" >&2
+#	echo "* So we must abort the install.                        *" >&2
 	echo "*                                                      *" >&2
 	echo "* Please run manually:                                 *" >&2
 	echo "*   rm -rf /var/lib/apt/lists/                         *" >&2
 	echo "*   apt-get -o Acquire::Check-Valid-Until=false update *" >&2
-	echo "*   apt-get install letux-sources-list                 *" >&2
+#	echo "*   apt-get install letux-sources-list                 *" >&2
 	echo "*                                                      *" >&2
 	echo "* Then continue installation or upgrade.               *" >&2
 	echo "*                                                      *" >&2
