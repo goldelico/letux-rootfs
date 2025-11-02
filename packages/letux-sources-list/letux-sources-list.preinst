@@ -59,12 +59,21 @@ rm /etc/apt/sources.list.d/qtmoko.list 2>/dev/null && CHANGED=true
 cd /
 
 case "$RELEASE" in
+	etch )
+		replacefile ./etc/apt/sources.list.d/letux.list <<END
+# Letux repository
+deb $SCHEME://download.goldelico.com/letux-debian-rootfs/debian $RELEASE main
+
+# Debian non-free and no backports
+deb $MAIN_REPO/debian $RELEASE non-free
+END
+		;;
 	bookworm | trixie | forky )
 		replacefile ./etc/apt/sources.list.d/letux.list <<END
 # Letux repository
 deb $SCHEME://download.goldelico.com/letux-debian-rootfs/debian $RELEASE main
 
-# Debian non-free and backports (mainly used for WiFi drivers)
+# Debian non-free, non-free-firmware and backports (mainly used for WiFi drivers)
 deb $MAIN_REPO/debian $RELEASE non-free
 deb $BACKPORT_REPO/debian $RELEASE-backports main non-free non-free-firmware
 END
@@ -110,7 +119,8 @@ diff -q ./etc/apt/sources.list ./etc/apt/sources.list.bak 2>/dev/null || CHANGED
 
 if $CHANGED
 then
-	rm -rf /var/lib/apt/lists/
+	# clear cache
+	rm -f /var/lib/apt/lists/*.*_*
 
 	echo "********************************************************" >&2
 	echo "*                                                      *" >&2
@@ -118,7 +128,7 @@ then
 #	echo "* So we must abort the install.                        *" >&2
 	echo "*                                                      *" >&2
 	echo "* Please run manually:                                 *" >&2
-	echo "*   rm -rf /var/lib/apt/lists/                         *" >&2
+#	echo "*   rm -rf /var/lib/apt/lists/                         *" >&2
 	echo "*   apt-get -o Acquire::Check-Valid-Until=false update *" >&2
 #	echo "*   apt-get install letux-sources-list                 *" >&2
 	echo "*                                                      *" >&2
