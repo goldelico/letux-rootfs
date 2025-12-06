@@ -31,7 +31,7 @@ exec > /dev/null 2>&1
 # Log a string via the syslog facility.
 log()
 {
-expr "$VERBOSE" : "[yY]" && echo $1 $2 >/dev/console
+expr "$VERBOSE" : "[yY]" > /dev/null && echo $1 $2 >/dev/console
     if [ $1 != debug ] || expr "$VERBOSE" : "[yY]" > /dev/null; then
 	logger -p user.$1 -t "usbmount[$$]" -- "$2"
     fi
@@ -60,7 +60,6 @@ MOUNTDIR="/media"	# could become /Volumes for QuantumSTEP
 FILESYSTEMS=
 MOUNTOPTIONS=
 FS_MOUNTOPTIONS=
-VERBOSE=no
 
 if [ -r /etc/usbmount/usbmount.conf ]; then
     . /etc/usbmount/usbmount.conf
@@ -102,8 +101,8 @@ umask 022
 DEVINFO=$(/sbin/blkid -p $DEVNAME 2>/dev/null)
 log debug "DEVINFO=$DEVINFO"
 
-LABEL=$(echo "$DEVINFO" | fgrep -q "LABEL=" && echo "$DEVINFO" | sed 's/.*[[:blank:]]LABEL="\([^"]*\)".*/\1/g; s/[[:blank:]]*//g;')
-UUID=$(echo "$DEVINFO" | fgrep -q "UUID=" && echo "$DEVINFO"   | sed 's/.*[[:blank:]]UUID="\([^"]*\)".*/\1/g; s/[[:blank:]]*//g;')
+LABEL=$(echo "$DEVINFO" | fgrep -q " LABEL=" && echo "$DEVINFO" | sed 's/.*[[:blank:]]LABEL="\([^"]*\)".*/\1/g; s/[[:blank:]]*//g;')
+UUID=$(echo "$DEVINFO" | fgrep -q " UUID=" && echo "$DEVINFO"   | sed 's/.*[[:blank:]]UUID="\([^"]*\)".*/\1/g; s/[[:blank:]]*//g;')
 [ "$LABEL" ] || LABEL="$UUID"	# fall back
 # note: labels should not contain / characters
 log debug "label: $LABEL"
@@ -126,7 +125,7 @@ clean_dynamic () {
 	fi
     	log debug "clean up $mount"
 # FIXME: there may be false triggers since this is run again for all partitions
-	rmdir "$mount" || log err "failed to clean $mount"	# should be empty - may contain subdirectories?
+	rmdir "$mount" || log err "failed to clean $mount (ignored)"	# should be empty - may contain subdirectories?
     done
     log debug "clean up $MOUNTDIR"
     rmdir "$MOUNTDIR" || log err "failed to clean $MOUNTDIR"

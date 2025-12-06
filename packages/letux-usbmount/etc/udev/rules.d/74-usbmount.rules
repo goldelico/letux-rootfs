@@ -2,12 +2,12 @@
 # Rules should trigger for individual partitions!
 
 # for Stretch++
-KERNEL=="sd[a-z][0-9]", SUBSYSTEMS=="usb", ACTION=="add", RUN+="/bin/systemctl start usb-mount@%k.service"
-KERNEL=="sd[a-z][0-9]", SUBSYSTEMS=="usb", ACTION=="remove", RUN+="/bin/systemctl stop usb-mount@%k.service"
+KERNEL=="sd[a-z]*", SUBSYSTEMS=="usb", ACTION=="add", RUN+="/bin/systemctl start usb-mount@%k.service"
+KERNEL=="sd[a-z]*", SUBSYSTEMS=="usb", ACTION=="remove", RUN+="/bin/systemctl stop usb-mount@%k.service"
 
 # for Jessie or Stretch with nosystemd
-KERNEL=="sd[a-z][0-9]", SUBSYSTEMS=="usb", ACTION=="add", RUN+="/usr/share/usbmount/usbmount add"
-KERNEL=="sd[a-z][0-9]",			   ACTION=="remove", RUN+="/usr/share/usbmount/usbmount remove"
+KERNEL=="sd[a-z]*", SUBSYSTEMS=="usb", ACTION=="add", RUN+="/usr/share/usbmount/usbmount add"
+KERNEL=="sd[a-z]*",		       ACTION=="remove", RUN+="/usr/share/usbmount/usbmount remove"
 
 # for MMC
 KERNEL=="mmcblk[0-9]p*", SUBSYSTEMS=="block", ACTION=="add", RUN+="/bin/systemctl start usb-mount@%k.service"
