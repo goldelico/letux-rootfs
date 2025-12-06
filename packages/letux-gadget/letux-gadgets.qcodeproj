@@ -15,5 +15,6 @@ export SOURCES="ip-over-usb/letux-ip-over-usb-gadget.qcodeproj"
 export SOURCES+=" core/letux-gadget-core.qcodeproj"
 export SOURCES+=" tty/letux-tty-gadget.qcodeproj"
 export SOURCES+=" video/letux-video-gadget.qcodeproj"
+export SOURCES+=" storage/letux-storage-gadget.qcodeproj"
 
 cd "$(dirname "${BASH_SOURCE[0]}")" && "$QuantumSTEP/System/Sources/Frameworks/mySTEP.make" $ACTION
