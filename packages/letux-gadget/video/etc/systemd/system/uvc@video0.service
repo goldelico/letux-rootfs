@@ -12,10 +12,6 @@ Description=uvc-gadget on video0
 # Documentation=none
 After=systemd-user-sessions.service rc-local.service usb-gadget.service
 
-# If additional gettys are spawned during boot then we should make
-# sure that this is synchronized before getty.target, even though
-# getty.target didn't actually pull it in.
-#Before=getty.target
 IgnoreOnIsolate=yes
 
 # IgnoreOnIsolate causes issues with sulogin, if someone isolates
@@ -24,31 +20,20 @@ IgnoreOnIsolate=yes
 Conflicts=rescue.service
 Before=rescue.service
 
-# On systems without virtual consoles, don't start any getty. Note
-# that serial gettys are covered by serial-getty@.service, not this
-# unit.
 ConditionPathExists=/dev/video0
 
 [Service]
-# the VT is cleared by TTYVTDisallocate 	# FIXME
 ExecStartPre=/bin/sleep 10
 ExecStart=-/usr/bin/uvc-gadget -u /dev/video0 -v uvc.0
 Type=idle
 Restart=always
 RestartSec=0
 UtmpIdentifier=video0
-TTYPath=/dev/video0	# FIXME
-#TTYReset=no
-#TTYVHangup=no
-# TTYDisallocate=no
 KillMode=process
 IgnoreSIGPIPE=no
 SendSIGHUP=no
 
-# Unset locale for the console getty since the console has problems
-# displaying some internationalized messages.
 Environment=LANG= LANGUAGE= LC_CTYPE= LC_NUMERIC= LC_TIME= LC_COLLATE= LC_MONETARY= LC_MESSAGES= LC_PAPER= LC_NAME= LC_ADDRESS= LC_TELEPHONE= LC_MEASUREMENT= LC_IDENTIFICATION=
 
 [Install]
-WantedBy=getty.target	# FIXME
 DefaultInstance=video0
