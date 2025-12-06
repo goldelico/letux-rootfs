@@ -46,7 +46,7 @@ case "$1" in
 # special subcommands
   add )
 	# FIXME: reject if there was no start
-	$2
+	$2 $3 $4
 	;;
   remove )
 	remove_function $2
