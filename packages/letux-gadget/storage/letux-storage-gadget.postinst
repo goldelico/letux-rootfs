@@ -1,5 +1,5 @@
 #! /bin/sh
-# postinst script for letux-ip-over-usb-gadget
+# postinst script for letux-storage-gadget
 #
 # see: dh_installdeb(1)
 
@@ -19,6 +19,15 @@ set -e
 
 case "$1" in
     configure)
+	DEVICE=/var/storage0.img
+	BLOCKS=100 # increase block count if we need more space
+	NAME=LETUX
+
+	if [ ! -f "$DEVICE" ]
+	then
+		/sbin/mkfs.vfat -C -n "$NAME" "$DEVICE" $BLOCKS
+	fi
+
 	[ -x /bin/systemctl ] && /bin/systemctl daemon-reload || : ignore
 	/usr/sbin/service letux-storage-gadget@storage0 start
    ;;

@@ -1,5 +1,5 @@
 #! /bin/sh
-# prerm script for letux-ip-over-usb-gadget
+# prerm script for letux-storage-gadget
 #
 # see: dh_installdeb(1)
 
@@ -19,7 +19,11 @@ set -e
 
 case "$1" in
     remove)
+	DEVICE=/var/storage0.img
+
 	[ -x /usr/sbin/service ] && /usr/sbin/service letux-storage-gadget@storage0 stop || : ignore
+
+	rm -rf "$DEVICE"
 
     ;;
 

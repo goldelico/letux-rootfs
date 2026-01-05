@@ -6,13 +6,13 @@
 #  (at your option) any later version.
 
 [Unit]
-Description=USB memory service
+Description=USB storage service
 Documentation=
 After=systemd-user-sessions.service rc-local.service usb-gadget.service
 
 [Service]
-ExecStartPre=/etc/gadget/core/letux-gadget.sh add mass_storage /tmp/disk ro
-# ExecStart=/bin/systemctl start serial-getty@%I.service
+ExecStartPre=/etc/gadget/core/letux-gadget.sh add mass_storage /dev/storage@%I.img ro
+# ExecStart=/bin/systemctl start letux-storage-gadget@%I.service
 ExecStopPost=/etc/gadget/core/letux-gadget.sh remove mass_storage
 Type=idle
 Restart=always
