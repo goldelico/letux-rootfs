@@ -1,0 +1,63 @@
+#!/bin/sh
+# kFreeBSD do not accept scripts as interpreters, using #!/bin/sh and sourcing.
+if [ true != "$INIT_D_SCRIPT_SOURCED" ] ; then
+    set "$0" "$@"; INIT_D_SCRIPT_SOURCED=true . /lib/init/init-d-script
+fi
+### BEGIN INIT INFO
+# Provides:          letux-tty-gadget
+# Required-Start:    letux-gadget
+# Required-Stop:
+# Default-Start:     
+# Default-Stop:      0 1 2 3 4 5 6
+# Short-Description: Control getty and /dev/ttyGS0
+# Description:       This script adds a /dev/ttyGS0 with agetty to configfs
+#                    
+### END INIT INFO
+
+# Author: H. Nikolaus Schaller <hns@goldelico.com>
+
+SERVICE=letux-tty-gadget
+DEVICE=ttyGS0
+TERM=vt100
+
+do_status () {
+	if [ -e /dev/ttyGS0 ] ; then
+		echo "$SERVICE is running."
+		return 0
+	else
+                return 4
+        fi
+}
+
+case "$1" in
+  start)
+        log_daemon_msg "Starting $SERVICE"
+	/etc/gadget/core/letux-gadget.sh add acm
+	daemon -r --name=$SERVICE -- /sbin/agetty --noclear $DEVICE $TERM
+        exit 0
+        ;;
+  restart|reload|force-reload)
+        echo "Error: argument '$1' not supported" >&2
+        exit 3
+        ;;
+  stop)
+        log_daemon_msg "Stopping $SERVICE"
+	(echo; echo "USB access to terminal stopped.") >/dev/$DEVICE &
+	sleep 1
+	daemon --name=$SERVICE --stop 2>/dev/null
+	/etc/gadget/core/letux-gadget.sh remove acm
+        log_progress_msg "disabled."
+        log_end_msg 0
+        exit 0
+        ;;
+  status)
+	do_status
+	exit $?
+	;;
+  *)
+        echo "Usage: $0 start|stop|status" >&2
+        exit 3
+        ;;
+esac
+
+:
