@@ -257,7 +257,6 @@ echo +++ mass_storage
 		LUN=lun.$i
 		[ -r $DEVICE/functions/mass_storage.$USB_IF/$LUN ] || break	# needs new slot with this number
 		[ "$(cat $DEVICE/functions/mass_storage.$USB_IF/$LUN/file)" ] || break	# not yet connected to a file
-
 	done
 
 	mkdir -p $DEVICE/functions/mass_storage.$USB_IF/$LUN
@@ -269,6 +268,7 @@ echo +++ mass_storage
 	echo "Letux" >$DEVICE/functions/mass_storage.$USB_IF/$LUN/inquiry_string
 
 	echo "$1" >$DEVICE/functions/mass_storage.$USB_IF/$LUN/file
+	start_device
 }
 
 video()
