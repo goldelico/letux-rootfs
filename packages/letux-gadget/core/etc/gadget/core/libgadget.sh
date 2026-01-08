@@ -24,7 +24,7 @@ USB_LANGUAGE=0x409
 
 echo $(date) $SUBSYSTEM $ACTION "$@" >>/tmp/udev-gadget.log
 
-status() {
+gadget_status() {
 	if [ ! -d $DEVICE ]
 	then
 		echo not initialized
@@ -36,11 +36,11 @@ status() {
 	echo Files: $(cat $DEVICE/functions/mass_storage.$USB_IF/lun.*/file 2>/dev/null)
 }
 
-setup_device() {
+gadget_setup_device() {
 # $1: Manufacturer
 # $2: Product
 # $3: Serial number
-echo setup_device
+echo gadget_setup_device
 	modprobe -r g_ether || :	# may be running...
 	if [ ! -d /sys/kernel/config/usb_gadget ]
 	then
@@ -64,11 +64,11 @@ echo setup_device
 	echo "${3:-000000}" >$DEVICE/strings/$USB_LANGUAGE/serialnumber
 }
 
-create_configuration() {
+gadget_create_configuration() {
 	for C in 1 2 3 4 5 6 7 8 9
 	do
 		[ -r $DEVICE/configs/c.$C ] && continue	# find a free slot
-echo create_configuration $C
+echo gadget_create_configuration $C
 		mkdir -p $DEVICE/configs/c.$C
 		echo 250 >$DEVICE/configs/c.$C/MaxPower
 		mkdir -p $DEVICE/configs/c.$C/strings/$USB_LANGUAGE/
@@ -76,12 +76,12 @@ echo create_configuration $C
 	done
 }
 
-link_functions() {
+gadget_link_functions() {
 	for CONFIG in $DEVICE/configs/c.*/
 	do
 		[ -d $CONFIG ] || continue;	# no configurarations
-echo process config $CONFIG to link configurations
-		for NAME in $DEVICE/functions/*.$USB_IF
+echo gadget_link_functions: process config $CONFIG to link configurations
+		for NAME in $DEVICE/functions/*.$USB_IF*
 		do
 			[ -d $NAME ] || continue;	# no functions
 			case $NAME in
@@ -105,18 +105,18 @@ echo process config $CONFIG to link configurations
 	done
 }
 
-update_configuration() {
+gadget_update_configuration() {
 	ANY=false
 	for CONFIG in $DEVICE/configs/c.*/
 	do
 		[ -d $CONFIG ] || continue;	# no configurarations
-echo process config $CONFIG to write configuration
+echo gadget_update_configuration: process config $CONFIG to write configuration
 		CONFIGURATION=""
-		for NAME in $DEVICE/functions/*.$USB_IF
+		for NAME in $DEVICE/functions/*.$USB_IF*
 		do
 			[ -d $NAME ] || continue;	# not found
 echo try function $NAME
-# CHECKME: do we need this at all? Does anyone care about this string?
+# FIXME: avoid duplicates!
 			case $NAME in
 				*/acm.* )
 					CONFIGURATION="$CONFIGURATION+CDC ACM"
@@ -156,14 +156,14 @@ echo "writing configuration '$CONFIGURATION'"
 	fi	
 }
 
-start_device() {
-echo start_device
-	link_functions
-	update_configuration
+gadget_start_device() {
+echo gadget_start_device
+	gadget_link_functions
+	gadget_update_configuration
 }
 
-stop_device() {
-echo stop_device
+gadget_stop_device() {
+echo gadget_stop_device
 	for STORAGE in $DEVICE/functions/mass_storage.$USB_IF/lun.*/file
 	do	# safely stop storage devices by setting the file name to ""
 		[ -w "$STORAGE" ] && echo "" >$STORAGE
@@ -185,7 +185,7 @@ echo device stopped.
 echo device unmounted.
 }
 
-host_addr() { # generate stable and unique MAC address
+gadget_host_addr() { # generate stable and unique MAC address
 	(
 	cd $DEVICE/strings/$USB_LANGUAGE/
 	cat manufacturer product serialnumber | md5sum |
@@ -193,7 +193,7 @@ host_addr() { # generate stable and unique MAC address
 	)
 }
 
-rndis()
+gadget_rndis()
 { # RNDIS Gadget usb_f_rndis
 echo +++ rndis
 	mkdir -p $DEVICE/functions/rndis.$USB_IF  # network
@@ -210,20 +210,20 @@ echo +++ rndis
 
 	# tell Windows to use this config
 	ln -s $DEVICE/configs/c.$C $DEVICE/os_desc/
-	start_device
+	gadget_start_device
 }
 
-ecm()
+gadget_ecm()
 { # CDC ECM gadget usb_f_ecm (native) for MacOS X
 echo +++ ecm
 	mkdir -p $DEVICE/functions/ecm.$USB_IF  # network
 
 	echo 32:70:05:18:ff:78 >$DEVICE/functions/ecm.$USB_IF/host_addr
 	echo 46:10:3a:b3:af:d9 >$DEVICE/functions/ecm.$USB_IF/dev_addr
-	start_device
+	gadget_start_device
 }
 
-ncm()
+gadget_ncm()
 { # CDC NCM gadget usb_f_ncm
 echo +++ ncm
 	mkdir -p $DEVICE/functions/ncm.$USB_IF  # network
@@ -232,14 +232,14 @@ echo +++ ncm
 	host_addr >$DEVICE/functions/ncm.$USB_IF/host_addr
 	echo 46:10:3a:b3:af:d9 >$DEVICE/functions/ncm.$USB_IF/dev_addr
 	# os_desc?
-	start_device
+	gadget_start_device
 }
 
-acm()
+gadget_acm()
 { # Serial Console usb_acm_rndis
 echo +++ acm
 	mkdir -p $DEVICE/functions/acm.$USB_IF  # network
-	start_device
+	gadget_start_device
 }
 
 mass_storage() # $1=diskpath $2=ro
@@ -268,10 +268,10 @@ echo +++ mass_storage
 	echo "Letux" >$DEVICE/functions/mass_storage.$USB_IF/$LUN/inquiry_string
 
 	echo "$1" >$DEVICE/functions/mass_storage.$USB_IF/$LUN/file
-	start_device
+	gadget_start_device
 }
 
-video()
+gadget_video()
 { # UVC usb_f_uvc
 echo +++ video
 # emulates an USB Video Class device: https://developer.ridgerun.com/wiki/index.php?title=How_to_use_the_UVC_gadget_driver_in_Linux
@@ -289,56 +289,107 @@ EOF
 	(cd $DEVICE/functions/uvc.$USB_IF/streaming/header/h && ln -sf ../../uncompressed/u)
 	(cd $DEVICE/functions/uvc.$USB_IF/control/class/fs && ln -sf ../../header/h)
 	(cd $DEVICE/functions/uvc.$USB_IF/control/class/hs && ln -sf ../../header/h)
+	gadget_start_device
 }
 
-hid()
+gadget_hid()
 { # HID: usb_f_hid
-# $1: protocol
-# $2: sibclass
-# $3: bytes per report
-# $4: descriptor (hex string)
+# $1: type (keyboard, mouse, gamepad, joystick)
 echo +++ hid
 	# emulate HID device: https://github.com/qlyoung/keyboard-gadget/blob/master/gadget-setup.sh
 	# or https://randomnerdtutorials.com/raspberry-pi-zero-usb-keyboard-hid/
 	# Device class: https://www.usb.org/sites/default/files/hid1_11.pdf
-	mkdir -p $DEVICE/functions/hid.$USB_IF 	# hid device
-
-	for i in 0 1 2 3 4 5 6 7
-	do
-		LUN=lun.$i
-		[ -r $DEVICE/functions/hid.$USB_IF/$LUN ] || break
+	for NUM in 0 1 2 3 4 5 6 7 8 9
+	do # find a free unused number
+		[ -r $DEVICE/functions/hid.$NUM.$USB_IF ] || break
 	done
 
-# FIXME: allow to add multiple devices
+	mkdir -p $DEVICE/functions/hid.$NUM.$USB_IF 	# hid device
 
-	# this makes a keyboard
-	echo ${1:-1} >$DEVICE/functions/hid.$USB_IF/protocol		# 1 for keyboard. see usb spec
-	echo ${2:-1} >$DEVICE/functions/hid.$USB_IF/subclass		# set the device subclass
-	echo ${3:-8} >$DEVICE/functions/hid.$USB_IF/report_length	# number of bytes per report
-	DEFAULT=$(
-		echo "00: 0501 0906 a101 0507 19e0 29e7 1500 2501"
-		echo "10: 7501 9508 8102 9501 7508 8103 9505 7501"
-		echo "20: 0508 1901 2905 9102 9501 7503 9103 9506"
-		echo "30: 7508 1500 2565 0507 1900 2965 8100 c0"
-	)
-	echo "${4:-$DEFAULT}" | xxd -r >$DEVICE/functions/hid.$USB_IF/report_desc	# write the binary blob of the report descriptor to report_desc; see HID class spec
+	case "$1" in
+	keyboard )
+		echo 1 '>' $DEVCICE/functions/hid.$NUM.$USB_IF/protocol
+		echo 1 >$DEVICE/functions/hid.$NUM.$USB_IF/protocol		# 1 for keyboard. see usb spec
+		echo 1 >$DEVICE/functions/hid.$NUM.$USB_IF/subclass		# set the device subclass
+		echo 8 >$DEVICE/functions/hid.$NUM.$USB_IF/report_length	# number of bytes per report
+		cat <<EOF | xxd -r -p >$DEVICE/functions/hid.$NUM.$USB_IF/report_desc
+05010906a101050719e029e715002501
+75019508810295017508810195057501
+05081901290591029501750391019506
+7508150025650507190029658100c0
+EOF
+		;;
+	mouse )
+		echo 2 '>' $DEVCICE/functions/hid.$NUM.$USB_IF/protocol
+		echo 2 >$DEVICE/functions/hid.$NUM.$USB_IF/protocol		# 2 for mouse. see usb spec
+		echo 1 >$DEVICE/functions/hid.$NUM.$USB_IF/subclass		# set the device subclass
+		echo 4 >$DEVICE/functions/hid.$NUM.$USB_IF/report_length	# number of bytes per report
+		cat <<EOF | xxd -r -p >$DEVICE/functions/hid.$NUM.$USB_IF/report_desc
+05010902a1010901a100050919012903
+15002501950375018102950175058101
+0501093009311581257f750895028106
+c0c0
+EOF
+		;;
+	gamepad | joystick )
+		echo 0 '>' $DEVCICE/functions/hid.$NUM.$USB_IF/protocol
+		echo 0 >$DEVICE/functions/hid.$NUM.$USB_IF/protocol		# 0 for joystick. see usb spec
+		echo 0 >$DEVICE/functions/hid.$NUM.$USB_IF/subclass		# set the device subclass
+		echo 4 >$DEVICE/functions/hid.$NUM.$USB_IF/report_length	# number of bytes per report
+		cat <<EOF | xxd -r -p >$DEVICE/functions/hid.$NUM.$USB_IF/report_desc
+0501        # Usage Page (Generic Desktop)
+0905        # Usage (Gamepad)
+a101        # Collection (Application)
+0509        # Usage Page (Button)
+1901        # Usage Minimum (Button 1)
+2902        # Usage Maximum (Button 2)
+1500        # Logical Minimum (0)
+2501        # Logical Maximum (1)
+9502        # Report Count (2)
+7501        # Report Size (1)
+8102        # Input (Data,Var,Abs)
+9506        # Report Count (6)
+7501        # Report Size (1)
+8101        # Input (Const,Arr,Abs) - padding
+0501        # Usage Page (Generic Desktop)
+0930        # Usage (X)
+0931        # Usage (Y)
+1581        # Logical Minimum (-127)
+257f        # Logical Maximum (127)
+7508        # Report Size (8)
+9502        # Report Count (2)
+8102        # Input (Data,Var,Abs)
+c0          # End Collection
+EOF
+		;;
+	* )
+		echo unknown device type: $1
+		rmdir $DEVICE/functions/hid.$NUM.$USB_IF
+		return 1
+	esac
 
 	# userspace should now be able to write to /dev/hidg* to send over USB
 	# well, since the joystick itself is a /dev (or should be) we need a daemon to pipe: cat </dev/joystick >/dev/hidg - and avoid buffering
 	# but: we must then translate Linux device events to USB keyboard/joystick messages
+	gadget_start_device
 }
 
-remove_function() # $1=functionname
-{ # delete a function from running system
-echo remove_function $1
+gadget_remove() # $1=functionname
+{ # delete a function (all instances) from running system
+echo --- remove $1
 	for CONFIG in $DEVICE/configs/c.*/
 	do
 #echo $0: process config $CONFIG
 #echo		rm -f $CONFIG/$1.$USB_IF	# remove symlink to config (i.e. disconnect function)
-		rm -f $CONFIG/$1.$USB_IF	# remove symlink to config (i.e. disconnect function)
+		rm -f $CONFIG/$1*.$USB_IF	# remove symlink to config (i.e. disconnect function)
 	done
 
-	[ -d $DEVICE/functions/$1.$USB_IF ] && rmdir $DEVICE/functions/$1.$USB_IF	# remove function (we can't remove function first!)
+	for DEV in $DEVICE/functions/$1*.$USB_IF
+	do
+		[ -d $DEV ] && rmdir $DEV	# remove function (we can't remove function first!)
+	done
 
-	update_configuration || : ignore error
+	gadget_update_configuration || : ignore error
 }
+
+# EOF
