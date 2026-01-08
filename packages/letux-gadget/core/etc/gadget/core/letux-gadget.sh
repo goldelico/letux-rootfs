@@ -16,15 +16,15 @@ fi
 
 # Author: H. Nikolaus Schaller <hns@goldelico.com>
 
-. /etc/gadget/core/libgadget.sh
+. /etc/gadget/core/libgadget.sh		# functions prefixed with gadget_
 
 case "$1" in
   start)
         log_daemon_msg "Starting USB Gadget"
 	# FIXME: somewhere get a unique serial number from...
-	setup_device "$(cut -d ' ' -f 1 /proc/device-tree/model)" "$(cut -d ' ' -f 2- /proc/device-tree/model)" "$(echo 000001)"
-	start_device
-	create_configuration	# create first configuration
+	gadget_setup_device "$(cut -d ' ' -f 1 /proc/device-tree/model)" "$(cut -d ' ' -f 2- /proc/device-tree/model)" "$(echo 000001)"
+	gadget_start_device
+	gadget_create_configuration		# create first configuration
         log_daemon_msg "started."
         exit 0
         ;;
@@ -34,22 +34,22 @@ case "$1" in
         ;;
   stop)
         log_daemon_msg "Stopping USB Gadget"
-	stop_device
+	gadget_stop_device
         log_progress_msg "stopped."
         log_end_msg 0
         exit 0
         ;;
   status)
-	status
+	gadget_status
 	exit $?
 	;;
-# special subcommands
+# special subcommands ("add" "hid", "add" "ncm" etc.)
   add )
 	# FIXME: reject if there was no start
-	$2 $3 $4
+	gadget_$2 $3 $4
 	;;
   remove )
-	remove_function $2
+	gadget_remove $2
 	;;
   *)
         echo "Usage: $0 start|stop|status|add|remove" >&2
