@@ -10,7 +10,7 @@ fi
 # Default-Start:     
 # Default-Stop:      0 1 2 3 4 5 6
 # Short-Description: Control IP over USB (ncm)
-# Description:       This script adds usb0 and a dhcp daemon to configfs
+# Description:       Adds usb0 and a dhcp daemon to configfs
 #                    
 ### END INIT INFO
 
