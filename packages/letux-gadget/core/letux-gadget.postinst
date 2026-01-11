@@ -19,7 +19,6 @@ set -e
 
 case "$1" in
     configure)
-	# remove from boot
 	/usr/sbin/update-rc.d letux-gadget@usb0 defaults || : ignore errors
    ;;
 

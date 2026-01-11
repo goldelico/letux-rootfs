@@ -62,13 +62,30 @@ echo gadget_setup_device
 	echo "${1:-Goldelico}" >$DEVICE/strings/$USB_LANGUAGE/manufacturer
 	echo "${2:-LetuxOS}" >$DEVICE/strings/$USB_LANGUAGE/product
 	echo "${3:-000000}" >$DEVICE/strings/$USB_LANGUAGE/serialnumber
+
+	echo created $(cat $DEVICE/strings/$USB_LANGUAGE/manufacturer) $(cat $DEVICE/strings/$USB_LANGUAGE/product) $(cat $DEVICE/strings/$USB_LANGUAGE/serialnumber) $DEVICE
+}
+
+gadget_shutdown_device() {
+	# there is a very specific sequence to teardown the settings (start with symlinks, then configs lower level, then functions, etc.)
+	find $DEVICE/os_desc/* -maxdepth 0 -type l -exec rm {} \; 2>/dev/null || :
+	find $DEVICE/configs/*/* -maxdepth 0 -type l -exec rm {} \; 2>/dev/null || :
+	find $DEVICE/configs/*/strings/* -maxdepth 0 -type d -exec rmdir {} \; 2>/dev/null || :
+	find $DEVICE/functions/* -type d -exec rmdir {} \; 2>/dev/null || :
+	find $DEVICE/strings/* -maxdepth 0 -type d -exec rmdir {} \; 2>/dev/null || :
+	find $DEVICE/configs/* -maxdepth 0 -type d -exec rmdir {} \; 2>/dev/null || :
+echo device stopped.
+
+	MOUNT="$(dirname "$(dirname "$DEVICE")")"
+	umount "$MOUNT"
+echo device unmounted.
 }
 
 gadget_create_configuration() {
 	for C in 1 2 3 4 5 6 7 8 9
 	do
-		[ -r $DEVICE/configs/c.$C ] && continue	# find a free slot
-echo gadget_create_configuration $C
+		[ "$(ls -1d $DEVICE/configs/c.$C/*.$USB_IF 2>/dev/null)" ] && continue	# find a free slot without functions
+echo gadget_create_configuration $DEVICE/configs/c.$C
 		mkdir -p $DEVICE/configs/c.$C
 		echo 250 >$DEVICE/configs/c.$C/MaxPower
 		mkdir -p $DEVICE/configs/c.$C/strings/$USB_LANGUAGE/
@@ -81,8 +98,9 @@ gadget_link_functions() {
 	do
 		[ -d $CONFIG ] || continue;	# no configurarations
 echo gadget_link_functions: process config $CONFIG to link configurations
-		for NAME in $DEVICE/functions/*.$USB_IF*
+		for NAME in $DEVICE/functions/*.$USB_IF
 		do
+# echo try $NAME
 			[ -d $NAME ] || continue;	# no functions
 			case $NAME in
 				*/ecm.* )
@@ -100,53 +118,39 @@ echo gadget_link_functions: process config $CONFIG to link configurations
 					fi
 					;;
 			esac
-			ln -sf "$NAME" "$CONFIG"
+			if ! [ -r "$CONFIG/$(basename "$NAME")" ]
+			then # link (new) function into config
+				echo "" >$DEVICE/UDC	# is write protected
+echo ln -sf "$NAME" "$CONFIG"
+				ln -sf "$NAME" "$CONFIG"
+			fi
 		done
 	done
+}
+
+gadget_stop_configuration() {
+	echo "" >$DEVICE/UDC
 }
 
 gadget_update_configuration() {
 	ANY=false
 	for CONFIG in $DEVICE/configs/c.*/
 	do
-		[ -d $CONFIG ] || continue;	# no configurarations
+		[ -d $CONFIG ] || continue;	# no configurations
 echo gadget_update_configuration: process config $CONFIG to write configuration
 		CONFIGURATION=""
-		for NAME in $DEVICE/functions/*.$USB_IF*
-		do
-			[ -d $NAME ] || continue;	# not found
-echo try function $NAME
-# FIXME: avoid duplicates!
-			case $NAME in
-				*/acm.* )
-					CONFIGURATION="$CONFIGURATION+CDC ACM"
-					;;
-				*/ecm.* )
-					CONFIGURATION="$CONFIGURATION+CDC ECM"
-					;;
-				*/ncm.* )
-					CONFIGURATION="$CONFIGURATION+CDC NCM"
-					;;
-				*/rndis.* )
-					CONFIGURATION="$CONFIGURATION+RNDIS"
-					;;
-				*/mass_storage.* )
-					CONFIGURATION="$CONFIGURATION+Mass Storage"
-					;;
-				*/uvc.* )
-					CONFIGURATION="$CONFIGURATION+Video"
-					;;
-				*/hid.* )
-					CONFIGURATION="$CONFIGURATION+HID"
-					;;
-				* ) echo unknown function "$NAME"
-					exit 1
-					;;
-			esac
-		done
+		[ "$(ls -1d $CONFIG/acm.* 2>/dev/null)" ] && CONFIGURATION="$CONFIGURATION+CDC ACM"
+		[ "$(ls -1d $CONFIG/ecm.* 2>/dev/null)" ] && CONFIGURATION="$CONFIGURATION+CDC ECM"
+		[ "$(ls -1d $CONFIG/ncm.* 2>/dev/null)" ] && CONFIGURATION="$CONFIGURATION+CDC NCM"
+		[ "$(ls -1d $CONFIG/rndis.* 2>/dev/null)" ] && CONFIGURATION="$CONFIGURATION+RNDIS"
+		[ "$(ls -1d $CONFIG/mass_storage.* 2>/dev/null)" ] && CONFIGURATION="$CONFIGURATION+Mass Storage"
+		[ "$(ls -1d $CONFIG/uvc.* 2>/dev/null)" ] && CONFIGURATION="$CONFIGURATION+Video"
+		[ "$(ls -1d $CONFIG/hid.* 2>/dev/null)" ] && CONFIGURATION="$CONFIGURATION+HID"
+
+		CONFIGUREATION="${CONFIGURATION#+}"	# strip first + if any
 echo "writing configuration '$CONFIGURATION'"
 		mkdir -p $DEVICE/strings/$USB_LANGUAGE
-		[ -w $CONFIG/strings/$USB_LANGUAGE/configuration ] && { echo ${CONFIGURATION#+} >$CONFIG/strings/$USB_LANGUAGE/configuration; ANY=true; }
+		[ -w $CONFIG/strings/$USB_LANGUAGE/configuration ] && { echo "$CONFIGURATION" >$CONFIG/strings/$USB_LANGUAGE/configuration; ANY=true; }
 	done
 	if $ANY
 	then
@@ -156,33 +160,24 @@ echo "writing configuration '$CONFIGURATION'"
 	fi	
 }
 
-gadget_start_device() {
-echo gadget_start_device
+gadget_enable_device() {
+echo gadget_enable_device
 	gadget_link_functions
 	gadget_update_configuration
 }
 
-gadget_stop_device() {
-echo gadget_stop_device
+gadget_disable_device() {
+echo gadget_disable_device
 	for STORAGE in $DEVICE/functions/mass_storage.$USB_IF/lun.*/file
 	do	# safely stop storage devices by setting the file name to ""
 		[ -w "$STORAGE" ] && echo "" >$STORAGE
 	done
 
+	# FIXME: unlink functions from all configurations?
 	[ -r "$DEVICE/UDC" -a "$(cat "$DEVICE/UDC")" ] && { echo stop running activities; echo "" >$DEVICE/UDC; } || :
 
-	# there is a very specific sequence to teardown the settings (start with symlinks, then configs lower level, then functions, etc.)
-	find $DEVICE/os_desc/* -maxdepth 0 -type l -exec rm {} \; 2>/dev/null || :
-	find $DEVICE/configs/*/* -maxdepth 0 -type l -exec rm {} \; 2>/dev/null || :
-	find $DEVICE/configs/*/strings/* -maxdepth 0 -type d -exec rmdir {} \; 2>/dev/null || :
-	find $DEVICE/functions/* -type d -exec rmdir {} \; 2>/dev/null || :
-	find $DEVICE/strings/* -maxdepth 0 -type d -exec rmdir {} \; 2>/dev/null || :
-	find $DEVICE/configs/* -maxdepth 0 -type d -exec rmdir {} \; 2>/dev/null || :
-echo device stopped.
-
-	MOUNT="$(dirname "$(dirname "$DEVICE")")"
-	umount "$MOUNT"
-echo device unmounted.
+	# FIXME: do this really here?
+	gadget_shutdown_device
 }
 
 gadget_host_addr() { # generate stable and unique MAC address
@@ -196,12 +191,13 @@ gadget_host_addr() { # generate stable and unique MAC address
 gadget_rndis()
 { # RNDIS Gadget usb_f_rndis
 echo +++ rndis
-	mkdir -p $DEVICE/functions/rndis.$USB_IF  # network
+	FUNCTION=$DEVICE/functions/rndis.$USB_IF
+	mkdir -p $FUNCTION || { echo please enable CONFIG_USB_F_RNDIS in Kernel config; return 1; }
 
-	echo 32:70:05:18:ff:78 >$DEVICE/functions/rndis.$USB_IF/host_addr
-	echo 46:10:3a:b3:af:d9 >$DEVICE/functions/rndis.$USB_IF/dev_addr
-	echo RNDIS >$DEVICE/functions/rndis.$USB_IF/os_desc/interface.rndis/compatible_id
-	echo 5162001 >$DEVICE/functions/rndis.$USB_IF/os_desc/interface.rndis/sub_compatible_id
+	echo 32:70:05:18:ff:78 >$FUNCTION/host_addr
+	echo 46:10:3a:b3:af:d9 >$FUNCTION/dev_addr
+	echo RNDIS >$FUNCTION/os_desc/interface.rndis/compatible_id
+	echo 5162001 >$FUNCTION/os_desc/interface.rndis/sub_compatible_id
 
 	# special setup for Windows
 	echo 1 >$DEVICE/os_desc/use
@@ -210,42 +206,53 @@ echo +++ rndis
 
 	# tell Windows to use this config
 	ln -s $DEVICE/configs/c.$C $DEVICE/os_desc/
-	gadget_start_device
+
+	gadget_enable_device
 }
 
 gadget_ecm()
 { # CDC ECM gadget usb_f_ecm (native) for MacOS X
 echo +++ ecm
-	mkdir -p $DEVICE/functions/ecm.$USB_IF  # network
+	FUNCTION=$DEVICE/functions/ecm.$USB_IF
+	mkdir -p $FUNCTION || { echo please enable CONFIG_USB_F_ECM in Kernel config; return 1; }
 
-	echo 32:70:05:18:ff:78 >$DEVICE/functions/ecm.$USB_IF/host_addr
-	echo 46:10:3a:b3:af:d9 >$DEVICE/functions/ecm.$USB_IF/dev_addr
-	gadget_start_device
+	gadget_host_addr >$FUNCTION/host_addr
+	echo 46:10:3a:b3:af:d9 >$FUNCTION/dev_addr
+
+	gadget_enable_device
 }
 
 gadget_ncm()
 { # CDC NCM gadget usb_f_ncm
 echo +++ ncm
-	mkdir -p $DEVICE/functions/ncm.$USB_IF  # network
+	FUNCTION=$DEVICE/functions/ncm.$USB_IF
+	mkdir -p $FUNCTION || { echo please enable CONFIG_USB_F_NCM in Kernel config; return 1; }
 
-#	echo 32:70:05:18:ff:78 >$DEVICE/functions/ncm.$USB_IF/host_addr
-	host_addr >$DEVICE/functions/ncm.$USB_IF/host_addr
-	echo 46:10:3a:b3:af:d9 >$DEVICE/functions/ncm.$USB_IF/dev_addr
+	gadget_host_addr >$FUNCTION/host_addr
+	echo 46:10:3a:b3:af:d9 >$FUNCTION/dev_addr
 	# os_desc?
-	gadget_start_device
+
+	gadget_enable_device
 }
 
 gadget_acm()
-{ # Serial Console usb_acm_rndis
+{ # Serial Console usb_acm
 echo +++ acm
-	mkdir -p $DEVICE/functions/acm.$USB_IF  # network
-	gadget_start_device
+	for NUM in 0 1 2 3 4 5 6 7 8 9
+	do # find a free unused number
+		[ -r $DEVICE/functions/acm.$NUM.$USB_IF ] || break
+	done
+
+	FUNCTION=$DEVICE/functions/acm.$NUM.$USB_IF
+	mkdir -p $FUNCTION || { echo please enable CONFIG_USB_F_ACM in Kernel config; return 1; }
+
+	gadget_enable_device
 }
 
-mass_storage() # $1=diskpath $2=ro
+gadget_mass_storage() # $1=diskpath $2=ro
 { # Mass Storage usb_f_mass_storage
 # $1: raw device path
-echo +++ mass_storage
+echo +++ mass_storage $1 $2
 	# emulate memory devices
 	[ ! -e "$1" ] && { echo device not found: $1; return; }
 
@@ -259,43 +266,63 @@ echo +++ mass_storage
 		[ "$(cat $DEVICE/functions/mass_storage.$USB_IF/$LUN/file)" ] || break	# not yet connected to a file
 	done
 
-	mkdir -p $DEVICE/functions/mass_storage.$USB_IF/$LUN
+	FUNCTION=$DEVICE/functions/mass_storage.$USB_IF/$LUN
+	mkdir -p $FUNCTION || { echo please enable CONFIG_USB_F_MASS_STORAGE in Kernel config; return 1; }
 
-	echo 0 >$DEVICE/functions/mass_storage.$USB_IF/$LUN/cdrom
-	echo 0 >$DEVICE/functions/mass_storage.$USB_IF/$LUN/nofua
-	echo 1 >$DEVICE/functions/mass_storage.$USB_IF/$LUN/removable	# this allows empty file name to indicate device is not (yet) loaded
-	[ "$2" ] && echo 1 >$DEVICE/functions/mass_storage.$USB_IF/$LUN/ro
-	echo "Letux" >$DEVICE/functions/mass_storage.$USB_IF/$LUN/inquiry_string
+	echo 0 >$FUNCTION/cdrom
+	echo 0 >$FUNCTION/nofua
+	echo 1 >$FUNCTION/removable	# this allows empty file name to indicate device is not (yet) loaded
+	[ "$2" ] && echo 1 >$FUNCTION/ro
+	echo "Letux" >$FUNCTION/inquiry_string
 
-	echo "$1" >$DEVICE/functions/mass_storage.$USB_IF/$LUN/file
-	gadget_start_device
+	echo "$1" >$FUNCTION/file
+
+	gadget_enable_device
 }
 
-gadget_video()
+gadget_uvc()
 { # UVC usb_f_uvc
 echo +++ video
 # emulates an USB Video Class device: https://developer.ridgerun.com/wiki/index.php?title=How_to_use_the_UVC_gadget_driver_in_Linux
-	mkdir -p $DEVICE/functions/uvc.$USB_IF  # video
+	for NUM in 0 1 2 3 4 5 6 7 8 9
+	do # find a free unused number
+		[ -r $DEVICE/functions/uvc.$NUM.$USB_IF ] || break
+	done
 
-	mkdir -p $DEVICE/functions/uvc.$USB_IF/control/header/h
-	(cd $DEVICE/functions/uvc.$USB_IF/control/ && ln -sf header/h class/fs)
-	mkdir -p $DEVICE/functions/uvc.$USB_IF/streaming/uncompressed/u/360p
-	cat <<EOF >$DEVICE/functions/uvc.$USB_IF/streaming/uncompressed/u/360p/dwFrameInterval
-666666
-1000000
-5000000
-EOF
-	mkdir $DEVICE/functions/uvc.$USB_IF/streaming/header/h
-	(cd $DEVICE/functions/uvc.$USB_IF/streaming/header/h && ln -sf ../../uncompressed/u)
-	(cd $DEVICE/functions/uvc.$USB_IF/control/class/fs && ln -sf ../../header/h)
-	(cd $DEVICE/functions/uvc.$USB_IF/control/class/hs && ln -sf ../../header/h)
-	gadget_start_device
+	FUNCTION=$DEVICE/functions/uvc.$NUM.$USB_IF
+# FIXME: can we scan gunzip </proc/config.gz | fgrep ... for what is missing?
+# but there may be no /proc/config.gz
+	mkdir -p $FUNCTION || { echo please enable USB_CONFIGFS, USB_LIBCOMPOSITE, USB_CONFIGFS_F_UVC and USB_F_UVC in Kernel config; return 1; }
+
+	mkdir -p $FUNCTION/control/header/h
+# only for older kernels
+#	ln -sf $FUNCTION/control/header/h $FUNCTION/control/class/fs
+#	ln -sf $FUNCTION/control/header/h $FUNCTION/control/class/hs
+#	ln -sf $FUNCTION/control/header/h $FUNCTION/control/class/ss
+	mkdir -p $FUNCTION/streaming/header/h
+	FMT=$FUNCTION/streaming/mjpeg/m
+	mkdir -p $FMT
+	FRAME=$FMT/640x480
+	mkdir -p $FRAME
+	echo 640 >$FRAME/wWidth
+	echo 480 >$FRAME/wHeight
+	FPS=30
+	echo $((10000000/$FPS)) >$FRAME/dwDefaultFrameInterval
+	echo $((10000000/$FPS)) >$FRAME/dwFrameInterval
+	echo $((640*480*2)) >$FRAME/dwMaxVideoFrameBufferSize
+#?	ln -sf $FMT $FUNCTION/streaming/header/h
+# only for older kernels
+#	ln -sf $FUNCTION/streaming/header/h $FUNCTION/streaming/class/fs
+#	ln -sf $FUNCTION/streaming/header/h $FUNCTION/streaming/class/hs
+#	ln -sf $FUNCTION/streaming/header/h $FUNCTION/streaming/class/ss
+
+	gadget_enable_device
 }
 
 gadget_hid()
 { # HID: usb_f_hid
 # $1: type (keyboard, mouse, gamepad, joystick)
-echo +++ hid
+echo +++ hid $1
 	# emulate HID device: https://github.com/qlyoung/keyboard-gadget/blob/master/gadget-setup.sh
 	# or https://randomnerdtutorials.com/raspberry-pi-zero-usb-keyboard-hid/
 	# Device class: https://www.usb.org/sites/default/files/hid1_11.pdf
@@ -304,15 +331,15 @@ echo +++ hid
 		[ -r $DEVICE/functions/hid.$NUM.$USB_IF ] || break
 	done
 
-	mkdir -p $DEVICE/functions/hid.$NUM.$USB_IF 	# hid device
+	FUNCTION=$DEVICE/functions/hid.$NUM.$USB_IF
+	mkdir -p $FUNCTION || { echo please enable USB_CONFIGFS, USB_LIBCOMPOSITE, CONFIG_USB_CONFIGFS_F_HID and CONFIG_USB_F_HID in Kernel config; return 1; }
 
 	case "$1" in
 	keyboard )
-		echo 1 '>' $DEVCICE/functions/hid.$NUM.$USB_IF/protocol
-		echo 1 >$DEVICE/functions/hid.$NUM.$USB_IF/protocol		# 1 for keyboard. see usb spec
-		echo 1 >$DEVICE/functions/hid.$NUM.$USB_IF/subclass		# set the device subclass
-		echo 8 >$DEVICE/functions/hid.$NUM.$USB_IF/report_length	# number of bytes per report
-		cat <<EOF | xxd -r -p >$DEVICE/functions/hid.$NUM.$USB_IF/report_desc
+		echo 1 >$FUNCTION/protocol		# 1 for keyboard. see usb spec
+		echo 1 >$FUNCTION/subclass		# set the device subclass
+		echo 8 >$FUNCTION/report_length	# number of bytes per report
+		cat <<EOF | xxd -r -p >$FUNCTION/report_desc
 05010906a101050719e029e715002501
 75019508810295017508810195057501
 05081901290591029501750391019506
@@ -320,11 +347,10 @@ echo +++ hid
 EOF
 		;;
 	mouse )
-		echo 2 '>' $DEVCICE/functions/hid.$NUM.$USB_IF/protocol
-		echo 2 >$DEVICE/functions/hid.$NUM.$USB_IF/protocol		# 2 for mouse. see usb spec
-		echo 1 >$DEVICE/functions/hid.$NUM.$USB_IF/subclass		# set the device subclass
-		echo 4 >$DEVICE/functions/hid.$NUM.$USB_IF/report_length	# number of bytes per report
-		cat <<EOF | xxd -r -p >$DEVICE/functions/hid.$NUM.$USB_IF/report_desc
+		echo 2 >$FUNCTION/protocol		# 2 for mouse. see usb spec
+		echo 1 >$FUNCTION/subclass		# set the device subclass
+		echo 4 >$FUNCTION/report_length	# number of bytes per report
+		cat <<EOF | xxd -r -p >$FUNCTION/report_desc
 05010902a1010901a100050919012903
 15002501950375018102950175058101
 0501093009311581257f750895028106
@@ -332,11 +358,10 @@ c0c0
 EOF
 		;;
 	gamepad | joystick )
-		echo 0 '>' $DEVCICE/functions/hid.$NUM.$USB_IF/protocol
-		echo 0 >$DEVICE/functions/hid.$NUM.$USB_IF/protocol		# 0 for joystick. see usb spec
-		echo 0 >$DEVICE/functions/hid.$NUM.$USB_IF/subclass		# set the device subclass
-		echo 4 >$DEVICE/functions/hid.$NUM.$USB_IF/report_length	# number of bytes per report
-		cat <<EOF | xxd -r -p >$DEVICE/functions/hid.$NUM.$USB_IF/report_desc
+		echo 0 >$FUNCTION/protocol		# 0 for joystick. see usb spec
+		echo 0 >$FUNCTION/subclass		# set the device subclass
+		echo 4 >$FUNCTION/report_length	# number of bytes per report
+		cat <<EOF | xxd -r -p >$FUNCTION/report_desc
 0501        # Usage Page (Generic Desktop)
 0905        # Usage (Gamepad)
 a101        # Collection (Application)
@@ -364,19 +389,22 @@ EOF
 		;;
 	* )
 		echo unknown device type: $1
-		rmdir $DEVICE/functions/hid.$NUM.$USB_IF
+		rmdir $FUNCTION
 		return 1
 	esac
 
 	# userspace should now be able to write to /dev/hidg* to send over USB
 	# well, since the joystick itself is a /dev (or should be) we need a daemon to pipe: cat </dev/joystick >/dev/hidg - and avoid buffering
 	# but: we must then translate Linux device events to USB keyboard/joystick messages
-	gadget_start_device
+
+	gadget_enable_device
 }
 
 gadget_remove() # $1=functionname
 { # delete a function (all instances) from running system
 echo --- remove $1
+	gadget_disable_device || : ignore error
+
 	for CONFIG in $DEVICE/configs/c.*/
 	do
 #echo $0: process config $CONFIG
@@ -389,7 +417,7 @@ echo --- remove $1
 		[ -d $DEV ] && rmdir $DEV	# remove function (we can't remove function first!)
 	done
 
-	gadget_update_configuration || : ignore error
+	gadget_enable_device || : ignore error
 }
 
 # EOF

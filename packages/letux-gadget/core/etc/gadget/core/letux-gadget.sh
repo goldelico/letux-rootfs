@@ -23,7 +23,6 @@ case "$1" in
         log_daemon_msg "Starting USB Gadget"
 	# FIXME: somewhere get a unique serial number from...
 	gadget_setup_device "$(cut -d ' ' -f 1 /proc/device-tree/model)" "$(cut -d ' ' -f 2- /proc/device-tree/model)" "$(echo 000001)"
-	gadget_start_device
 	gadget_create_configuration		# create first configuration
         log_daemon_msg "started."
         exit 0
@@ -34,7 +33,7 @@ case "$1" in
         ;;
   stop)
         log_daemon_msg "Stopping USB Gadget"
-	gadget_stop_device
+	gadget_shutdown_device
         log_progress_msg "stopped."
         log_end_msg 0
         exit 0
@@ -45,8 +44,7 @@ case "$1" in
 	;;
 # special subcommands ("add" "hid", "add" "ncm" etc.)
   add )
-	# FIXME: reject if there was no start
-	gadget_$2 $3 $4
+	gadget_$2 $3 $4	# add new gadget function with optional parameters
 	;;
   remove )
 	gadget_remove $2
