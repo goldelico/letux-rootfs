@@ -173,8 +173,11 @@ linux() {
 # based on http://jpdelacroix.com/tutorials/sharing-internet-beaglebone-black.html
 
 HOST=192.168.0.200	# fixme: somehow find out or calculate...
-USB=usb0	# fixme - find out where the Letux device is connected to
-INTERFACE=$(route | grep '^default' | head -1 | grep -o '[^ ]*$')	# first default route
+
+USB=usb0
+[ "$1" ] && USB=$1	# passed in from the udev rule - default to usb0 if there is no rule
+
+INTERFACE=$(route | grep '^default' | head -1 | grep -o '[^ ]*$')	# first default outgoing route
 
 if [ ! "$INTERFACE" ]
 then
@@ -182,7 +185,7 @@ then
 	exit 1
 fi
 
-echo Sharing $DEVICE at $USB over: $INTERFACE
+echo Sharing $DEVICE at $USB over $INTERFACE
 
 ifconfig $USB $HOST
 sysctl net.ipv4.ip_forward=1
@@ -194,7 +197,7 @@ case "$(uname -s)" in
 Darwin )
 	darwin;;
 Linux )
-	linux;;
+	linux $1;;	# $1 is available from udev rule
 * )
 	echo unknown operating system $(uname -a)
 	;;

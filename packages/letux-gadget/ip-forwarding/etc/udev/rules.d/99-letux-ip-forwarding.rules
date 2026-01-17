@@ -1,0 +1,3 @@
+# if Letux device is plugged in
+
+SUBSYSTEM=="net", ACTION=="add", DRIVERS=="cdc_ether", NAME="ncm%n" RUN+="/bin/bash /usr/bin/ip-forwarding ncm%n"
