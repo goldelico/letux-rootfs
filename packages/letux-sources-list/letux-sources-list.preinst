@@ -36,7 +36,7 @@ case "$(cat /etc/debian_version)" in
 	5.* )	RELEASE=lenny; MAIN_REPO=http://archive.debian.org;;
 	6.* )	RELEASE=squeeze; MAIN_REPO=http://archive.debian.org;;
 	7.* )	RELEASE=wheezy; MAIN_REPO=http://archive.debian.org;;
-	8.* )	RELEASE=jessie; MAIN_REPO=http://archive.debian.org;;
+	8.* )	RELEASE=jessie; MAIN_REPO="[trusted=yes] http://archive.debian.org";;
 	9.* )	RELEASE=stretch; MAIN_REPO=http://archive.debian.org;;
 	10.* )	RELEASE=buster; MAIN_REPO=http://archive.debian.org;;
 	11.* | bullseye/sid )	RELEASE=bullseye;;
@@ -48,7 +48,7 @@ case "$(cat /etc/debian_version)" in
 		exit 1
 		;;
 esac
-[ "$BACKPORT_REPO" ] || BACKPORT_REPO=$MAIN_REPO
+[ "$BACKPORT_REPO" ] || BACKPORT_REPO="$MAIN_REPO"
 
 # remove old stuff
 rm /etc/apt/sources.list.d/gta04.list 2>/dev/null && CHANGED=true
