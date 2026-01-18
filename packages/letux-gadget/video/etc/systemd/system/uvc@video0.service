@@ -24,7 +24,7 @@ ConditionPathExists=/dev/video0
 
 [Service]
 ExecStartPre=/bin/sleep 10
-ExecStart=-/usr/bin/uvc-gadget -u /dev/video0 -v uvc.0
+ExecStart=-$(which uvc-gadget) -u /dev/video0 -v uvc.0
 Type=idle
 Restart=always
 RestartSec=0

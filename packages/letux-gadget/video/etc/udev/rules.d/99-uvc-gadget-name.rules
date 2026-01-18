@@ -1,0 +1,8 @@
+# identify the uvc sink as an unique /dev/uvc* name
+SUBSYSTEM=="video4linux", ATTR{function_name}=="uvc.0.usb0", SYMLINK+="uvc%n"
+
+# start daemon, when camera is plugged in
+ACTION=="add", SUBSYSTEM=="video4linux", ATTRS{idVendor}=="046d", ATTRS{idProduct}=="0825", RUN+="/usr/bin/systemctl start uvc-bridge@%k.service"
+
+# stop daemon, when camera is removed
+ACTION=="remove", SUBSYSTEM=="video4linux", ENV{ID_VENDOR_ID}=="046d", ENV{ID_MODEL_ID}=="0825", RUN+="/usr/bin/systemctl stop uvc-bridge@%k.service"
