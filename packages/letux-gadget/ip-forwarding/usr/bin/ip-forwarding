@@ -174,8 +174,15 @@ linux() {
 
 HOST=192.168.0.200	# fixme: somehow find out or calculate...
 
-USB=usb0
-[ "$1" ] && USB=$1	# passed in from the udev rule - default to usb0 if there is no rule
+USB=$1	# passed in from the udev rule - default to usb0 if there is no rule
+[ "$USB" ] || USB=$(ifconfig -a | fgrep ncm | cut -d ':' -f 1)
+[ "$USB" ] || USB=$(ifconfig -a | fgrep usb | cut -d ':' -f 1)
+
+if [ ! "$USB" ]
+then
+	echo "Could not find incoming interface" >&2
+	exit 1
+fi
 
 INTERFACE=$(route | grep '^default' | head -1 | grep -o '[^ ]*$')	# first default outgoing route
 

@@ -1,3 +1,7 @@
 # if Letux device is plugged in
 
+# old style ethernet gadget
 SUBSYSTEM=="net", ACTION=="add", DRIVERS=="cdc_ether", NAME="ncm%n" RUN+="/bin/bash /usr/bin/ip-forwarding ncm%n"
+
+# new style ncm
+SUBSYSTEM=="net", ACTION=="add", DRIVERS=="cdc_ncm", NAME="ncm%n" RUN+="/bin/bash /usr/bin/ip-forwarding ncm%n"
