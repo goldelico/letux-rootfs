@@ -44,10 +44,14 @@ case "$1" in
 	;;
 # special subcommands ("add" "hid", "add" "ncm" etc.)
   add )
-	gadget_$2 $3 $4	# add new gadget function with optional parameters
+	gadget_unbind_device
+	gadget_$2 $3 $4		# add new gadget function with optional parameters
+	gadget_enable_device	# update links, configuration and bind_device
 	;;
   remove )
+	gadget_unbind_device
 	gadget_remove $2
+	gadget_enable_device
 	;;
   *)
         echo "Usage: $0 start|stop|status|add|remove" >&2

@@ -93,10 +93,32 @@ echo gadget_create_configuration $DEVICE/configs/c.$C
 	done
 }
 
+gadget_bind_device() {
+	[ "$(cat "$DEVICE/UDC" 2>/dev/null)" ] || ls -1 /sys/class/udc >$DEVICE/UDC
+}
+
+gadget_unbind_device() {
+	if [ "$(cat "$DEVICE/UDC" 2>/dev/null)" ]
+	then
+		echo stop running activities
+		echo "" >$DEVICE/UDC 2>/dev/null
+	fi
+}
+
+gadget_stop_configuration() {
+	for STORAGE in $DEVICE/functions/mass_storage.$USB_IF/lun.*/file
+	do	# safely stop storage devices by setting the file name to ""
+		[ -w "$STORAGE" ] && echo "" >$STORAGE
+	done
+
+	gadget_unbind_device
+	# rmdir c.$C?
+}
+
 gadget_link_functions() {
 	for CONFIG in $DEVICE/configs/c.*/
 	do
-		[ -d $CONFIG ] || continue;	# no configurarations
+		[ -d $CONFIG ] || continue;	# no configurations
 echo gadget_link_functions: process config $CONFIG to link configurations
 		for NAME in $DEVICE/functions/*.$USB_IF
 		do
@@ -120,19 +142,16 @@ echo gadget_link_functions: process config $CONFIG to link configurations
 			esac
 			if ! [ -r "$CONFIG/$(basename "$NAME")" ]
 			then # link (new) function into config
-				echo "" >$DEVICE/UDC	# is write protected
 echo ln -sf "$NAME" "$CONFIG"
+				gadget_unbind_device
 				ln -sf "$NAME" "$CONFIG"
 			fi
 		done
 	done
 }
 
-gadget_stop_configuration() {
-	echo "" >$DEVICE/UDC
-}
-
 gadget_update_configuration() {
+	gadget_unbind_device	# to be sure
 	ANY=false
 	for CONFIG in $DEVICE/configs/c.*/
 	do
@@ -147,17 +166,12 @@ echo gadget_update_configuration: process config $CONFIG to write configuration
 		[ "$(ls -1d $CONFIG/uvc.* 2>/dev/null)" ] && CONFIGURATION="$CONFIGURATION+Video"
 		[ "$(ls -1d $CONFIG/hid.* 2>/dev/null)" ] && CONFIGURATION="$CONFIGURATION+HID"
 
-		CONFIGUREATION="${CONFIGURATION#+}"	# strip first + if any
+		CONFIGURATION="${CONFIGURATION#+}"	# strip first + if any
 echo "writing configuration '$CONFIGURATION'"
 		mkdir -p $DEVICE/strings/$USB_LANGUAGE
 		[ -w $CONFIG/strings/$USB_LANGUAGE/configuration ] && { echo "$CONFIGURATION" >$CONFIG/strings/$USB_LANGUAGE/configuration; ANY=true; }
 	done
-	if $ANY
-	then
-		ls -1 /sys/class/udc >$DEVICE/UDC
-	else
-		[ -r "$DEVICE/UDC" ] && [ "$(cat "$DEVICE/UDC")" ] && { echo stop running activities; echo "" >$DEVICE/UDC; } || :
-	fi	
+	$ANY && gadget_bind_device
 }
 
 gadget_enable_device() {
@@ -168,13 +182,8 @@ echo gadget_enable_device
 
 gadget_disable_device() {
 echo gadget_disable_device
-	for STORAGE in $DEVICE/functions/mass_storage.$USB_IF/lun.*/file
-	do	# safely stop storage devices by setting the file name to ""
-		[ -w "$STORAGE" ] && echo "" >$STORAGE
-	done
-
 	# FIXME: unlink functions from all configurations?
-	[ -r "$DEVICE/UDC" -a "$(cat "$DEVICE/UDC")" ] && { echo stop running activities; echo "" >$DEVICE/UDC; } || :
+	gadget_unbind_device
 
 	# FIXME: do this really here?
 	gadget_shutdown_device
@@ -206,8 +215,6 @@ echo +++ rndis
 
 	# tell Windows to use this config
 	ln -s $DEVICE/configs/c.$C $DEVICE/os_desc/
-
-	gadget_enable_device
 }
 
 gadget_ecm()
@@ -218,8 +225,6 @@ echo +++ ecm
 
 	gadget_host_addr >$FUNCTION/host_addr
 	echo 46:10:3a:b3:af:d9 >$FUNCTION/dev_addr
-
-	gadget_enable_device
 }
 
 gadget_ncm()
@@ -231,8 +236,6 @@ echo +++ ncm
 	gadget_host_addr >$FUNCTION/host_addr
 	echo 46:10:3a:b3:af:d9 >$FUNCTION/dev_addr
 	# os_desc?
-
-	gadget_enable_device
 }
 
 gadget_acm()
@@ -245,8 +248,6 @@ echo +++ acm
 
 	FUNCTION=$DEVICE/functions/acm.$NUM.$USB_IF
 	mkdir -p $FUNCTION || { echo please enable CONFIG_USB_F_ACM in Kernel config; return 1; }
-
-	gadget_enable_device
 }
 
 gadget_mass_storage() # $1=diskpath $2=ro
@@ -276,47 +277,53 @@ echo +++ mass_storage $1 $2
 	echo "Letux" >$FUNCTION/inquiry_string
 
 	echo "$1" >$FUNCTION/file
-
-	gadget_enable_device
 }
 
 gadget_uvc()
 { # UVC usb_f_uvc
 echo +++ video
 # emulates an USB Video Class device: https://developer.ridgerun.com/wiki/index.php?title=How_to_use_the_UVC_gadget_driver_in_Linux
+
 	for NUM in 0 1 2 3 4 5 6 7 8 9
 	do # find a free unused number
 		[ -r $DEVICE/functions/uvc.$NUM.$USB_IF ] || break
 	done
 
 	FUNCTION=$DEVICE/functions/uvc.$NUM.$USB_IF
+	FMT=$FUNCTION/streaming/mjpeg/m
+	FRAME=$FMT/640x480
+
 # FIXME: can we scan gunzip </proc/config.gz | fgrep ... for what is missing?
 # but there may be no /proc/config.gz
 	mkdir -p $FUNCTION || { echo please enable USB_CONFIGFS, USB_LIBCOMPOSITE, USB_CONFIGFS_F_UVC and USB_F_UVC in Kernel config; return 1; }
 
-	mkdir -p $FUNCTION/control/header/h
-# only for older kernels
-#	ln -sf $FUNCTION/control/header/h $FUNCTION/control/class/fs
-#	ln -sf $FUNCTION/control/header/h $FUNCTION/control/class/hs
-#	ln -sf $FUNCTION/control/header/h $FUNCTION/control/class/ss
-	mkdir -p $FUNCTION/streaming/header/h
-	FMT=$FUNCTION/streaming/mjpeg/m
-	mkdir -p $FMT
-	FRAME=$FMT/640x480
 	mkdir -p $FRAME
 	echo 640 >$FRAME/wWidth
 	echo 480 >$FRAME/wHeight
 	FPS=30
-	echo $((10000000/$FPS)) >$FRAME/dwDefaultFrameInterval
-	echo $((10000000/$FPS)) >$FRAME/dwFrameInterval
+	INTERVAL=$((10000000/$FPS))
+	echo $INTERVAL >$FRAME/dwDefaultFrameInterval
+	echo $INTERVAL >$FRAME/dwFrameInterval
 	echo $((640*480*2)) >$FRAME/dwMaxVideoFrameBufferSize
-#?	ln -sf $FMT $FUNCTION/streaming/header/h
-# only for older kernels
-#	ln -sf $FUNCTION/streaming/header/h $FUNCTION/streaming/class/fs
-#	ln -sf $FUNCTION/streaming/header/h $FUNCTION/streaming/class/hs
-#	ln -sf $FUNCTION/streaming/header/h $FUNCTION/streaming/class/ss
 
-	gadget_enable_device
+	echo 512 >$FUNCTION/streaming_maxpacket
+	echo 0 >$FUNCTION/streaming_maxburst 2>/dev/null || true
+
+	mkdir -p $FUNCTION/streaming/header/h
+	mkdir -p $FUNCTION/control/header/h
+
+	ln -sf $FMT $FUNCTION/streaming/header/h/m
+
+	ln -sf $FUNCTION/streaming/header/h $FUNCTION/streaming/class/fs/h
+	ln -sf $FUNCTION/streaming/header/h $FUNCTION/streaming/class/hs/h
+	ln -sf $FUNCTION/streaming/header/h $FUNCTION/streaming/class/ss/h
+
+	ln -sf $FUNCTION/control/header/h $FUNCTION/control/class/fs/h
+# missing	ln -sf $FUNCTION/control/header/h $FUNCTION/control/class/hs
+	ln -sf $FUNCTION/control/header/h $FUNCTION/control/class/ss/h
+
+	# userspace should now be able to write to /dev/uvc* (a symlink to be created by udevd) to send over USB
+	# use uvd-gadget to stream video
 }
 
 gadget_hid()
@@ -396,14 +403,11 @@ EOF
 	# userspace should now be able to write to /dev/hidg* to send over USB
 	# well, since the joystick itself is a /dev (or should be) we need a daemon to pipe: cat </dev/joystick >/dev/hidg - and avoid buffering
 	# but: we must then translate Linux device events to USB keyboard/joystick messages
-
-	gadget_enable_device
 }
 
 gadget_remove() # $1=functionname
 { # delete a function (all instances) from running system
 echo --- remove $1
-	gadget_disable_device || : ignore error
 
 	for CONFIG in $DEVICE/configs/c.*/
 	do
@@ -414,10 +418,20 @@ echo --- remove $1
 
 	for DEV in $DEVICE/functions/$1*.$USB_IF
 	do
+		case "$1" in
+			uvc )
+				rm $DEV/control/class/*/h
+				rm $DEV/streaming/class/*/h
+				rm $DEV/streaming/header/h/m
+				rm $DEV/control/header/h
+				rm $DEV/streaming/header/h
+				rm -R $DEV/streaming/mjpeg/m/*
+				rm $DEV/streaming/mjpeg/m
+				;;			
+			# safely stop storage devices by setting the file name to ""?
+		esac
 		[ -d $DEV ] && rmdir $DEV	# remove function (we can't remove function first!)
 	done
-
-	gadget_enable_device || : ignore error
 }
 
 # EOF
