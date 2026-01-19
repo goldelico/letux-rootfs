@@ -5,9 +5,7 @@
 # it uses the current service or default route for internet connection
 #
 # on Mac the device is identified by its IP address
-# on Linux the device is (currently) assumed to create ifconfig usb0
-#
-# on Mac it is possible to install a Launch Daemon to activate on reboot
+# on Linux the device is (currently) assumed to create ifconfig usb0 or an interface passed as $1
 #
 
 DEVICE=192.168.0.202	# Letux device
@@ -27,61 +25,6 @@ esac
 
 echo "+++ running $SCRIPTPATH"
 date
-
-install_launch_daemon() {
-SERVERADMIN=/Applications/Server.app/Contents/ServerRoot/usr/sbin/serveradmin
-UUID=com.goldelico.ajzaurus
-LAUNCHDAEMON=/Library/LaunchDaemons/$UUID.plist
-
-if [ ! -r "$LAUNCHDAEMON" -o "$SCRIPTPATH" -nt "$LAUNCHDAEMON" ]
-then
-	echo "+++ install $LAUNCHDAEMON for $SCRIPTPATH"
-	sudo launchctl stop $UUID || echo "$UUID may not be installed (can be ignored)."
-	sudo launchctl unload $LAUNCHDAEMON || echo "$UUID may not be installed (can be ignored)."
-
-	cat <<END | sudo tee $LAUNCHDAEMON >/dev/null
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-	<key>Label</key>
-	<string>$UUID</string>
-	<key>LowPriorityIO</key>
-	<true/>
-	<key>ProgramArguments</key>
-	<array>
-		<string>$SCRIPTPATH</string>
-	</array>
-	<key>StandardErrorPath</key>
-	<string>/tmp/$UUID.stderr</string>
-	<key>StandardOutPath</key>
-	<string>/tmp/$UUID.stdout</string>
-	<key>WatchPaths</key>
-	<array>
-		<string>/etc/resolv.conf</string>
-		<string>/var/run/resolv.conf</string>
-		<string>/private/var/run/resolv.conf</string>
-	</array>
-	<key>RunAtLoad</key>
-	<true/>
-	<key>StartCalendarInterval</key>
-	<dict>
-		<key>Hour</key>
-		<integer>3</integer>
-		<key>Minute</key>
-		<integer>47</integer>
-	</dict>
-	<key>Description</key>
-	<string>Update ip-forwarding on network changes, once per day and at boot</string>
-</dict>
-</plist>
-END
-	sudo launchctl load $LAUNCHDAEMON
-	# will trigger a first update
-	sudo launchctl start $UUID
-	echo "+++ installed"
-fi
-}
 
 darwin() {
 # based on
@@ -165,8 +108,6 @@ sudo sysctl -w net.inet.ip.fw.enable=1 || echo "may fail on newer macOS kernels 
 # ifconfig pflog1 create
 # sudo tcpdump -n -e -ttt -i pflog1
 # sudo tcpdump -n -e -ttt -i $INTERFACE
-
-install_launch_daemon
 }
 
 linux() {
@@ -204,7 +145,7 @@ case "$(uname -s)" in
 Darwin )
 	darwin;;
 Linux )
-	linux $1;;	# $1 is available from udev rule
+	linux $1	# $1 is available from udev rule
 * )
 	echo unknown operating system $(uname -a)
 	;;
