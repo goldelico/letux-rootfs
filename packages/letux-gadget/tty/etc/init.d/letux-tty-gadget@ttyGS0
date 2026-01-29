@@ -21,7 +21,7 @@ DEVICE=ttyGS0
 TERM=vt100
 
 do_status () {
-	if [ -e /dev/ttyGS0 ] ; then
+	if [ -e /dev/$DEVICE ] ; then
 		echo "$SERVICE is running."
 		return 0
 	else
