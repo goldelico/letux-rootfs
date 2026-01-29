@@ -143,9 +143,11 @@ iptables --append FORWARD --in-interface $USB -j ACCEPT
 
 case "$(uname -s)" in
 Darwin )
-	darwin;;
+	darwin
+	;;
 Linux )
 	linux $1	# $1 is available from udev rule
+	;;
 * )
 	echo unknown operating system $(uname -a)
 	;;
