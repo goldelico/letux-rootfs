@@ -34,12 +34,8 @@ case "$1" in
 	rmmod g_ether	# just be sure...
 	/etc/gadget/core/letux-gadget.sh start
 
-#	service letux-tty-gadget@ttyGS0 start
-#	service letux-ip-over-usb-gadget@usb0 start
-#	service letux-storage-gadget@usb0 start
-
-	# loop over all installed letux-*-gadgets
-	find /etc/init.d -name 'letux-*-gadget@*' -exec sh -c 'service $(basename $1) start' _ {} \;
+	# start all installed *-gadgets services - except this one
+	find /etc/init.d -name '*-gadget@*' -a ! -name 'letux-gadget@*' -exec sh -c 'service $(basename $1) start' _ {} \;
 
         log_progress_msg "$SERVICE started."
      	exit 0
@@ -51,11 +47,8 @@ case "$1" in
   stop)
         log_daemon_msg "Stopping $SERVICE"
 
-#	service letux-tty-gadget@ttyGS0 stop
-#	service letux-ip-over-usb-gadget@usb0 stop
-
-	# loop over all installed letux-*-gadgets
-	find /etc/init.d -name 'letux-*-gadget@*' -exec sh -c 'service $(basename $1) stop' _ {} \;
+	# stop all installed *-gadgets services - except this one
+	find /etc/init.d -name '*-gadget@*' -a ! -name 'letux-gadget@*' -exec sh -c 'service $(basename $1) stop' _ {} \;
 
 	/etc/gadget/core/letux-gadget.sh stop
 
