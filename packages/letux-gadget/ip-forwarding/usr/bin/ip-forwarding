@@ -57,7 +57,7 @@ do
 	fi
 done < <(networksetup -listnetworkserviceorder | grep 'Hardware Port')
 
-echo "$INTERFACE"
+# echo VPN: "$INTERFACE"
 
 if [ ! "$INTERFACE" ]	# no VPN found
 then
@@ -88,9 +88,9 @@ then
 	echo "Could not identify current internet service on your host" >&2
 	exit 1
 fi
-echo Sharing $DEVICE over: $CURRENT $INTERFACE
+echo +++ enable sharing $DEVICE over: $CURRENT $INTERFACE
 
-echo "(NOTE: ignore messages about ALTQ)"
+echo "(NOTE: ignore messages about no ALTQ support in kernel)"
 sudo pfctl -F nat
 
 echo "nat log on $INTERFACE from $DEVICE to any -> ($INTERFACE)"
@@ -101,17 +101,19 @@ sudo pfctl -a '*' -s nat
 
 echo "sysctl (one of these should succeed)"	# FIXME: we could make this depend on $(uname -r)
 sudo sysctl -w net.inet.ip.forwarding=1
-sudo sysctl -w net.inet.ip.fw.enable=1 || echo "may fail on newer macOS kernels (can be ignored)."
+sudo sysctl -w net.inet.ip.fw.enable=1 || : echo "may fail on newer macOS kernels (can be ignored)."
 # sudo sysctl -w net.inet6.ip6.forwarding=1
 
 ## logging
 # ifconfig pflog1 create
 # sudo tcpdump -n -e -ttt -i pflog1
 # sudo tcpdump -n -e -ttt -i $INTERFACE
+echo +++ sharing $DEVICE over: $CURRENT $INTERFACE
 }
 
 linux() {
 # based on http://jpdelacroix.com/tutorials/sharing-internet-beaglebone-black.html
+# assumes that this script runs as root
 
 HOST=192.168.0.200	# fixme: somehow find out or calculate...
 
@@ -143,6 +145,8 @@ iptables --append FORWARD --in-interface $USB -j ACCEPT
 
 case "$(uname -s)" in
 Darwin )
+	echo "please provide sudo password:"
+	sudo true || exit 1
 	darwin
 	;;
 Linux )
