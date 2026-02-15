@@ -40,7 +40,7 @@ gadget_setup_device() {
 # $1: Manufacturer
 # $2: Product
 # $3: Serial number
-echo gadget_setup_device
+# echo gadget_setup_device
 	modprobe -r g_ether || :	# may be running...
 	if [ ! -d /sys/kernel/config/usb_gadget ]
 	then
@@ -74,18 +74,18 @@ gadget_shutdown_device() {
 	find $DEVICE/functions/* -type d -exec rmdir {} \; 2>/dev/null || :
 	find $DEVICE/strings/* -maxdepth 0 -type d -exec rmdir {} \; 2>/dev/null || :
 	find $DEVICE/configs/* -maxdepth 0 -type d -exec rmdir {} \; 2>/dev/null || :
-echo device stopped.
+# echo device stopped.
 
 	MOUNT="$(dirname "$(dirname "$DEVICE")")"
 	umount "$MOUNT"
-echo device unmounted.
+# echo device unmounted.
 }
 
 gadget_create_configuration() {
 	for C in 1 2 3 4 5 6 7 8 9
 	do
 		[ "$(ls -1d $DEVICE/configs/c.$C/*.$USB_IF 2>/dev/null)" ] && continue	# find a free slot without functions
-echo gadget_create_configuration $DEVICE/configs/c.$C
+# echo gadget_create_configuration $DEVICE/configs/c.$C
 		mkdir -p $DEVICE/configs/c.$C
 		echo 250 >$DEVICE/configs/c.$C/MaxPower
 		mkdir -p $DEVICE/configs/c.$C/strings/$USB_LANGUAGE/
@@ -119,7 +119,7 @@ gadget_link_functions() {
 	for CONFIG in $DEVICE/configs/c.*/
 	do
 		[ -d $CONFIG ] || continue;	# no configurations
-echo gadget_link_functions: process config $CONFIG to link configurations
+# echo gadget_link_functions: process config $CONFIG to link configurations
 		for NAME in $DEVICE/functions/*.$USB_IF
 		do
 # echo try $NAME
@@ -140,9 +140,10 @@ echo gadget_link_functions: process config $CONFIG to link configurations
 					fi
 					;;
 			esac
+# echo "$NAME" "$CONFIG/$(basename "$NAME")"
 			if ! [ -r "$CONFIG/$(basename "$NAME")" ]
 			then # link (new) function into config
-echo ln -sf "$NAME" "$CONFIG"
+# echo ln -sf "$NAME" "$CONFIG"
 				gadget_unbind_device
 				ln -sf "$NAME" "$CONFIG"
 			fi
@@ -156,7 +157,7 @@ gadget_update_configuration() {
 	for CONFIG in $DEVICE/configs/c.*/
 	do
 		[ -d $CONFIG ] || continue;	# no configurations
-echo gadget_update_configuration: process config $CONFIG to write configuration
+# echo gadget_update_configuration: process config $CONFIG to write configuration
 		CONFIGURATION=""
 		[ "$(ls -1d $CONFIG/acm.* 2>/dev/null)" ] && CONFIGURATION="$CONFIGURATION+CDC ACM"
 		[ "$(ls -1d $CONFIG/ecm.* 2>/dev/null)" ] && CONFIGURATION="$CONFIGURATION+CDC ECM"
@@ -175,13 +176,13 @@ echo "writing configuration '$CONFIGURATION'"
 }
 
 gadget_enable_device() {
-echo gadget_enable_device
+# echo gadget_enable_device
 	gadget_link_functions
 	gadget_update_configuration
 }
 
 gadget_disable_device() {
-echo gadget_disable_device
+# echo gadget_disable_device
 	# FIXME: unlink functions from all configurations?
 	gadget_unbind_device
 
