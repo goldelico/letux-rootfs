@@ -5,7 +5,6 @@ export DEBIAN_ARCHITECTURES="all"
 export DEBIAN_DESCRIPTION="Install some tools in /root"
 export DEBIAN_PACKAGE_NAME="letux-config-roothome"
 export DEBIAN_RAW_FILES="./root"
-export DEBIAN_RECOMMENDS="cloud-guest-utils"
 export INSTALL_PATH="//"
 export PRODUCT_NAME="letux-config-roothome"
 
