@@ -25,39 +25,40 @@ do_status () {
 		echo "$SERVICE is running."
 		return 0
 	else
-                return 4
-        fi
+		return 4
+	fi
 }
 
 case "$1" in
   start)
-        log_daemon_msg "Starting $SERVICE"
+	log_daemon_msg "Starting $SERVICE"
 	/etc/gadget/core/letux-gadget.sh add acm
+	echo "This is a vt100 console service for $(tr -d '\0' </proc/device-tree/model)." >/dev/$DEVICE
 	daemon -r --name=$SERVICE -- /sbin/agetty --noclear $DEVICE $TERM
-        exit 0
-        ;;
+	exit 0
+	;;
   restart|reload|force-reload)
-        echo "Error: argument '$1' not supported" >&2
-        exit 3
-        ;;
+	echo "Error: argument '$1' not supported" >&2
+	exit 3
+	;;
   stop)
-        log_daemon_msg "Stopping $SERVICE"
+	log_daemon_msg "Stopping $SERVICE"
 	(echo; echo "USB access to terminal stopped.") >/dev/$DEVICE &
 	sleep 1
 	daemon --name=$SERVICE --stop 2>/dev/null
 	/etc/gadget/core/letux-gadget.sh remove acm
-        log_progress_msg "disabled."
-        log_end_msg 0
-        exit 0
-        ;;
+	log_progress_msg "disabled."
+	log_end_msg 0
+	exit 0
+	;;
   status)
 	do_status
 	exit $?
 	;;
   *)
-        echo "Usage: $0 start|stop|status" >&2
-        exit 3
-        ;;
+	echo "Usage: $0 start|stop|status" >&2
+	exit 3
+	;;
 esac
 
 :
