@@ -19,24 +19,24 @@ set -e
 
 install_launch_daemon() {
 SCRIPTPATH=/usr/local/bin/ip-forwarding
-SERVERADMIN=/Applications/Server.app/Contents/ServerRoot/usr/sbin/serveradmin
-UUID=com.goldelico.ajzaurus
+UUID=com.goldelico.ip-forwarding
 LAUNCHDAEMON=/Library/LaunchDaemons/$UUID.plist
 
-# FIXME: we do not have to check that in a postinst script!
-# and especially if this is not called by running ip-forwarding manually
-
-if [ ! -r "$LAUNCHDAEMON" -o "$SCRIPTPATH" -nt "$LAUNCHDAEMON" ]
-then
 	echo "+++ install $LAUNCHDAEMON for $SCRIPTPATH"
-	sudo launchctl stop $UUID || echo "$UUID may not be installed (can be ignored)."
-	sudo launchctl unload $LAUNCHDAEMON || echo "$UUID may not be installed (can be ignored)."
 
-	cat <<END | sudo tee $LAUNCHDAEMON >/dev/null
+	sudo launchctl bootout system /Library/LaunchDaemons/com.goldelico.ip-forwarding.plist || true
+
+	sudo cp /usr/local/QuantumSTEP/usr/bin/ip-forwarding "$SCRIPTPATH"
+	sudo chown root:wheel "$SCRIPTPATH"
+	sudo chmod +x "$SCRIPTPATH"
+
+	cat <<END | sudo tee "$LAUNCHDAEMON" >/dev/null
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>UserName</key>
+	<string>root</string>
 	<key>Label</key>
 	<string>$UUID</string>
 	<key>LowPriorityIO</key>
@@ -51,9 +51,12 @@ then
 	<string>/tmp/$UUID.stdout</string>
 	<key>WatchPaths</key>
 	<array>
+		<!--dhcp based devices will update here-->
 		<string>/etc/resolv.conf</string>
 		<string>/var/run/resolv.conf</string>
 		<string>/private/var/run/resolv.conf</string>
+		<!--RNDIS/Ethernet device status changes will write/delete temp files here and update the directory time stamp-->
+		<string>/Library/Preferences/SystemConfiguration</string>
 	</array>
 	<key>RunAtLoad</key>
 	<true/>
@@ -69,11 +72,9 @@ then
 </dict>
 </plist>
 END
-	sudo launchctl load $LAUNCHDAEMON
-	# will trigger a first update
-	sudo launchctl start $UUID
-	echo "+++ installed"
-fi
+
+	sudo launchctl bootstrap system "$LAUNCHDAEMON"
+	echo "+++ $LAUNCHDAEMON installed"
 }
 
 install_udev_rule() {
@@ -81,7 +82,7 @@ install_udev_rule() {
 	udevadm control --reload-rules
 	udevadm trigger
 
-	# hack to make the same device load the uvc driver on boot
+	# hack to make this same device load the uvc driver on boot
 	echo "uvcvideo" >/etc/modules-load.d/uvcvideo.conf
 }
 

@@ -16,13 +16,14 @@ set -e
 # for details, see http://www.debian.org/doc/debian-policy/ or
 # the debian-policy package
 
+UUID=com.goldelico.ip-forwarding
+LAUNCHDAEMON=/Library/LaunchDaemons/$UUID.plist
 
 case "$1" in
     remove)
 	case "$(uname -s)" in
 		Darwin )
-			UUID=com.goldelico.ajzaurus
-			LAUNCHDAEMON=/Library/LaunchDaemons/$UUID.plist
+			sudo launchctl bootout system $LAUNCHDAEMON
 			sudo rm $LAUNCHDAEMON;;
 			echo "+++ $LAUNCHDAEMON removed"
 		Linux )

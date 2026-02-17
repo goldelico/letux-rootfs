@@ -8,5 +8,7 @@ export DEBIAN_RAW_FILES+=" ./etc"
 export DEBIAN_SECTION="net"
 export INSTALL_PATH="//"
 export PRODUCT_NAME="letux-ip-forwarding"
+export SOURCES="letux-ip-forwarding.postinst"
+export SOURCES+=" letux-ip-forwarding.prerm"
 
 cd "$(dirname "${BASH_SOURCE[0]}")" && "$QuantumSTEP/System/Sources/Frameworks/mySTEP.make" $ACTION
