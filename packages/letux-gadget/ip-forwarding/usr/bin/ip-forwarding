@@ -145,8 +145,11 @@ iptables --append FORWARD --in-interface $USB -j ACCEPT
 
 case "$(uname -s)" in
 Darwin )
-	echo "please provide sudo password:"
-	sudo true || exit 1
+	if [ "$EUID" -ne 0 ]
+	then
+		echo "please provide sudo password:"
+		sudo true || exit 1
+	fi
 	darwin
 	;;
 Linux )

@@ -60,15 +60,18 @@ LAUNCHDAEMON=/Library/LaunchDaemons/$UUID.plist
 	</array>
 	<key>RunAtLoad</key>
 	<true/>
-	<key>StartCalendarInterval</key>
-	<dict>
-		<key>Hour</key>
-		<integer>3</integer>
-		<key>Minute</key>
-		<integer>47</integer>
-	</dict>
+	<key>KeepAlive</key>
+	<false/>
+	<key>ExitTimeOut</key>
+	<integer>15</integer>
+<!--
+	<key>ThrottleInterval</key>
+	<integer>300</integer>
+-->
+	<key>StartInterval</key>
+	<integer>43200</integer>
 	<key>Description</key>
-	<string>Update ip-forwarding on network changes, once per day and at boot</string>
+	<string>Update ip-forwarding on network changes, twice per day and at boot</string>
 </dict>
 </plist>
 END
