@@ -1,6 +1,7 @@
 # attempt to switch back from configfs to g_ether
 
 service letux-gadget@usb0 stop || : ignore errors
+/etc/gadget/core/letux-gadget.sh stop || : ignore errors
 
 ifdown usb0
 sleep 1
