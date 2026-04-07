@@ -31,7 +31,7 @@ case "$1" in
   start)
         log_daemon_msg "Starting $SERVICE"
 	ifconfig usb0 down
-	rmmod g_ether	# just be sure...
+	rmmod g_ether 2>/dev/null	# just be sure...
 	/etc/gadget/core/letux-gadget.sh start
 
 	# start all installed *-gadgets services - except this one
