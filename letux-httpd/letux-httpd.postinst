@@ -20,10 +20,51 @@ set -e
 case "$1" in
     configure)
 	# start httpd
-	echo to start the httpd: >&2
-	echo /etc/init.d/apache2 restart >&2
-	echo or >&2
-	echo service apache2 restart >&2
+	case "$(uname -s)" in
+		Linux )
+			echo to start the httpd: >&2
+			echo /etc/init.d/apache2 restart >&2
+			echo or >&2
+			echo service apache2 restart >&2
+			;;
+		Darwin )
+			# tweak httpd-conf
+			echo ">>" stop running apache >&2
+			sudo apachectl -k stop	# to be sure...
+			sudo port -N unload apache2 || true	# may fail on first install
+			[ "$DOCROOT" ] || export DOCROOT=/usr/local/QuantumSTEP/var/www/html
+			[ "$PORT" ] || export PORT=4999
+			echo ">>" restore httpd.conf >&2
+			sudo cp /opt/local/etc/apache2/httpd.conf.orig /opt/local/etc/apache2/httpd.conf
+			echo ">>" make Apache2 a server >&2
+			echo may ask for root password: >&2
+			# FIXME: should we run as _www:_www?
+			USER=$(stat -f '%Su' $DOCROOT)
+			GROUP=$(stat -f '%Sg' $DOCROOT)
+			# echo user "$USER" "$GROUP" >&2
+			sudo sed -i.bak -e "s|Listen .*|Listen 127.0.0.1:$PORT|g" \
+				-e "s|DirectoryIndex index.html|DirectoryIndex index.php index.html|g" \
+				-e "s|DocumentRoot .*|DocumentRoot \"$DOCROOT\"|g" \
+				-e "/DocumentRoot .*/,/<\/Directory>/s|<Directory .*>|<Directory \"$DOCROOT\">|g" \
+				-e "/DocumentRoot .*/,/<\/Directory>/s|AllowOverride None|AllowOverride All|g" \
+				-e "s|User .*|User $USER|g" \
+				-e "s|Group .*|Group $GROUP|g" \
+				-e "s|#LoadModule rewrite_module lib/apache2/modules/mod_rewrite.so|LoadModule rewrite_module lib/apache2/modules/mod_rewrite.so|g" \
+				-e "s|ServerRoot .*|ServerRoot "\/opt\/local"|g" \
+				-e "s|#*ServerName .*|ServerName \"localhost:$PORT\"|g" \
+			/opt/local/etc/apache2/httpd.conf
+			echo "checking config" >&2
+			/opt/local/sbin/apachectl -t >&2
+			# to show /usr/local/QuantumSTEP/var/www/html
+			sudo port -N load apache2 >&2
+			sudo apachectl -k start
+			echo "to restart the httpd for http://localhost:$PORT" >&2
+			"sudo apachectl -k restart      # to be sure" >&2	# to be sure...
+			;;
+		* )
+			echo unknown OS: $(uname -a) >&2
+			;;
+	esac
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)
