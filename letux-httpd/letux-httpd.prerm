@@ -1,5 +1,5 @@
 #! /bin/sh
-# prerm script for linux-image-letux
+# prerm script for letux-amp
 #
 # see: dh_installdeb(1)
 
@@ -20,6 +20,27 @@ set -e
 case "$1" in
     remove)
 	# stop httpd
+	case "$(uname -s)" in
+		Linux )
+			# will be stopped elsewhere
+			;;
+		Darwin )
+			echo ">>" stop running apache >&2
+			echo may ask for root password: >&2
+			sudo apachectl -k stop
+			sudo port -N unload apache2 || true	# may fail
+			PHPVERSIONS=84	# 5.6, 5.7, 8.1, 8.2 and 8.3 are broken
+
+			for PHP in $PHPVERSIONS
+			do
+				PACKAGES="php$PHP-apache2handler php$PHP-posix php$PHP-opcache php$PHP-openssl"
+				sudo port -N uninstall $PACKAGES
+			done
+			;;
+		* )
+			echo unknown OS: $(uname -a) >&2
+			;;
+	esac
     ;;
 
     upgrade|deconfigure)
