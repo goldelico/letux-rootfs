@@ -17,7 +17,7 @@ set -e
 # the debian-policy package
 #
 
-function install_darwin_php {
+install_darwin_php() {
 	PHPVERSIONS=84	# 5.6, 5.7, 8.1, 8.2 and 8.3 are broken
 
 	for PHP in $PHPVERSIONS
@@ -108,7 +108,7 @@ END
 	done
 }
 
-function install_darwin_apache {
+install_darwin_apache() {
 	# tweak httpd-conf
 	echo +++  stop running apache +++ >&2
 	echo may ask for root password: >&2

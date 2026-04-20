@@ -17,7 +17,7 @@ set -e
 # the debian-policy package
 #
 
-function install_darwin_mysql {
+install_darwin_mysql() {
 
 	MYSQLVERSIONS=57	# mysql 8.2?
 
