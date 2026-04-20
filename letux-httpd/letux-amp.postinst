@@ -18,6 +18,81 @@ set -e
 #
 
 function install_darwin_mysql {
+
+	MYSQLVERSIONS=57	# mysql 8.2?
+
+	for MYSQL in $MYSQLVERSIONS
+	do
+	echo +++ install MySQL$MYSQL +++ >&2
+
+	sudo port -N install mysql$MYSQL-server mysql$MYSQL mysql_select
+
+	echo +++ select mysql$MYSQL +++ >&2
+# trick to fix Macports 5.7 installation
+sudo sh -c "cd /opt/local/share/man/mysql$MYSQLVERSIONS/man1; touch mysql-stress-test.pl.1.gz mysql-test-run.pl.1.gz mysql_client_test.1.gz mysql_client_test_embedded.1.gz mysqltest.1.gz mysqltest_embedded.1.gz"
+
+	sudo port -N select mysql mysql$MYSQL
+
+	echo +++ check and launch mysqld$MYSQL-server +++
+	if [ -r /Library/LaunchDaemons/org.macports.mysql$MYSQL-server.plist ]
+	then
+		sudo port -N unload mysql$MYSQL-server
+	fi
+
+	# neue Datenbank anlegen
+	if [ ! -d /opt/local/var/db/mysql$MYSQL ]
+	then
+		# seems to fail for second time - or works only if server is unloaded
+		# then, mysql must be manually loaded!
+
+		echo +++ create new database /opt/local/var/db/mysql$MYSQL +++
+
+		case "$MYSQL" in
+			5.[0.6]* )
+				sudo -u _mysql mysql_install_db
+				;;
+			* )
+				sudo /opt/local/lib/mysql$MYSQL/bin/mysqld --initialize --user=_mysql
+				;;
+		esac
+
+#	sudo chown -R _mysql:_mysql /opt/local/var/db/mysql$MYSQL/
+#	sudo chown -R _mysql:_mysql /opt/local/var/run/mysql$MYSQL/
+#	sudo chown -R _mysql:_mysql /opt/local/var/log/mysql$MYSQL/
+
+		FILE=/opt/local/etc/mysql$MYSQL/my.cnf
+		sudo sh -c "fgrep -q '[mysqld]' $FILE || echo '[mysqld]' >>$FILE"
+		sudo sh -c "fgrep -q 'table_open_cache =' $FILE || echo 'table_open_cache = 250' >>$FILE"
+		sudo sed -i.bak -e 's|table_open_cache = .*|table_open_cache = 250|g' $FILE
+
+		sudo port -N load mysql$MYSQL-server
+
+#### gehört das hier nach quantumstep-mysql?
+
+		# update password
+		# ./mysqladmin -u root password "$PASSWORD"
+
+		# this manually walks through installation
+		# needs the temporary password
+
+		(
+		echo gilt nur für 5.7!
+		echo "rootpassword"
+		echo N	# Would you like to setup VALIDATE PASSWORD plugin?
+		echo N	# Using existing password for root. Change the password for root ?
+		echo Y	# Remove anonymous users?
+		echo Y	# Disallow root login remotely?
+		echo Y	# Remove test database and access to it?
+		echo Y	# Reload privilege tables now?
+		)
+
+		(/opt/local/lib/mysql$MYSQL/bin/mysql_secure_installation || true)	# may fail on second install -> ignore
+
+	fi
+
+	sudo port -N load mysql$MYSQL-server	# again
+	done
+
 	PHPVERSIONS=84	# 5.6, 5.7, 8.1, 8.2 and 8.3 are broken
 
 	for PHP in $PHPVERSIONS
@@ -27,6 +102,7 @@ function install_darwin_mysql {
 		PACKAGES="php$PHP-mysql"
 		sudo port -N install $PACKAGES
 	done
+
 	sudo apachectl -k restart
 }
 
