@@ -22,13 +22,14 @@ case "$1" in
 	# stop httpd
 	case "$(uname -s)" in
 		Linux )
-			# will be stopped elsewhere
+		# fixme: should this be done by postrm - or is it done automatically somewhere else?
+		#	service apache2 restart
 			;;
 		Darwin )
-			echo ">>" stop running apache >&2
+			echo ">>" stop running mysql server >&2
 			echo may ask for root password: >&2
-			sudo apachectl -k stop
-			sudo port -N unload apache2 || true	# may fail
+			sudo port -N unload mysql$MYSQL-server
+
 			PHPVERSIONS=84	# 5.6, 5.7, 8.1, 8.2 and 8.3 are broken
 
 			for PHP in $PHPVERSIONS
@@ -36,6 +37,9 @@ case "$1" in
 				PACKAGES="php$PHP-mysql"
 				sudo port -N uninstall $PACKAGES
 			done
+
+			# notify apache2
+			sudo apachectl -k restart
 			;;
 		* )
 			echo unknown OS: $(uname -a) >&2

@@ -91,6 +91,7 @@ sudo sh -c "cd /opt/local/share/man/mysql$MYSQLVERSIONS/man1; touch mysql-stress
 	fi
 
 	sudo port -N load mysql$MYSQL-server	# again
+	echo +++ database in /opt/local/var/db/mysql$MYSQL +++ >&2
 	done
 
 	PHPVERSIONS=84	# 5.6, 5.7, 8.1, 8.2 and 8.3 are broken
@@ -102,8 +103,6 @@ sudo sh -c "cd /opt/local/share/man/mysql$MYSQLVERSIONS/man1; touch mysql-stress
 		PACKAGES="php$PHP-mysql"
 		sudo port -N install $PACKAGES
 	done
-
-	sudo apachectl -k restart
 }
 
 case "$1" in
@@ -111,9 +110,12 @@ case "$1" in
 	# start httpd
 	case "$(uname -s)" in
 		Linux )
+			service apache2 restart
+			echo +++ database in /var/lib/mysql +++ >&2
 			;;
 		Darwin )
 			install_darwin_mysql
+			sudo apachectl -k restart
 			;;
 		* )
 			echo unknown OS: $(uname -a) >&2
