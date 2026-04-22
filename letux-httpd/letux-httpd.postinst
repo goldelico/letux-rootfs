@@ -111,7 +111,7 @@ END
 install_darwin_apache() {
 	# tweak httpd-conf
 	echo +++  stop running apache +++ >&2
-	echo may ask for root password: >&2
+	echo may ask for admin password: >&2
 	# echo +++ restore httpd.conf +++ >&2
 	sudo cp /opt/local/etc/apache2/httpd.conf.orig /opt/local/etc/apache2/httpd.conf
 	sudo apachectl -k stop	# to be sure...
