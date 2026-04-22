@@ -25,6 +25,7 @@ install_darwin_mysql() {
 	do
 	echo +++ install MySQL$MYSQL +++ >&2
 
+	echo may ask for admin password: >&2
 	sudo port -N install mysql$MYSQL-server mysql$MYSQL mysql_select
 
 	echo +++ select mysql$MYSQL +++ >&2
