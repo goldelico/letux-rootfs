@@ -1,5 +1,5 @@
 #! /bin/sh
-# prerm script for letux-amp
+# prerm script for letux-httpd
 #
 # see: dh_installdeb(1)
 

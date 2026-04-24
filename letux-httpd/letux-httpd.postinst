@@ -35,9 +35,11 @@ install_darwin_php() {
       		  	-e 's|;pcre.jit=1|pcre.jit=0|g' \
 		/opt/local/etc/php$PHP/php.ini
 
-		echo +++ opcache disabled +++ >&2
+		echo +++ opcache not enabled +++ >&2
 : *disabled* cat <<END >/dev/null
 enable opcache
+# some suggestions
+
 https://www.scalingphpbook.com/blog/2014/02/14/best-zend-opcache-settings.html
 opcache.revalidate_freq=0
 opcache.validate_timestamps=0 (comment this out in your dev environment)
@@ -45,7 +47,8 @@ opcache.max_accelerated_files=7963
 opcache.memory_consumption=192
 opcache.interned_strings_buffer=16
 opcache.fast_shutdown=1
-www:www.modiblast.de hns$ fgrep opcache /opt/local/etc/php73/php.ini
+
+fgrep opcache /opt/local/etc/php73/php.ini
 [opcache]
 ;opcache.enable=1
 ;opcache.enable_cli=0
@@ -80,8 +83,9 @@ www:www.modiblast.de hns$ fgrep opcache /opt/local/etc/php73/php.ini
 ;opcache.validate_permission=0
 ;opcache.validate_root=0
 ;opcache.opt_debug_level=0
-www:www.modiblast.de hns$
 END
+
+# FIXME: auf letux-httpd-ctl choose-php $PHP umstellen!
 
 		echo +++ choose php$PHP for Apache through apxs +++ >&2
 		(
@@ -110,16 +114,17 @@ install_darwin_apache() {
 	echo may ask for admin password: >&2
 	# echo +++ restore httpd.conf +++ >&2
 	sudo cp /opt/local/etc/apache2/httpd.conf.orig /opt/local/etc/apache2/httpd.conf
-	sudo apachectl -k stop	# to be sure...
-	sudo port -N unload apache2 || true	# may fail on first install
-	sleep 5	# may need some time to free the socket
+	letux-httpd-ctl start
 	[ "$DOCROOT" ] || export DOCROOT=/usr/local/QuantumSTEP/var/www/html
 	[ "$PORT" ] || export PORT=4999
 	echo +++ make Apache2 a server for http://localhost:$PORT +++ >&2
-	# FIXME: should we run as _www:_www?
+# FIXME: should we run as _www:_www?
 	USER=$(stat -f '%Su' $DOCROOT)
 	GROUP=$(stat -f '%Sg' $DOCROOT)
 	# echo user "$USER" "$GROUP" >&2
+
+# FIXME: auf letux-httpd-ctl set-port usw. umstellen
+
 	sudo sed -i.bak -e "s|Listen .*|Listen 127.0.0.1:$PORT|g" \
 		-e "s|DirectoryIndex index.html|DirectoryIndex index.php index.html|g" \
 		-e "s|DocumentRoot .*|DocumentRoot \"$DOCROOT\"|g" \
@@ -132,12 +137,7 @@ install_darwin_apache() {
 		-e "s|#*ServerName .*|ServerName \"localhost:$PORT\"|g" \
 	/opt/local/etc/apache2/httpd.conf
 	install_darwin_php
-	echo +++ checking config +++ >&2
-	/opt/local/sbin/apachectl -t >&2
-	sudo port -N load apache2 >&2
-	sudo apachectl -k start
-	echo +++ to restart the httpd +++ >&2
-	echo "  sudo apachectl -k restart" >&2
+	letux-httpd-ctl start
 }
 
 case "$1" in
@@ -145,10 +145,6 @@ case "$1" in
 	# start httpd
 	case "$(uname -s)" in
 		Linux )
-			echo to start the httpd: >&2
-			echo /etc/init.d/apache2 restart >&2
-			echo or >&2
-			echo service apache2 restart >&2
 			;;
 		Darwin )
 			install_darwin_apache
@@ -157,6 +153,8 @@ case "$1" in
 			echo unknown OS: $(uname -a) >&2
 			;;
 	esac
+	echo to start the httpd: >&2
+	echo letux-httpd-ctl start >&2
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)
