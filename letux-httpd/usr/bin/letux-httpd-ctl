@@ -1,0 +1,183 @@
+#!/bin/bash
+#
+# letux-httpd-ctl
+#
+
+set -e
+
+linux() {
+case "$1" in
+	start | restart )
+		service apache2 restart
+		;;
+	stop )
+		service apache2 stop
+		;;
+	* )
+		echo unknown or unimplemented command $1
+		exit 1
+		;;
+esac
+}
+
+PATH=/opt/local/bin:/opt/local/sbin:$PATH	# just to be sure
+SCRIPTPATH="$(dirname "$0")"
+
+update_vhosts() {
+	APACHE_LOG_DIR=/opt/local/var/log/apache2
+
+	sudo rm -f /opt/local/etc/apache2/extra/httpd-vhosts.conf
+	SERVER=
+	ALIASES=
+	LASTDIR=
+	LASTPORT=
+	LASTDOMAIN=
+	(cat /opt/local/etc/apache2/extra/letux-httpd-vhosts.list; echo last record done) | while read DIR PORT DOMAIN
+	do
+# echo $DIR $PORT $DOMAIN $LASTDIR $LASTPORT $SERVER $ALIASES
+		if [ "$DIR" != "$LASTDIR" -o "$PORT" != "$LASTPORT" ]
+		then
+			if [ "$LASTPORT" ]
+			then
+			cat <<END | sudo tee -a /opt/local/etc/apache2/extra/httpd-vhosts.conf >/dev/null
+<VirtualHost *:$LASTPORT>
+	ServerAdmin admin@$SERVER
+	ServerName $SERVER
+	ServerAlias $ALIASES
+	DocumentRoot $LASTDIR
+	<Directory $LASTDIR/>
+		AllowOverride All
+	</Directory>
+	ErrorLog ${APACHE_LOG_DIR}/${LASTDOMAIN}_error.log
+	CustomLog ${APACHE_LOG_DIR}/${LASTDOMAIN}_access.log combined
+
+END
+			fi
+			SERVER=
+			ALIASES=
+		fi
+		if [ "$SERVER" ]
+		then
+			ALIASES+=" $DOMAIN"
+		else
+			SERVER="$DOMAIN"
+		fi
+		LASTPORT="$PORT"
+		LASTDIR="$DIR"
+		LASTDOMAIN="$DOMAIN"
+	done
+	echo not yet enabled...
+	/opt/local/sbin/apachectl -t -D DUMP_VHOSTS
+}
+
+darwin() {
+case "$1" in
+	start | restart )
+		/opt/local/sbin/apachectl -t >&2
+		sudo port -N load apache2 >&2
+		sudo apachectl -k restart
+		;;
+	stop )
+		sudo cp /opt/local/etc/apache2/httpd.conf.orig /opt/local/etc/apache2/httpd.conf
+		sudo apachectl -k stop	# to be sure...
+		sudo port -N unload apache2 || true	# may fail on first install
+		sleep 5	# may need some time to free the socket
+		;;
+	choose-php )
+		if [ "$2" ]
+		then
+			(
+			grep -q "LoadModule php_module " /opt/local/etc/apache2/httpd.conf || echo "LoadModule php_module default"
+			grep -q "Include .*extra/mod_php.*.conf" /opt/local/etc/apache2/httpd.conf || echo "Include etc/apache2/extra/mod_php_default.conf"
+			) | sudo tee -a /opt/local/etc/apache2/httpd.conf >/dev/null
+			sudo sed -i.bak -e "s|LoadModule php_module .*|LoadModule php_module lib/apache2/modules/mod_php$2.so|g" \
+				-e "s|Include .*extra/mod_php.*.conf|Include etc/apache2/extra/mod_php$2.conf|g" \
+				/opt/local/etc/apache2/httpd.conf
+		else
+			sudo sed -i.bak -e "/LoadModule php_module.*/d" -e "/Include .*extra\/mod_php.*.conf/d" \
+				/opt/local/etc/apache2/httpd.conf
+		fi
+		(
+			cd /opt/local/lib/apache2/modules
+			case "$2" in
+				5* ) sudo /opt/local/bin/apxs -a -e -n php5 mod_php$2.so;;
+				7* ) sudo /opt/local/bin/apxs -a -e -n php7 mod_php$2.so;;
+				8* ) sudo /opt/local/bin/apxs -a -e -n php mod_php$2.so;;	# name changed: https://gitlab.alpinelinux.org/alpine/aports/-/issues/12249
+			esac
+		)
+
+		;;
+	set-user )
+		sudo sed -i.bak -e "s|User .*|User $2|g" /opt/local/etc/apache2/httpd.conf
+		;;
+	set-group )
+		sudo sed -i.bak -e "s|Group .*|Group $2|g" /opt/local/etc/apache2/httpd.conf
+		;;
+	set-docroot )
+		sudo sed -i.bak -e "s|DocumentRoot .*|DocumentRoot \"$2\"|g" \
+				-e "/DocumentRoot .*/,/<\/Directory>/s|<Directory .*>|<Directory \"$2\">|g" \
+				-e "/DocumentRoot .*/,/<\/Directory>/s|AllowOverride None|AllowOverride All|g"
+				/opt/local/etc/apache2/httpd.conf
+		;;
+	set-servername )
+		sudo sed -i.bak -e "s|#*ServerName .*|ServerName \"$1:$PORT\"|g" /opt/local/etc/apache2/httpd.conf
+		;;
+	set-listen )
+		sudo sed -i.bak -e "s|Listen .*|Listen \"$1:$PORT\"|g" /opt/local/etc/apache2/httpd.conf
+		;;
+
+
+# 		-e "s|DirectoryIndex index.html|DirectoryIndex index.php index.html|g" \
+#		-e "s|#LoadModule rewrite_module lib/apache2/modules/mod_rewrite.so|LoadModule rewrite_module lib/apache2/modules/mod_rewrite.so|g" 
+
+	add-domain-directory )	# $2=scheme://domain:port $3=directory (use "https" as directory to define forwarding)
+		case "$2" in
+			http://*.*:[0-9]* | https://*.*:[0-9]* )
+				DOMAIN=$(echo "$2" | sed 's|http.*://\([^:]*\):\(.*\)|\1|')
+				PORT=$(echo "$2" | sed 's|http.*://\([^:]*\):\(.*\)|\2|')
+				;;
+			http://*.* )
+				DOMAIN=$(echo "$2" | sed 's|http://\(.*\)|\1|')
+				PORT=80
+				;;
+			https://*.* )
+				DOMAIN=$(echo "$2" | sed 's|https://\(.*\)|\1|')
+				PORT=443
+				;;
+			* )
+				echo invalid domain $2
+				exit 1
+				;;
+		esac
+		DIRECTORY="$3"
+		sudo touch /opt/local/etc/apache2/extra/letux-httpd-vhosts.list
+		echo "$DIRECTORY $PORT $DOMAIN" | sudo tee -a /opt/local/etc/apache2/extra/letux-httpd-vhosts.list >/dev/null
+		# Problem: wenn man ein Domain/Dir-Paar mal ohne redir und mal mit angibt dann funktioniert das uniq nicht!
+		# Alternative: einfach "http://domain https" als Directory angeben?
+		sudo sort -u </opt/local/etc/apache2/extra/letux-httpd-vhosts.list >/tmp/$$.list && sudo mv -f /tmp/$$.list /opt/local/etc/apache2/extra/letux-httpd-vhosts.list
+		update_vhosts
+		;;
+	remove-domain )
+		# FIXME: remove optional http[s]://
+		sudo touch /opt/local/etc/apache2/extra/letux-httpd-vhosts.list
+		awk '$3 != "'$2'"' /opt/local/etc/apache2/extra/letux-httpd-vhosts.list >/tmp/$$.list && sudo mv -f /tmp/$$.list /opt/local/etc/apache2/extra/letux-httpd-vhosts.list
+		update_vhosts
+		;;
+	* )
+		echo unknown command $1
+		exit 1
+		;;
+esac
+}
+
+case "$(uname -s)" in
+	Linux )
+		linux "$@"
+		;;
+	Darwin )
+		darwin "$@"
+		;;
+	* )
+		echo unknown OS: $(uname -a) >&2
+		;;
+esac

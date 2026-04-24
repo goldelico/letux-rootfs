@@ -25,10 +25,6 @@ install_darwin_php() {
 		echo +++ install packages for PHP$PHP support +++ >&2
 
 		PACKAGES="php$PHP-apache2handler php$PHP-posix php$PHP-opcache php$PHP-openssl"
-# some of these may be optional and should be installed by letux-amp or quantumstep-webserver
-# abgleichen was Linux als Extensions geladen hat!
-#		PACKAGES+="  php$PHP-mysql"	# => letux-amp
-#		PACKAGES+="  php$PHP-mbstring php$PHP-zip php$PHP-intl php$PHP-iconv php$PHP-pcntl php$PHP-mysql php$PHP-gd php$PHP-curl php$PHP-imagick php$PHP-sqlite gnutar"	# => quantumstep-webserver
 		sudo port -N install $PACKAGES
 
 		echo +++ php setup +++ >&2
