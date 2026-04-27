@@ -32,19 +32,22 @@ update_vhosts() {
 	LASTDIR=
 	LASTPORT=
 	LASTDOMAIN=
-	(cat /opt/local/etc/apache2/extra/letux-httpd-vhosts.list; echo last record done) | while read DIR PORT DOMAIN
+	(cat /opt/local/etc/apache2/extra/letux-httpd-vhosts.list; echo last record done) | while read DIR PORT DOMAIN REWRITE INDEX
 	do
 # echo $DIR $PORT $DOMAIN $LASTDIR $LASTPORT $SERVER $ALIASES
 		if [ "$DIR" != "$LASTDIR" -o "$PORT" != "$LASTPORT" ]
 		then
 			if [ "$LASTPORT" ]
 			then
-			cat <<END | sudo tee -a /opt/local/etc/apache2/extra/httpd-vhosts.conf >/dev/null
+			(
+
+# use full URL for ServerName?
+cat <<END
 <VirtualHost *:$LASTPORT>
 	ServerAdmin admin@$SERVER
 	ServerName $SERVER
 	ServerAlias $ALIASES
-	DocumentRoot $LASTDIR
+	DocumentRoot \"$LASTDIR\"
 	<Directory $LASTDIR/>
 		AllowOverride All
 	</Directory>
@@ -52,6 +55,16 @@ update_vhosts() {
 	CustomLog ${APACHE_LOG_DIR}/${LASTDOMAIN}_access.log combined
 
 END
+# to config rewrite
+cat <<END >/dev/null
+	RewriteEngine On
+	RewriteCond %{HTTP_HOST} !(^localhost|^127.0.0.1|^::1)
+	RewriteCond %{REQUEST_URI} !/.well-known/?.*
+	RewriteCond %{REQUEST_URI} !^/netboot/ [NC]
+	RewriteRule .* https://%{SERVER_NAME}%{REQUEST_URI} [R]
+END
+echo "</VirtualHost>"
+) | sudo tee -a /opt/local/etc/apache2/extra/httpd-vhosts.conf >/dev/null
 			fi
 			SERVER=
 			ALIASES=
@@ -71,6 +84,7 @@ END
 }
 
 darwin() {
+# echo $0 $@
 case "$1" in
 	start | restart )
 		/opt/local/sbin/apachectl -t >&2
@@ -78,7 +92,6 @@ case "$1" in
 		sudo apachectl -k restart
 		;;
 	stop )
-		sudo cp /opt/local/etc/apache2/httpd.conf.orig /opt/local/etc/apache2/httpd.conf
 		sudo apachectl -k stop	# to be sure...
 		sudo port -N unload apache2 || true	# may fail on first install
 		sleep 5	# may need some time to free the socket
@@ -90,25 +103,28 @@ case "$1" in
 				5* ) sudo /opt/local/bin/apxs -a -e -n php5 mod_php$2.so;;
 				7* ) sudo /opt/local/bin/apxs -a -e -n php7 mod_php$2.so;;
 				8* ) sudo /opt/local/bin/apxs -a -e -n php mod_php$2.so;;	# name changed: https://gitlab.alpinelinux.org/alpine/aports/-/issues/12249
+				'' ) ;;
+				* ) echo invalid php version $2; exit 1;;
 			esac
 		)
 		sudo sed -i.bak -e 's|memory_limit = .*|memory_limit = 512M|g' \
 			-e 's|;pcre.jit=1|pcre.jit=0|g' \
-			/opt/local/etc/php$PHP/php.ini
+			/opt/local/etc/php$2/php.ini
 		if [ "$2" ]
 		then
-			(
+			( # create defaults
 			grep -q "LoadModule php_module " /opt/local/etc/apache2/httpd.conf || echo "LoadModule php_module default"
 			grep -q "Include .*extra/mod_php.*.conf" /opt/local/etc/apache2/httpd.conf || echo "Include etc/apache2/extra/mod_php_default.conf"
 			) | sudo tee -a /opt/local/etc/apache2/httpd.conf >/dev/null
 			sudo sed -i.bak -e "s|LoadModule php_module .*|LoadModule php_module lib/apache2/modules/mod_php$2.so|g" \
 				-e "s|Include .*extra/mod_php.*.conf|Include etc/apache2/extra/mod_php$2.conf|g" \
 				/opt/local/etc/apache2/httpd.conf
+			# should we also enable the rewrite_module?
 		else
 			sudo sed -i.bak -e "/LoadModule php_module.*/d" -e "/Include .*extra\/mod_php.*.conf/d" \
 				/opt/local/etc/apache2/httpd.conf
 		fi
-		sudo port -N select --set php php$PHP	# choose for shell PHP
+		sudo port -N select --set php php$2	# choose for shell PHP
 		;;
 	set-user )
 		sudo sed -i.bak -e "s|User .*|User $2|g" /opt/local/etc/apache2/httpd.conf
@@ -119,20 +135,22 @@ case "$1" in
 	set-docroot )
 		sudo sed -i.bak -e "s|DocumentRoot .*|DocumentRoot \"$2\"|g" \
 				-e "/DocumentRoot .*/,/<\/Directory>/s|<Directory .*>|<Directory \"$2\">|g" \
-				-e "/DocumentRoot .*/,/<\/Directory>/s|AllowOverride None|AllowOverride All|g"
+				-e "/DocumentRoot .*/,/<\/Directory>/s|AllowOverride None|AllowOverride All|g" \
 				/opt/local/etc/apache2/httpd.conf
 		;;
 	set-servername )
-		sudo sed -i.bak -e "s|#*ServerName .*|ServerName \"$1:$PORT\"|g" /opt/local/etc/apache2/httpd.conf
+		sudo sed -i.bak -e "s|#*ServerName .*|ServerName \"$2\"|g" /opt/local/etc/apache2/httpd.conf
 		;;
 	set-listen )
-		sudo sed -i.bak -e "s|Listen .*|Listen \"$1:$PORT\"|g" /opt/local/etc/apache2/httpd.conf
+		sudo sed -i.bak -e "s|^Listen .*|Listen \"$2\"|g" /opt/local/etc/apache2/httpd.conf
 		;;
-
-
-# 		-e "s|DirectoryIndex index.html|DirectoryIndex index.php index.html|g" \
-#		-e "s|#LoadModule rewrite_module lib/apache2/modules/mod_rewrite.so|LoadModule rewrite_module lib/apache2/modules/mod_rewrite.so|g" 
-
+	set-index )
+		sudo sed -i.bak -e "s|DirectoryIndex .*|DirectoryIndex $2|g" /opt/local/etc/apache2/httpd.conf
+		;;
+	set-rewrite )
+		[ "$2" == yes ] &&
+		sudo sed -i.bak -e "s|#*LoadModule rewrite_module lib/apache2/modules/mod_rewrite.so|LoadModule rewrite_module lib/apache2/modules/mod_rewrite.so|g" /opt/local/etc/apache2/httpd.conf
+		;;
 	add-domain-directory )	# $2=scheme://domain:port $3=directory (use "https" as directory to define forwarding)
 		case "$2" in
 			http://*.*:[0-9]* | https://*.*:[0-9]* )

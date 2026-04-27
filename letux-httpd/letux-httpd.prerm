@@ -25,12 +25,13 @@ case "$1" in
 			# will be stopped elsewhere
 			;;
 		Darwin )
-			echo ">>" stop running apache >&2
+			echo +++  stop running apache +++ >&2
 			echo may ask for admin password: >&2
-			sudo apachectl -k stop
-			sudo port -N unload apache2 || true	# may fail
-			PHPVERSIONS=84	# 5.6, 5.7, 8.1, 8.2 and 8.3 are broken
+			# echo +++ restore httpd.conf +++ >&2
+			sudo cp /opt/local/etc/apache2/httpd.conf.orig /opt/local/etc/apache2/httpd.conf
+			letux-httpd-ctl stop
 
+			PHPVERSIONS=84	# 5.6, 5.7, 8.1, 8.2 and 8.3 are broken
 			for PHP in $PHPVERSIONS
 			do
 				PACKAGES="php$PHP-apache2handler php$PHP-posix php$PHP-opcache php$PHP-openssl"
