@@ -109,8 +109,6 @@ install_darwin_apache() {
 	GROUP=$(stat -f '%Sg' $DOCROOT)
 	# echo user "$USER" "$GROUP" >&2
 
-# FIXME: auf letux-httpd-ctl set-port usw. umstellen
-
 	letux-httpd-ctl set-listen "127.0.0.1:$PORT"
 	letux-httpd-ctl set-user "$USER"
 	letux-httpd-ctl set-group "$GROUP"
@@ -119,17 +117,6 @@ install_darwin_apache() {
 	letux-httpd-ctl set-index "index.php index.html"
 	letux-httpd-ctl set-rewrite yes
 
-:	sudo sed -i.bak -e "s|Listen .*|Listen 127.0.0.1:$PORT|g" \
-		-e "s|DirectoryIndex index.html|DirectoryIndex index.php index.html|g" \
-		-e "s|DocumentRoot .*|DocumentRoot \"$DOCROOT\"|g" \
-		-e "/DocumentRoot .*/,/<\/Directory>/s|<Directory .*>|<Directory \"$DOCROOT\">|g" \
-		-e "/DocumentRoot .*/,/<\/Directory>/s|AllowOverride None|AllowOverride All|g" \
-		-e "s|User .*|User $USER|g" \
-		-e "s|Group .*|Group $GROUP|g" \
-		-e "s|#*LoadModule rewrite_module lib/apache2/modules/mod_rewrite.so|LoadModule rewrite_module lib/apache2/modules/mod_rewrite.so|g" \
-		-e "s|ServerRoot .*|ServerRoot "\/opt\/local"|g" \
-		-e "s|#*ServerName .*|ServerName \"http://localhost:$PORT\"|g" \
-	/opt/local/etc/apache2/httpd.conf
 	install_darwin_php
 }
 

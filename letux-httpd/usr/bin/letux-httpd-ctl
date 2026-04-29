@@ -151,42 +151,6 @@ case "$1" in
 		[ "$2" == yes ] &&
 		sudo sed -i.bak -e "s|#*LoadModule rewrite_module lib/apache2/modules/mod_rewrite.so|LoadModule rewrite_module lib/apache2/modules/mod_rewrite.so|g" /opt/local/etc/apache2/httpd.conf
 		;;
-	add-domain-directory )	# $2=scheme://domain:port $3=directory (use "https" as directory to define forwarding)
-		case "$2" in
-			http://*.*:[0-9]* | https://*.*:[0-9]* )
-				DOMAIN=$(echo "$2" | sed 's|http.*://\([^:]*\):\(.*\)|\1|')
-				PORT=$(echo "$2" | sed 's|http.*://\([^:]*\):\(.*\)|\2|')
-				;;
-			http://*.* )
-				DOMAIN=$(echo "$2" | sed 's|http://\(.*\)|\1|')
-				PORT=80
-				;;
-			https://*.* )
-				DOMAIN=$(echo "$2" | sed 's|https://\(.*\)|\1|')
-				PORT=443
-				;;
-			* )
-				echo invalid domain $2
-				exit 1
-				;;
-		esac
-		case "$3" in
-			/* ) DIRECTORY="$3";;
-			* ) DIRECTORY="/usr/local/QuantumSTEP/Library/WebServer/Sites/$3";;
-		esac
-		sudo touch /opt/local/etc/apache2/extra/letux-httpd-vhosts.list
-		echo "$DIRECTORY $PORT $DOMAIN" | sudo tee -a /opt/local/etc/apache2/extra/letux-httpd-vhosts.list >/dev/null
-		# Problem: wenn man ein Domain/Dir-Paar mal ohne redir und mal mit angibt dann funktioniert das uniq nicht!
-		# Alternative: einfach "http://domain https" als Directory angeben?
-		sudo sort -u </opt/local/etc/apache2/extra/letux-httpd-vhosts.list >/tmp/$$.list && sudo mv -f /tmp/$$.list /opt/local/etc/apache2/extra/letux-httpd-vhosts.list
-		update_vhosts
-		;;
-	remove-domain )
-		DOMAIN=${2#http*://}
-		sudo touch /opt/local/etc/apache2/extra/letux-httpd-vhosts.list
-		awk '$3 != "'$2'"' /opt/local/etc/apache2/extra/letux-httpd-vhosts.list >/tmp/$$.list && sudo mv -f /tmp/$$.list /opt/local/etc/apache2/extra/letux-httpd-vhosts.list
-		update_vhosts
-		;;
 	* )
 		echo unknown command $1
 		exit 1

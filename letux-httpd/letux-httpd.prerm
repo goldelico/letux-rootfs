@@ -22,7 +22,7 @@ case "$1" in
 	# stop httpd
 	case "$(uname -s)" in
 		Linux )
-			# will be stopped elsewhere
+			letux-httpd-ctl stop
 			;;
 		Darwin )
 			echo +++  stop running apache +++ >&2
