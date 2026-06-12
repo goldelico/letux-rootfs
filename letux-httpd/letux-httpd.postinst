@@ -125,9 +125,56 @@ case "$1" in
 	# start httpd
 	case "$(uname -s)" in
 		Linux )
-			# enable https with self-signed default certificate
-			a2enmod ssl
-			a2ensite default-ssl
+			# enable https with a self-signed default certificate
+			if [ ! -e /etc/ssl/certs/ssl-cert-snakeoil.pem ] || [ ! -e /etc/ssl/private/ssl-cert-snakeoil.key ]
+			then
+				echo "letux-httpd: missing SSL-certificates. Create temporary snakeoil-certificates..."
+				if command -v make-ssl-cert >/dev/null 2>&1
+				then
+					make-ssl-cert generate-default-snakeoil --force-overwrite >/dev/null 2>&1 || true
+				else
+					mkdir -p /etc/ssl/certs /etc/ssl/private
+					openssl req -x509 -nodes -days 3650 -newkey rsa:2048 \
+						-keyout /etc/ssl/private/ssl-cert-snakeoil.key \
+						-out /etc/ssl/certs/ssl-cert-snakeoil.pem \
+						-subj "/CN=localhost" >/dev/null 2>&1 || true
+				fi
+			fi
+
+			a2enmod ssl || true
+			a2ensite default-ssl || true
+
+			# this is only because we have no pre-depends...
+			if ! apache2ctl configtest >/dev/null 2>&1
+			then
+				echo "letux-httpd: broken apache configuration. Enforce cleanup..."
+				# if the PHP-module is loaded but MPM wrongly set:
+				# temporarily deaktivate the PHP-modul for the first safe start of apache
+				if command -v a2dismod >/dev/null 2>&1
+				then
+					a2dismod -m php5 >/dev/null 2>&1 || true
+					a2dismod -m php >/dev/null 2>&1 || true
+				fi
+			fi
+
+			if command -v a2dismod >/dev/null 2>&1 && command -v a2enmod >/dev/null 2>&1
+			then
+				echo "letux-httpd: enforce mpm_prefork for PHP5 compatibility..."
+				a2dismod -m mpm_event >/dev/null 2>&1 || true
+				a2dismod -m mpm_worker >/dev/null 2>&1 || true
+				a2enmod -m mpm_prefork >/dev/null 2>&1 || true
+			fi
+
+			if command -v a2enmod >/dev/null 2>&1
+			then
+				# turn on libapache2-mod-php5 if already available
+				if [ -e /etc/apache2/mods-available/php5.load ] || [ -e /etc/apache2/mods-available/php.load ]
+				then
+					a2enmod -m php5 >/dev/null 2>&1 || true
+					a2enmod -m php >/dev/null 2>&1 || true
+					fi
+			fi
+
 			letux-httpd-ctl start
 			;;
 		Darwin )
