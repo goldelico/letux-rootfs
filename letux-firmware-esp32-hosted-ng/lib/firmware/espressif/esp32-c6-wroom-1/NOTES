@@ -1,5 +1,6 @@
-This firmware was built Di  3 Dez 2024 08:22:55 CET
-from df96df5 @ https://github.com/espressif/esp-hosted.git
+This firmware was built Do 11 Jun 2026 20:06:51 CEST
+from 84d7e4c @ https://github.com/espressif/esp-hosted.git
+using fcae32885 @ https://github.com/espressif/esp-idf.git
 for target esp32c6
 
 To flash, run this command:
