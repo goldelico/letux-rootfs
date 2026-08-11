@@ -149,7 +149,7 @@ case "$1" in
 			then
 				echo "letux-httpd: broken apache configuration. Enforce cleanup..."
 				# if the PHP-module is loaded but MPM wrongly set:
-				# temporarily deaktivate the PHP-modul for the first safe start of apache
+				# temporarily deactivate the PHP-module for the first safe start of apache
 				if command -v a2dismod >/dev/null 2>&1
 				then
 					a2dismod -m php5 >/dev/null 2>&1 || true
@@ -175,7 +175,12 @@ case "$1" in
 					fi
 			fi
 
-			letux-httpd-ctl start
+			letux-httpd-ctl start || true
+
+			# first attempt may have failed
+			a2enmod ssl || true
+			a2ensite default-ssl || true
+
 			;;
 		Darwin )
 			install_darwin_apache
