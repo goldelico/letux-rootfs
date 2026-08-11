@@ -1,0 +1,20 @@
+<?xml version="1.0" standalone='no'?>
+<!DOCTYPE service-group SYSTEM "avahi-service.dtd">
+<service-group>
+  <!-- %h will automatically be replaced by the system's hostname -->
+  <name replace-wildcards="yes">File Sharing on %h</name>
+
+  <!-- Announces the SMB service to the network -->
+  <service>
+    <type>_smb._tcp</type>
+    <port>445</port>
+  </service>
+
+  <!-- Recommended for macOS/Apple clients to display a proper server icon -->
+  <service>
+    <type>_device-info._tcp</type>
+    <port>0</port>
+    <!-- Defines the icon style in the macOS Finder sidebar -->
+    <txt-record>model=TimeCapsule6,116</txt-record>
+  </service>
+</service-group>

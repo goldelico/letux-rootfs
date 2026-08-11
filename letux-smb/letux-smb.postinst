@@ -15,8 +15,22 @@ set -e
 
 case "$1" in
     configure)
+		echo "deactivate nmbd" >&2
+
+		service nmbd stop >/dev/null 2>&1 || true
+
+		if [ -x /usr/bin/deb-systemd-helper -a "$(which systemctl)" ]
+		then
+		        systemctl disable nmbd >/dev/null 2>&1 || true
+			systemctl mask nmbd >/dev/null 2>&1 || true
+		elif [ -x /usr/sbin/update-rc.d ]
+		then
+			update-rc.d -f nmbd remove >/dev/null 2>&1 || true
+			update-rc.d nmbd disable >/dev/null 2>&1 || true
+    		fi
+
 		echo "Restarting smbd..." >&2
-		if [ "$(which systemctl)" ]
+		if [ -x /usr/bin/deb-systemd-helper -a "$(which systemctl)" ]
 		then
 			systemctl restart smbd.service
 		else

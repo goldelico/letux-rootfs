@@ -9,6 +9,6 @@ export DEBIAN_RAW_FILES="./etc/samba/smb.conf"
 export DEBIAN_RAW_FILES+=" ./media"
 export INSTALL_PATH="//"
 export PRODUCT_NAME="letux-smb"
-export SOURCES="leutux-smb.postinst"
+export SOURCES="letux-smb.postinst"
 
 cd "$(dirname "${BASH_SOURCE[0]}")" && "$QuantumSTEP/System/Sources/Frameworks/mySTEP.make" $ACTION
