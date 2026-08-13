@@ -32,6 +32,7 @@ do_status () {
 case "$1" in
   start)
         log_daemon_msg "Starting $SERVICE"
+	do_status && exit 0	# already running
 	/etc/gadget/core/letux-gadget.sh add mass_storage "$DEVICE" ro
         exit 0
         ;;
@@ -41,6 +42,7 @@ case "$1" in
         ;;
   stop)
         log_daemon_msg "Stopping $SERVICE"
+	do_status || exit 0	# not running
 	/etc/gadget/core/letux-gadget.sh remove mass_storage
         log_progress_msg "disabled."
         log_end_msg 0
