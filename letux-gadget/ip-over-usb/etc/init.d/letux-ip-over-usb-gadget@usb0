@@ -30,6 +30,7 @@ do_status () {
 case "$1" in
   start)
         log_daemon_msg "Starting $SERVICE"
+	do_status && exit 0	# already running
 	/etc/gadget/core/letux-gadget.sh add ncm
 	/sbin/ifconfig usb0 netmask 255.255.255.192 192.168.0.202 up
 	/sbin/route add default gw 192.168.0.200 metric 203 | : may fail
@@ -44,6 +45,7 @@ case "$1" in
         ;;
   stop)
         log_daemon_msg "Stopping $SERVICE"
+	do_status || exit 0	# not running
 	/bin/kill -SIGTERM $(cat /run/dhcpd.pid)
 	/sbin/ifconfig usb0 down || : ignore error
 	/etc/gadget/core/letux-gadget.sh remove ncm
