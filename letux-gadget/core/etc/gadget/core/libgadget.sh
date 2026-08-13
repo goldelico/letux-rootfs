@@ -105,16 +105,6 @@ gadget_unbind_device() {
 	fi
 }
 
-gadget_stop_configuration() {
-	for STORAGE in $DEVICE/functions/mass_storage.$USB_IF/lun.*/file
-	do	# safely stop storage devices by setting the file name to ""
-		[ -w "$STORAGE" ] && echo "" >$STORAGE
-	done
-
-	gadget_unbind_device
-	# rmdir c.$C?
-}
-
 gadget_link_functions() {
 	for CONFIG in $DEVICE/configs/c.*/
 	do

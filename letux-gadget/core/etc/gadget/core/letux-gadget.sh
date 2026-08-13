@@ -20,6 +20,7 @@ fi
 
 case "$1" in
   start)
+	gadget_status && exit 0	# already running
         log_daemon_msg "Starting USB Gadget"
 	# FIXME: somewhere get a unique serial number from...
 	gadget_setup_device "$(cut -d ' ' -f 1 /proc/device-tree/model)" "$(cut -d ' ' -f 2- /proc/device-tree/model)" "$(echo 000001)"
@@ -32,6 +33,7 @@ case "$1" in
         exit 3
         ;;
   stop)
+	gadget_status || exit 0	# not running
         log_daemon_msg "Stopping USB Gadget"
 	gadget_shutdown_device
         log_progress_msg "stopped."
