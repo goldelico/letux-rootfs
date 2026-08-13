@@ -32,6 +32,7 @@ do_status () {
 case "$1" in
   start)
 	log_daemon_msg "Starting $SERVICE"
+	do_status && exit 0	# already running
 	/etc/gadget/core/letux-gadget.sh add acm
 	echo "This is a vt100 console service for $(tr -d '\0' </proc/device-tree/model)." >/dev/$DEVICE
 	daemon -r --name=$SERVICE -- /sbin/agetty --noclear $DEVICE $TERM
@@ -43,6 +44,7 @@ case "$1" in
 	;;
   stop)
 	log_daemon_msg "Stopping $SERVICE"
+	do_status || exit 0	# not running
 	(echo; echo "USB access to terminal stopped.") >/dev/$DEVICE &
 	sleep 1
 	daemon --name=$SERVICE --stop 2>/dev/null
