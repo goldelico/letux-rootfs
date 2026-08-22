@@ -171,6 +171,26 @@ gadget_enable_device() {
 	gadget_update_configuration
 }
 
+gadget_enable_device_debounced() {
+	# coalesce multiple quick calls into single gadget_update_configuration
+	DEBOUNCE_PID="/tmp/gadget_enable_device_debounce.pid"
+	if [ -f "$DEBOUNCE_PID" ]
+	then
+		local OLD_PID
+		OLD_PID=$(cat "$DEBOUNCE_PID")
+		if [ -n "$OLD_PID" ] && kill -0 "$OLD_PID" 2>/dev/null
+		then
+			kill "$OLD_PID" 2>/dev/null
+		fi
+	fi
+	(
+		sleep 0.5
+		gadget_enable_device
+		rm -f "$DEBOUNCE_PID"
+	) &
+	echo $! >"$DEBOUNCE_PID"
+}
+
 gadget_disable_device() {
 # echo gadget_disable_device
 	# FIXME: unlink functions from all configurations?
