@@ -28,7 +28,7 @@ gadget_status() {
 	if [ ! -d $DEVICE ]
 	then
 		echo not initialized
-		return
+		return 1
 	fi
 	echo UDC: $(cat $DEVICE/UDC 2>/dev/null)
 	echo Configs: $(cd $DEVICE/configs && ls -1d * 2>/dev/null)
@@ -165,13 +165,13 @@ echo "writing configuration '$CONFIGURATION'"
 	$ANY && gadget_bind_device
 }
 
-gadget_enable_device() {
+gadget_enable_device_raw() {
 # echo gadget_enable_device
 	gadget_link_functions
 	gadget_update_configuration
 }
 
-gadget_enable_device_debounced() {
+gadget_enable_device() {
 	# coalesce multiple quick calls into single gadget_update_configuration
 	DEBOUNCE_PID="/tmp/gadget_enable_device_debounce.pid"
 	if [ -f "$DEBOUNCE_PID" ]
@@ -185,7 +185,7 @@ gadget_enable_device_debounced() {
 	fi
 	(
 		sleep 0.5
-		gadget_enable_device
+		gadget_enable_device_raw
 		rm -f "$DEBOUNCE_PID"
 	) &
 	echo $! >"$DEBOUNCE_PID"
