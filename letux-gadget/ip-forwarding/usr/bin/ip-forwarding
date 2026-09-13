@@ -4,11 +4,11 @@
 #
 # it uses the current service or default route for internet connection
 #
-# on Mac the device is identified by its IP address
+# on Mac the device is identified by the IP address passed as DEVICE
 # on Linux the device is (currently) assumed to create ifconfig usb0 or an interface passed as $1
 #
 
-DEVICE=192.168.0.202	# Letux device
+[ "$DEVICE" ] || DEVICE=192.168.0.202	# Letux device
 
 case "$0" in
 	/* )
@@ -90,14 +90,39 @@ then
 fi
 echo +++ enable sharing $DEVICE over: $CURRENT $INTERFACE
 
-echo "(NOTE: ignore messages about no ALTQ support in kernel)"
-sudo pfctl -F nat
+# echo "(NOTE: ignore messages about no ALTQ support in kernel)"
+# sudo pfctl -F nat # das flusht alles!!!
 
-echo "nat log on $INTERFACE from $DEVICE to any -> ($INTERFACE)"
-#nat log on en0 from $DEVICE to any -> (en0)" | sudo pfctl -N -f - -e
-echo "(NOTE: ignore messages about -f option flushing rules)"
-echo "nat log on $INTERFACE from $DEVICE to any -> ($INTERFACE)" | sudo pfctl -N -f - -e
-sudo pfctl -a '*' -s nat
+# NEW_RULE="nat log on $INTERFACE inet from $DEVICE to any -> ($INTERFACE) round-robin"
+# echo "add $NEW_RULE"
+# nat log on en0 from $DEVICE to any -> (en0)" | sudo pfctl -N -f - -e
+# echo "(NOTE: ignore messages about -f option flushing rules)"
+# echo "nat log on $INTERFACE from $DEVICE to any -> ($INTERFACE)" | sudo pfctl -N -f - -e
+# mix and filter duplicates
+#(sudo pfctl -s nat 2>&1 | fgrep nat; echo "$NEW_RULE") | sort -u
+#(sudo pfctl -s nat 2>&1 | fgrep nat; echo "$NEW_RULE") | sort -u | sudo pfctl -N -f - -e
+# echo new rules:
+# sudo pfctl -s nat 2>&1 | fgrep nat
+# sudo pfctl -a '*' -s nat
+
+TABLE_NAME="forward_ips"
+
+if ! sudo pfctl -s nat 2>&1 | grep -q "from <$TABLE_NAME>"
+then
+	echo "create table <$TABLE_NAME>..."
+	(
+	echo "table <$TABLE_NAME> persist"
+	echo "nat log on $INTERFACE inet from <$TABLE_NAME> to any -> ($INTERFACE) round-robin"
+	) | sudo pfctl -N -f - -e
+fi
+
+# echo add $DEVICE
+# add -> delete to delete some IP...
+sudo pfctl -t "$TABLE_NAME" -T add "$DEVICE" 2>/dev/null
+echo "+++ IP list"
+sudo pfctl -t "$TABLE_NAME" -T show 2>/dev/null
+echo "       to remove:"
+echo "       sudo pfctl -t $TABLE_NAME -T delete $DEVICE"
 
 echo "sysctl (one of these should succeed)"	# FIXME: we could make this depend on $(uname -r)
 sudo sysctl -w net.inet.ip.forwarding=1
