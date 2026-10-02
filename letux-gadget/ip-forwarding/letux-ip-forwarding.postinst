@@ -22,10 +22,14 @@ SCRIPTPATH=/usr/local/bin/ip-forwarding
 UUID=com.goldelico.ip-forwarding
 LAUNCHDAEMON=/Library/LaunchDaemons/$UUID.plist
 
-	echo "+++ install $LAUNCHDAEMON for $SCRIPTPATH"
+	echo "+++ install $LAUNCHDAEMON for $SCRIPTPATH" >&2
 
-	sudo launchctl bootout system /Library/LaunchDaemons/com.goldelico.ip-forwarding.plist || true
+	if sudo launchctl print system/$UUID >/dev/null 2>&1
+	then
+		sudo launchctl bootout system $LAUNCHDAEMON || true
+	fi
 
+	sudo mkdir -p $(dirname "$SCRIPTPATH")
 	sudo cp /usr/local/QuantumSTEP/usr/bin/ip-forwarding "$SCRIPTPATH"
 	sudo chown root:wheel "$SCRIPTPATH"
 	sudo chmod +x "$SCRIPTPATH"
@@ -77,7 +81,7 @@ LAUNCHDAEMON=/Library/LaunchDaemons/$UUID.plist
 END
 
 	sudo launchctl bootstrap system "$LAUNCHDAEMON"
-	echo "+++ $LAUNCHDAEMON installed"
+	echo "+++ $LAUNCHDAEMON installed" >&2
 }
 
 install_udev_rule() {

@@ -23,9 +23,13 @@ case "$1" in
     remove)
 	case "$(uname -s)" in
 		Darwin )
-			sudo launchctl bootout system $LAUNCHDAEMON
-			sudo rm $LAUNCHDAEMON;;
-			echo "+++ $LAUNCHDAEMON removed"
+			if sudo launchctl print system/$UUID >/dev/null 2>&1
+			then
+				sudo launchctl bootout system $LAUNCHDAEMON || true
+			fi
+			sudo rm -f $LAUNCHDAEMON
+			echo "+++ $LAUNCHDAEMON removed" >&2
+			;;
 		Linux )
 			;;
 		* )
