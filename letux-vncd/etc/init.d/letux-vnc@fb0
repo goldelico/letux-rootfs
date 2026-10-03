@@ -1,0 +1,81 @@
+#!/bin/sh
+# kFreeBSD do not accept scripts as interpreters, using #!/bin/sh and sourcing.
+if [ true != "$INIT_D_SCRIPT_SOURCED" ] ; then
+    set "$0" "$@"; INIT_D_SCRIPT_SOURCED=true . /lib/init/init-d-script
+fi
+### BEGIN INIT INFO
+# Provides:          letux-vnc@fb0
+# Required-Start:    
+# Required-Stop:
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Run vnc on /dev/fb0
+# Description:       This script run a vnc daemon on port 5900 to show /dev/fb0
+#                    
+### END INIT INFO
+
+# Author: H. Nikolaus Schaller <hns@goldelico.com>
+
+SERVICE=letux-vnc
+FB=fb0
+TITLE=$(cat /proc/device-tree/model 2>/dev/null || hostname | tr -d '\0')
+
+do_status () {
+	if daemon --name=$SERVICE --running ; then
+		echo "$SERVICE is running."
+		return 0
+	else
+		return 4
+	fi
+}
+
+case "$1" in
+  start)
+	log_daemon_msg "Starting framebuffer and vnc server"
+	do_status && exit 0	# already running
+	if [ ! -r "/dev/$FB" ]
+	then	# try to create the FB
+		modprobe vkms || exit 1
+		fbset -fb "/dev/$FB" -g 1024 768 1024 768 32
+	fi
+	mkdir -p /var/lib/vnc
+	x11vnc -storepasswd "letux" "/var/lib/vnc/$FB"
+	# OPTS="-r -A 1 -L 60"	# respawn every 60 seconds - may occur if FB device does not exist
+	DISPLAY="-rawfb /dev/$FB"
+	daemon $OPTS --name="$SERVICE" -- /usr/bin/x11vnc -desktop "$TITLE" $DISPLAY \
+		-forever -shared -rfbauth "/var/lib/vnc/$FB" \
+		-pipeinput CONSOLE -noxrecord -many -noshm -noxdamage -repeat \
+		-remap UTF-8
+# 		-display :0 -auth guess \
+
+
+	#  /usr/bin/x11vnc -desktop "UDOO Neo Full"
+	#	-display :0 -auth guess -forever -shared -rfbport 5900 -rfbauth /var/lib/vnc/fb0 -pipeinput CONSOLE -noxrecord -many -noshm -noxdamage -repeat &
+
+
+	exit 0
+    ;;
+  stop)
+	log_daemon_msg "Stopping vnc server"
+	do_status || exit 0	# not running
+	daemon --name=$SERVICE --stop 2>/dev/null
+	# modprobe -r vkms
+	log_progress_msg "stopped."
+	log_end_msg 0
+	exit 0
+    ;;
+  restart|reload|force-reload)
+	echo "Error: argument '$1' not supported" >&2
+	exit 3
+	;;
+  status)
+	do_status
+	exit $?
+	;;
+  *)
+	echo "Usage: $0 start|stop|status" >&2
+        exit 3
+	;;
+esac
+
+:
