@@ -1,0 +1,19 @@
+<?xml version="1.0" standalone='no'?>
+<!DOCTYPE service-group SYSTEM "avahi-service.dtd">
+<service-group>
+  <!-- %h will automatically be replaced by the system's hostname -->
+  <name replace-wildcards="yes">%h</name>
+
+  <!-- Announces the HTTP service to the network -->
+  <service>
+    <type>_http._tcp</type>
+    <port>80</port>
+  </service>
+
+  <!-- Announces the HTTPS service to the network -->
+  <service>
+    <type>_https._tcp</type>
+    <port>443</port>
+  </service>
+
+ </service-group>
