@@ -1,0 +1,13 @@
+<?xml version="1.0" standalone='no'?>
+<!DOCTYPE service-group SYSTEM "avahi-service.dtd">
+<service-group>
+  <!-- %h will automatically be replaced by the system's hostname -->
+  <name replace-wildcards="yes">%h</name>
+
+  <!-- Announces the SMB service to the network -->
+  <service>
+    <type>_smb._tcp</type>
+    <port>445</port>
+  </service>
+
+</service-group>

@@ -1,5 +1,5 @@
 #! /bin/sh
-# post script for letux-smb
+# post script for letux-smbd
 #
 # see: dh_installdeb(1)
 
@@ -29,7 +29,7 @@ case "$1" in
 			update-rc.d nmbd disable >/dev/null 2>&1 || true
     		fi
 
-		echo "Restarting smbd..." >&2
+		echo "(Re)starting smbd..." >&2
 		if [ -x /usr/bin/deb-systemd-helper -a "$(which systemctl)" ]
 		then
 			systemctl restart smbd.service
@@ -37,6 +37,11 @@ case "$1" in
 			killall smbd
 			/usr/sbin/smbd -D
 		fi
+
+		echo "Restarting avahi-daemon..." >&2
+		sed -i.bak "s/<name replace-wildcards=\"yes\">[^<]*<\/name>/<name replace-wildcards=\"yes\">$(hostnamectl --pretty status)<\/name>/" /etc/avahi/services/smb.service
+		service avahi-daemon restart
+
 		echo "... restarted." >&2
     ;;
 
