@@ -16,6 +16,7 @@ set -e
 case "$1" in
     configure)
 		echo "Starting letux-vnc@fb0..." >&2
+		[ -x /usr/sbin/update-rc.d ] && /usr/sbin/update-rc.d letux-vnc@fb0 defaults || true
 		service letux-vnc@fb0 restart
 
 		echo "Restarting avahi-daemon..." >&2
