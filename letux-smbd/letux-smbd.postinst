@@ -19,9 +19,9 @@ case "$1" in
 
 		service nmbd stop >/dev/null 2>&1 || true
 
-		if [ -x /usr/bin/deb-systemd-helper -a "$(which systemctl)" ]
+		if [ -d /run/systemd/system ]
 		then
-		        systemctl disable nmbd >/dev/null 2>&1 || true
+		        systemctl disable --now nmbd >/dev/null 2>&1 || true
 			systemctl mask nmbd >/dev/null 2>&1 || true
 		elif [ -x /usr/sbin/update-rc.d ]
 		then
@@ -30,13 +30,7 @@ case "$1" in
     		fi
 
 		echo "(Re)starting smbd..." >&2
-		if [ -x /usr/bin/deb-systemd-helper -a "$(which systemctl)" ]
-		then
-			systemctl restart smbd.service
-		else
-			killall smbd
-			/usr/sbin/smbd -D
-		fi
+		service smbd restart
 
 		echo "Restarting avahi-daemon..." >&2
 		sed -i.bak "s/<name replace-wildcards=\"yes\">[^<]*<\/name>/<name replace-wildcards=\"yes\">$(hostnamectl --pretty status)<\/name>/" /etc/avahi/services/smb.service

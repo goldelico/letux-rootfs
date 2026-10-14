@@ -20,13 +20,7 @@ set -e
 case "$1" in
     remove)
 	# stop smbd
-		if [ -x /usr/bin/deb-systemd-helper -a "$(which systemctl)" ]
-		then
-			systemctl stop smbd.service
-		else
-			killall smbd
-			/usr/sbin/smbd -D
-		fi
+	service smbd stop
     ;;
 
     upgrade|deconfigure)
